@@ -80,6 +80,7 @@ async function throttledFetch(url) {
       await sleep(backoff);
     }
   }
+  throw new Error('All retries exhausted (429)');
 }
 
 async function fetchWorldMarket(server) {
@@ -113,55 +114,83 @@ function trimItems(items) {
 // ─── MAIN ──────────────────────────────────────────────────────────────────
 async function main() {
   const startTime = Date.now();
-  console.log('🔍 TransferWatch Scanner starting...\n');
+  const PHASE2_ONLY = process.argv.includes('--phase2');
+  console.log('🔍 TransferWatch Scanner starting...');
+  if (PHASE2_ONLY) console.log('   ⚡ Phase 2 only — loading world data from Supabase');
+  console.log('');
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // PHASE 1: Fetch market_values for all worlds
-  // ═══════════════════════════════════════════════════════════════════════
-  console.log('═══ PHASE 1: Market Values ═══\n');
-
-  console.log('📡 Fetching world list from TibiaData...');
-  const worldResponse = await fetch(`${TIBIADATA_API}/worlds`).then(r => r.json());
-  const allWorlds = (worldResponse.worlds.regular_worlds || [])
-    .filter(w => w.transfer_type === 'regular');
-  console.log(`   Found ${allWorlds.length} transferable worlds\n`);
-
-  // Fetch + store market_values per world, keep in memory for phase 2
   const worldMarket = {};  // worldName → trimmed items array
   const worldPvp = {};     // worldName → pvp_type
-  let scanned = 0, failed = 0;
 
-  for (const world of allWorlds) {
-    const idx = scanned + failed + 1;
-    process.stdout.write(`[${idx}/${allWorlds.length}] ${world.name}... `);
+  if (!PHASE2_ONLY) {
+    // ═══════════════════════════════════════════════════════════════════════
+    // PHASE 1: Fetch market_values for all worlds
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log('═══ PHASE 1: Market Values ═══\n');
 
-    try {
-      const rawItems = await fetchWorldMarket(world.name);
-      const trimmed = trimItems(rawItems);
+    console.log('📡 Fetching world list from TibiaData...');
+    const worldResponse = await fetch(`${TIBIADATA_API}/worlds`).then(r => r.json());
+    const allWorlds = (worldResponse.worlds.regular_worlds || [])
+      .filter(w => w.transfer_type === 'regular');
+    console.log(`   Found ${allWorlds.length} transferable worlds\n`);
 
-      const { error } = await supabase
-        .from('world_market_data')
-        .upsert({
-          world_name: world.name,
-          pvp_type: world.pvp_type,
-          items: trimmed,
-          scanned_at: new Date().toISOString(),
-        }, { onConflict: 'world_name' });
+    let scanned = 0, failed = 0;
 
-      if (error) throw new Error(`Supabase: ${error.message}`);
+    for (const world of allWorlds) {
+      const idx = scanned + failed + 1;
+      process.stdout.write(`[${idx}/${allWorlds.length}] ${world.name}... `);
 
-      worldMarket[world.name] = trimmed;
-      worldPvp[world.name] = world.pvp_type;
-      scanned++;
-      console.log(`✅ ${trimmed.length} items`);
-    } catch (e) {
-      failed++;
-      console.log(`❌ ${e.message}`);
+      try {
+        const rawItems = await fetchWorldMarket(world.name);
+        const trimmed = trimItems(rawItems);
+
+        const { error } = await supabase
+          .from('world_market_data')
+          .upsert({
+            world_name: world.name,
+            pvp_type: world.pvp_type,
+            items: trimmed,
+            scanned_at: new Date().toISOString(),
+          }, { onConflict: 'world_name' });
+
+        if (error) throw new Error(`Supabase: ${error.message}`);
+
+        worldMarket[world.name] = trimmed;
+        worldPvp[world.name] = world.pvp_type;
+        scanned++;
+        console.log(`✅ ${trimmed.length} items`);
+      } catch (e) {
+        failed++;
+        console.log(`❌ ${e.message}`);
+      }
     }
-  }
 
-  const phase1Time = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
-  console.log(`\nPhase 1 done: ${scanned} worlds in ${phase1Time} min\n`);
+    const phase1Time = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+    console.log(`\nPhase 1 done: ${scanned} worlds in ${phase1Time} min\n`);
+
+    // Pause between phases to let rate limit reset
+    console.log('⏸️  Pausing 60s to let rate limit reset...\n');
+    await sleep(60000);
+
+  } else {
+    // ═══════════════════════════════════════════════════════════════════════
+    // PHASE 2 ONLY: Load world data from Supabase
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log('═══ Loading world data from Supabase ═══\n');
+
+    const { data: rows, error } = await supabase
+      .from('world_market_data')
+      .select('world_name, pvp_type, items');
+
+    if (error) throw new Error('Supabase load failed: ' + error.message);
+
+    for (const row of rows) {
+      worldMarket[row.world_name] = row.items;
+      worldPvp[row.world_name] = row.pvp_type;
+    }
+
+    console.log(`   Loaded ${rows.length} worlds from Supabase\n`);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // PHASE 2: Find profitable trades → fetch market_board for those items
