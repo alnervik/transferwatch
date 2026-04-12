@@ -90,6 +90,10 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .offers-detail .offers-label { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.35rem; font-family: 'Outfit', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 .offers-detail .loading-text { font-size: 0.78rem; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
 .offers-detail .error-text { font-size: 0.78rem; color: var(--red); font-family: 'JetBrains Mono', monospace; }
+.board-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 800px) { .board-panels { grid-template-columns: 1fr; } }
+.board-panel { min-width: 0; }
+.board-panel .offers-label { margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
 .offers-list { display: flex; flex-direction: column; gap: 0.25rem; }
 .offer-entry { display: grid; grid-template-columns: 3rem 8rem 6rem 6rem 8rem; gap: 0.5rem; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 0.25rem 0; border-bottom: 1px solid rgba(30,35,48,0.3); }
 .offer-entry:last-child { border-bottom: none; }
@@ -456,7 +460,7 @@ function renderResults() {
       const rowId = g.name + ':' + t.item_id;
       const marginCls = t.margin_pct >= 20 ? ' profit-cell' : '';
 
-      h += '<tr class="item-row" data-row-id="' + rowId + '" data-world="' + g.name + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" onclick="toggleOffers(this)">';
+      h += '<tr class="item-row" data-row-id="' + rowId + '" data-world="' + g.name + '" data-start="' + currentStartName + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" data-sell-price="' + t.sell_price + '" onclick="toggleOffers(this)">';
       h += '<td style="font-size:0.65rem;color:var(--text-muted);width:1.5rem;">▶</td>';
       h += '<td class="item-name-cell" title="Klicka för buy offers breakdown">' + t.item_name + '</td>';
       h += '<td>' + t.buy_price.toLocaleString('sv-SE') + '</td>';
@@ -470,7 +474,6 @@ function renderResults() {
 
       // Expandable row for buy offers breakdown
       h += '<tr class="offers-row" id="offers-' + rowId.replace(/[^a-zA-Z0-9]/g, '_') + '"><td colspan="9"><div class="offers-detail">';
-      h += '<div class="offers-label">Buy offers på ' + g.name + '</div>';
       h += '<div class="offers-content">Klicka för att ladda offers…</div>';
       h += '</div></td></tr>';
     }
@@ -483,7 +486,7 @@ function renderResults() {
 function toggleGroup(el) { el.closest('.world-group').classList.toggle('expanded'); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TOGGLE ITEM → FETCH BUY OFFERS FROM /market_board
+// TOGGLE ITEM → FETCH SELLERS (start) + BUYERS (target) FROM /market_board
 // ═══════════════════════════════════════════════════════════════════════════
 async function toggleOffers(rowEl) {
   const rowId = rowEl.dataset.rowId;
@@ -491,7 +494,6 @@ async function toggleOffers(rowEl) {
   const offersRow = document.getElementById(safeId);
   if (!offersRow) return;
 
-  // Toggle visibility
   const isVisible = offersRow.classList.contains('visible');
   if (isVisible) {
     offersRow.classList.remove('visible');
@@ -505,62 +507,107 @@ async function toggleOffers(rowEl) {
   rowEl.querySelector('td').textContent = '▼';
 
   const contentEl = offersRow.querySelector('.offers-content');
-  const worldName = rowEl.dataset.world;
+  const targetWorld = rowEl.dataset.world;
+  const startWorld = rowEl.dataset.start;
   const itemId = rowEl.dataset.item;
-  const buyPrice = parseInt(rowEl.dataset.buyPrice);
-  const cacheKey = worldName + ':' + itemId;
+  const buyPrice = parseInt(rowEl.dataset.buyPrice);   // sell_offer on start (our buy cost)
+  const sellPrice = parseInt(rowEl.dataset.sellPrice);  // buy_offer on target (our sell price)
+
+  const cacheKey = startWorld + '>' + targetWorld + ':' + itemId;
 
   // Already cached?
   if (boardCache[cacheKey]) {
-    renderOffers(contentEl, boardCache[cacheKey], buyPrice);
+    renderBoardDetail(contentEl, boardCache[cacheKey], startWorld, targetWorld);
     return;
   }
 
-  // Fetch via throttled queue
-  contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar offers… (köad)</span>';
+  contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar offers från ' + startWorld + ' + ' + targetWorld + '… (köad)</span>';
 
   try {
-    const url = MARKET_API + '/market_board?server=' + encodeURIComponent(worldName) + '&item_id=' + itemId;
-    const data = await queueFetch(url);
+    // Fetch both worlds — both go through the throttled queue
+    const startUrl = MARKET_API + '/market_board?server=' + encodeURIComponent(startWorld) + '&item_id=' + itemId;
+    const targetUrl = MARKET_API + '/market_board?server=' + encodeURIComponent(targetWorld) + '&item_id=' + itemId;
 
-    // Response: { id, sellers: [...], buyers: [...], update_time }
-    // buyers = people wanting to buy = we sell to them
-    const buyOffers = (data.buyers || []).sort((a, b) => b.price - a.price);
+    const [startData, targetData] = await Promise.all([
+      queueFetch(startUrl),
+      queueFetch(targetUrl)
+    ]);
 
-    boardCache[cacheKey] = buyOffers;
-    renderOffers(contentEl, buyOffers, buyPrice);
+    const result = {
+      sellers: (startData.sellers || []).sort((a, b) => a.price - b.price),   // cheapest first
+      buyers:  (targetData.buyers || []).sort((a, b) => b.price - a.price),   // highest first
+      startWorld,
+      targetWorld,
+    };
+
+    boardCache[cacheKey] = result;
+    renderBoardDetail(contentEl, result, startWorld, targetWorld);
   } catch (e) {
     contentEl.innerHTML = '<span class="error-text">Fel: ' + e.message + '</span>';
   }
 }
 
-function renderOffers(el, offers, buyPrice) {
-  if (!offers.length) {
-    el.innerHTML = '<span class="loading-text">Inga buy offers hittades.</span>';
-    return;
-  }
+function renderBoardDetail(el, data, startWorld, targetWorld) {
+  let h = '<div class="board-panels">';
 
-  let h = '<div class="offers-list">';
-  h += '<div class="offer-entry" style="font-weight:600;color:var(--text-dim);font-size:0.68rem;">';
-  h += '<span>#</span><span>PRIS</span><span>ANTAL</span><span>MARGINAL</span><span>PROFIT</span>';
-  h += '</div>';
+  // ─── SELLERS on start world (what we buy from) ───
+  h += '<div class="board-panel">';
+  h += '<div class="offers-label">📦 Säljare på ' + startWorld + ' <span style="color:var(--text-muted);font-weight:400;">(du köper härifrån — lägst pris först)</span></div>';
 
-  for (let i = 0; i < offers.length; i++) {
-    const o = offers[i];
-    const price = o.price || 0;
-    const amount = o.amount || 1;
-    const margin = price - buyPrice;
-    const profit = margin * amount;
-    const negCls = margin < 0 ? ' negative' : '';
-
-    h += '<div class="offer-entry">';
-    h += '<span class="offer-idx">' + (i + 1) + '</span>';
-    h += '<span class="offer-price">' + price.toLocaleString('sv-SE') + ' gp</span>';
-    h += '<span class="offer-amount">×' + amount.toLocaleString('sv-SE') + '</span>';
-    h += '<span class="offer-margin' + negCls + '">' + (margin >= 0 ? '+' : '') + formatGold(margin) + '/st</span>';
-    h += '<span class="offer-profit' + negCls + '">' + (profit >= 0 ? '+' : '') + formatGold(profit) + ' gp</span>';
+  if (!data.sellers.length) {
+    h += '<div style="color:var(--text-muted);font-size:0.78rem;padding:0.3rem 0;">Inga sell offers.</div>';
+  } else {
+    h += '<div class="offers-list">';
+    h += '<div class="offer-entry" style="font-weight:600;color:var(--text-dim);font-size:0.68rem;">';
+    h += '<span>#</span><span>PRIS</span><span>ANTAL</span><span></span><span></span>';
+    h += '</div>';
+    for (let i = 0; i < data.sellers.length; i++) {
+      const o = data.sellers[i];
+      h += '<div class="offer-entry">';
+      h += '<span class="offer-idx">' + (i + 1) + '</span>';
+      h += '<span class="offer-price">' + o.price.toLocaleString('sv-SE') + ' gp</span>';
+      h += '<span class="offer-amount">×' + (o.amount || 1).toLocaleString('sv-SE') + '</span>';
+      h += '<span></span><span></span>';
+      h += '</div>';
+    }
     h += '</div>';
   }
+  h += '</div>';
+
+  // ─── BUYERS on target world (what we sell to) ───
+  h += '<div class="board-panel">';
+  h += '<div class="offers-label">💰 Köpare på ' + targetWorld + ' <span style="color:var(--text-muted);font-weight:400;">(du säljer hit — högst pris först)</span></div>';
+
+  if (!data.buyers.length) {
+    h += '<div style="color:var(--text-muted);font-size:0.78rem;padding:0.3rem 0;">Inga buy offers.</div>';
+  } else {
+    // For margin calculation, use cheapest seller as buy cost
+    const cheapestBuy = data.sellers.length ? data.sellers[0].price : 0;
+
+    h += '<div class="offers-list">';
+    h += '<div class="offer-entry" style="font-weight:600;color:var(--text-dim);font-size:0.68rem;">';
+    h += '<span>#</span><span>PRIS</span><span>ANTAL</span><span>MARGINAL</span><span>PROFIT</span>';
+    h += '</div>';
+    for (let i = 0; i < data.buyers.length; i++) {
+      const o = data.buyers[i];
+      const price = o.price;
+      const amount = o.amount || 1;
+      const margin = cheapestBuy > 0 ? price - cheapestBuy : 0;
+      const profit = margin * amount;
+      const negCls = margin < 0 ? ' negative' : '';
+
+      h += '<div class="offer-entry">';
+      h += '<span class="offer-idx">' + (i + 1) + '</span>';
+      h += '<span class="offer-price">' + price.toLocaleString('sv-SE') + ' gp</span>';
+      h += '<span class="offer-amount">×' + amount.toLocaleString('sv-SE') + '</span>';
+      h += '<span class="offer-margin' + negCls + '">' + (margin >= 0 ? '+' : '') + formatGold(margin) + '/st</span>';
+      h += '<span class="offer-profit' + negCls + '">' + (profit >= 0 ? '+' : '') + formatGold(profit) + ' gp</span>';
+      h += '</div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+
   h += '</div>';
   el.innerHTML = h;
 }
