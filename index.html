@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TransferWatch — Tibia World Transfer Arbitrage</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0c10;
+  --bg-card: #12151c;
+  --bg-card-hover: #181c26;
+  --bg-input: #0e1118;
+  --border: #1e2330;
+  --border-focus: #3b82f6;
+  --text: #e2e8f0;
+  --text-dim: #64748b;
+  --text-muted: #475569;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --green: #22c55e;
+  --green-dim: rgba(34, 197, 94, 0.12);
+  --red: #ef4444;
+  --gold: #f59e0b;
+  --gold-dim: rgba(245, 158, 11, 0.12);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+html { font-size: 14px; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Layout */
+.app { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.header-icon {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, var(--accent), #6366f1);
+  border-radius: var(--radius);
+  display: grid; place-items: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.header h1 span { color: var(--accent); }
+.header-sub {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+/* Controls */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: end;
+}
+@media (max-width: 700px) {
+  .controls { grid-template-columns: 1fr; }
+}
+.field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.4rem;
+}
+.field select, .field input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.field select:focus, .field input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.field select { cursor: pointer; }
+.field select option { background: var(--bg-card); }
+
+.btn {
+  padding: 0.65rem 1.8rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn:hover { background: #2563eb; transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+.status-bar .dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+.dot-ok { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+.dot-wait { background: var(--gold); box-shadow: 0 0 6px rgba(245,158,11,0.3); }
+.dot-err { background: var(--red); }
+
+/* Progress */
+.progress-wrap {
+  margin-bottom: 1.5rem;
+  display: none;
+}
+.progress-wrap.active { display: block; }
+.progress-label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: 0.4rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #6366f1);
+  border-radius: 2px;
+  transition: width 0.3s;
+  width: 0%;
+}
+
+/* Summary cards */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  display: none;
+}
+.summary.active { display: grid; }
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+.summary-card .label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+.summary-card .value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.summary-card .value.gold-text { color: var(--gold); }
+.summary-card .value.green-text { color: var(--green); }
+
+/* Filters row */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+  display: none;
+}
+.filters.active { display: flex; }
+.filters label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-right: 0.25rem;
+}
+.filters input[type="number"] {
+  width: 100px;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  outline: none;
+}
+.filters input[type="text"] {
+  width: 180px;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Results table */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  display: none;
+}
+.table-wrap.active { display: block; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+thead th {
+  padding: 0.75rem 0.85rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+thead th:hover { color: var(--text); }
+thead th.sort-active { color: var(--accent); }
+thead th .sort-arrow { margin-left: 0.3rem; font-size: 0.7rem; }
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--bg-card-hover); }
+td {
+  padding: 0.6rem 0.85rem;
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+}
+td.item-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+td.profit-positive { color: var(--green); font-weight: 600; }
+td.profit-negative { color: var(--red); }
+td.world-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+}
+.badge-pvp { background: rgba(239,68,68,0.12); color: #f87171; }
+.badge-be-green { background: rgba(34,197,94,0.12); color: #4ade80; }
+.badge-be-yellow { background: rgba(245,158,11,0.12); color: #fbbf24; }
+.badge-fresh { background: rgba(34,197,94,0.1); color: #4ade80; }
+.badge-stale { background: rgba(245,158,11,0.1); color: #fbbf24; }
+.badge-old { background: rgba(239,68,68,0.1); color: #f87171; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+}
+.empty-state .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+.empty-state p { font-size: 0.95rem; }
+
+/* Log panel */
+.log-toggle {
+  margin-top: 1.5rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.log-toggle:hover { color: var(--text); }
+.log-panel {
+  margin-top: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  display: none;
+}
+.log-panel.active { display: block; }
+.log-entry-err { color: var(--red); }
+.log-entry-warn { color: var(--gold); }
+.log-entry-ok { color: var(--green); }
+
+/* Tooltip */
+.tt {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted var(--text-muted);
+}
+.tt:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: var(--text);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+  font-family: 'Outfit', sans-serif;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">⚔️</div>
+    <div>
+      <h1>Transfer<span>Watch</span></h1>
+      <div class="header-sub">Cross-world arbitrage scanner</div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar" id="statusBar">
+    <span><span class="dot dot-wait" id="dotWorlds"></span>Worlds: <span id="statusWorlds">loading…</span></span>
+    <span><span class="dot dot-wait" id="dotItems"></span>Items: <span id="statusItems">loading…</span></span>
+    <span><span class="dot dot-wait" id="dotMarket"></span>Market data: <span id="statusMarket">–</span></span>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="field">
+      <label>Startvärld</label>
+      <select id="worldSelect" disabled>
+        <option value="">Laddar världar…</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tibia Coins att sälja</label>
+      <input type="number" id="tcInput" placeholder="ex. 250" min="1" value="250">
+    </div>
+    <button class="btn" id="scanBtn" disabled>Scanna</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label" id="progressLabel">Förbereder…</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary" id="summaryRow">
+    <div class="summary-card">
+      <div class="label">Gold-kapital</div>
+      <div class="value gold-text" id="sumGold">–</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Lönsamma trades</div>
+      <div class="value green-text" id="sumTrades">–</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Målvärldar</div>
+      <div class="value" id="sumWorlds">–</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Bästa profit</div>
+      <div class="value green-text" id="sumBest">–</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters" id="filtersRow">
+    <div class="filter-group">
+      <label>Sök item:</label>
+      <input type="text" id="filterName" placeholder="Item-namn…">
+    </div>
+    <div class="filter-group">
+      <label>Min profit:</label>
+      <input type="number" id="filterMinProfit" placeholder="0" value="0">
+    </div>
+    <div class="filter-group">
+      <label>Min buy offers:</label>
+      <input type="number" id="filterMinOffers" placeholder="1" value="1">
+    </div>
+  </div>
+
+  <!-- Results table -->
+  <div class="table-wrap" id="tableWrap">
+    <table>
+      <thead>
+        <tr id="tableHead"></tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" id="emptyState">
+    <div class="icon">🔍</div>
+    <p>Välj startvärld och antal TC, klicka sedan Scanna.</p>
+  </div>
+
+  <!-- Log -->
+  <div class="log-toggle" id="logToggle">▶ Visa logg</div>
+  <div class="log-panel" id="logPanel"></div>
+</div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────────
+const MARKET_API = 'https://api.tibiamarket.top:8001';
+const TIBIADATA_API = 'https://api.tibiadata.com/v4';
+const TC_ITEM_ID = 22118;
+const TRANSFER_COST_TC = 750;
+const PAGE_LIMIT = 100;
+
+// PvP hierarchy (higher index = more restrictive)
+const PVP_RANK = {
+  'Optional PvP': 0,
+  'Open PvP': 1,
+  'Retro Open PvP': 2,
+  'Retro Hardcore PvP': 3
+};
+
+// Green BattlEye worlds (hardcoded, never changes dynamically)
+const GREEN_BE_WORLDS = new Set([
+  'Aethera','Blumera','Bravoria','Cantabra','Citra','Collabra','Descubra','Dia','Dracobra',
+  'Eclipta','Escura','Etebra','Gladibra','Honbra','Hostera','Idyllia','Ignitera','Issobra',
+  'Jadebra','Kalanta','Kalimera','Karmeya','Luzibra','Monstera','Mystera','Nevia','Noctalia',
+  'Ombra','Ourobra','Penumbra','Quidera','Rasteibra','Retalia','Sombra','Sonira','Stralis',
+  'Tempestera','Terribra','Tornabra','Unebra','Ustebra','Venebra','Victoris','Yovera','Yubra'
+]);
+
+// ─── STATE ─────────────────────────────────────────────────────────────────────
+let allWorlds = [];       // from TibiaData
+let worldUpdates = {};    // last_update per world from tibiamarket
+let itemMeta = [];        // item_metadata.json
+let itemMap = {};         // id → item
+let results = [];         // computed results
+let sortCol = 'net_profit';
+let sortAsc = false;
+
+// ─── DOM REFS ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const worldSelect = $('worldSelect');
+const tcInput = $('tcInput');
+const scanBtn = $('scanBtn');
+const progressWrap = $('progressWrap');
+const progressLabel = $('progressLabel');
+const progressFill = $('progressFill');
+const tableHead = $('tableHead');
+const tableBody = $('tableBody');
+const tableWrap = $('tableWrap');
+const emptyState = $('emptyState');
+const logPanel = $('logPanel');
+const logToggle = $('logToggle');
+const summaryRow = $('summaryRow');
+const filtersRow = $('filtersRow');
+
+// ─── LOGGING ───────────────────────────────────────────────────────────────────
+function log(msg, type = '') {
+  const el = document.createElement('div');
+  el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  if (type) el.className = `log-entry-${type}`;
+  logPanel.appendChild(el);
+  logPanel.scrollTop = logPanel.scrollHeight;
+}
+logToggle.addEventListener('click', () => {
+  logPanel.classList.toggle('active');
+  logToggle.textContent = logPanel.classList.contains('active') ? '▼ Dölj logg' : '▶ Visa logg';
+});
+
+// ─── HELPERS ───────────────────────────────────────────────────────────────────
+function formatGold(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
+  return n.toLocaleString('sv-SE');
+}
+
+function getBEColor(worldName) {
+  return GREEN_BE_WORLDS.has(worldName) ? 'green' : 'yellow';
+}
+
+function canTransfer(fromWorld, toWorld) {
+  // PvP check: can only go to same or less restrictive (lower rank)
+  const fromRank = PVP_RANK[fromWorld.pvp_type];
+  const toRank = PVP_RANK[toWorld.pvp_type];
+  if (fromRank === undefined || toRank === undefined) return false;
+  if (toRank > fromRank) return false;
+
+  // BattlEye check: yellow cannot go to green
+  const fromBE = getBEColor(fromWorld.name);
+  const toBE = getBEColor(toWorld.name);
+  if (fromBE === 'yellow' && toBE === 'green') return false;
+
+  return true;
+}
+
+function dataAge(lastUpdate) {
+  if (!lastUpdate) return { text: '?', cls: 'badge-stale' };
+  const diff = (Date.now() - new Date(lastUpdate).getTime()) / 1000 / 60;
+  if (diff < 60) return { text: Math.round(diff) + 'm', cls: 'badge-fresh' };
+  if (diff < 1440) return { text: Math.round(diff / 60) + 'h', cls: 'badge-stale' };
+  return { text: Math.round(diff / 1440) + 'd', cls: 'badge-old' };
+}
+
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  return res.json();
+}
+
+// Fetch all pages from /market_values
+async function fetchAllMarketValues(server) {
+  let all = [];
+  let skip = 0;
+  while (true) {
+    const url = `${MARKET_API}/market_values?server=${encodeURIComponent(server)}&skip=${skip}&limit=${PAGE_LIMIT}`;
+    const data = await fetchJSON(url);
+    if (!Array.isArray(data) || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < PAGE_LIMIT) break;
+    skip += PAGE_LIMIT;
+  }
+  return all;
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  log('Starting initialization…');
+
+  // Load item metadata
+  try {
+    const res = await fetch('item_metadata.json');
+    itemMeta = await res.json();
+    itemMap = {};
+    itemMeta.forEach(it => { itemMap[it.id] = it; });
+    $('statusItems').textContent = itemMeta.length + ' items';
+    $('dotItems').className = 'dot dot-ok';
+    log(`Loaded ${itemMeta.length} items from metadata`, 'ok');
+  } catch (e) {
+    $('statusItems').textContent = 'FEL';
+    $('dotItems').className = 'dot dot-err';
+    log('Failed to load item_metadata.json: ' + e.message, 'err');
+    return;
+  }
+
+  // Load worlds from TibiaData
+  try {
+    const data = await fetchJSON(`${TIBIADATA_API}/worlds`);
+    const regular = data.worlds.regular_worlds || [];
+    allWorlds = regular
+      .filter(w => w.transfer_type === 'regular')
+      .map(w => ({
+        name: w.name,
+        pvp_type: w.pvp_type,
+        battleye_protected: w.battleye_protected,
+        be_color: getBEColor(w.name),
+        status: w.status
+      }));
+    $('statusWorlds').textContent = allWorlds.length + ' open worlds';
+    $('dotWorlds').className = 'dot dot-ok';
+    log(`Loaded ${allWorlds.length} transferable worlds`, 'ok');
+  } catch (e) {
+    $('statusWorlds').textContent = 'FEL';
+    $('dotWorlds').className = 'dot dot-err';
+    log('Failed to load worlds: ' + e.message, 'err');
+    return;
+  }
+
+  // Load world_data (last_update) from tibiamarket
+  try {
+    const data = await fetchJSON(`${MARKET_API}/world_data`);
+    if (Array.isArray(data)) {
+      data.forEach(w => { worldUpdates[w.name] = w.last_update; });
+    }
+    log(`Loaded update timestamps for ${Object.keys(worldUpdates).length} worlds`, 'ok');
+  } catch (e) {
+    log('Could not load world_data (non-critical): ' + e.message, 'warn');
+  }
+
+  // Populate dropdown
+  worldSelect.innerHTML = '<option value="">— Välj startvärld —</option>';
+  allWorlds
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w.name;
+      const pvpShort = w.pvp_type.replace(' PvP', '').replace('Optional', 'Opt').replace('Retro ', 'R-');
+      const be = w.be_color === 'green' ? '🟢' : '🟡';
+      opt.textContent = `${w.name} — ${pvpShort} ${be}`;
+      worldSelect.appendChild(opt);
+    });
+
+  worldSelect.disabled = false;
+  scanBtn.disabled = false;
+  log('Ready!', 'ok');
+}
+
+// ─── SCAN ──────────────────────────────────────────────────────────────────────
+scanBtn.addEventListener('click', runScan);
+
+async function runScan() {
+  const startWorldName = worldSelect.value;
+  const tcAmount = parseInt(tcInput.value);
+  if (!startWorldName) { alert('Välj en startvärld!'); return; }
+  if (!tcAmount || tcAmount < 1) { alert('Ange antal TC!'); return; }
+
+  const startWorld = allWorlds.find(w => w.name === startWorldName);
+  if (!startWorld) return;
+
+  // Find valid target worlds
+  const targetWorlds = allWorlds.filter(w => w.name !== startWorldName && canTransfer(startWorld, w));
+  log(`Start: ${startWorldName} (${startWorld.pvp_type}, BE ${startWorld.be_color})`);
+  log(`Valid target worlds: ${targetWorlds.length}`);
+
+  scanBtn.disabled = true;
+  progressWrap.classList.add('active');
+  tableWrap.classList.remove('active');
+  summaryRow.classList.remove('active');
+  filtersRow.classList.remove('active');
+  emptyState.style.display = 'none';
+  results = [];
+
+  const totalSteps = 1 + 1 + targetWorlds.length; // TC price + start market + targets
+  let step = 0;
+  const progress = (label) => {
+    step++;
+    progressLabel.textContent = label;
+    progressFill.style.width = Math.round((step / totalSteps) * 100) + '%';
+  };
+
+  try {
+    // Step 1: Get TC buy_offer on start world
+    progress('Hämtar TC-pris på ' + startWorldName + '…');
+    const tcData = await fetchJSON(`${MARKET_API}/market_values?server=${encodeURIComponent(startWorldName)}&item_ids=${TC_ITEM_ID}`);
+    if (!tcData.length || tcData[0].buy_offer <= 0) {
+      throw new Error('Kunde inte hitta TC buy_offer på ' + startWorldName);
+    }
+    const tcBuyOffer = tcData[0].buy_offer;
+    const goldCapital = tcAmount * tcBuyOffer;
+    const transferCostGold = TRANSFER_COST_TC * tcBuyOffer;
+    log(`TC buy_offer: ${tcBuyOffer.toLocaleString()} gp → Gold-kapital: ${goldCapital.toLocaleString()} gp`, 'ok');
+    log(`Transfer cost: ${TRANSFER_COST_TC} TC = ${transferCostGold.toLocaleString()} gp`);
+
+    // Step 2: Fetch start world market data
+    progress('Hämtar marknadsdata för ' + startWorldName + '…');
+    const startMarket = await fetchAllMarketValues(startWorldName);
+    log(`Start world: ${startMarket.length} items fetched`);
+
+    // Build lookup: item_id → start data
+    const startPrices = {};
+    startMarket.forEach(item => {
+      if (item.sell_offer > 0) {  // -1 means no sell offer
+        startPrices[item.item_id] = item;
+      }
+    });
+    log(`Items with sell offers on start: ${Object.keys(startPrices).length}`);
+
+    $('statusMarket').textContent = 'scanning…';
+    $('dotMarket').className = 'dot dot-wait';
+
+    // Step 3: Fetch each target world and compute profits
+    for (const target of targetWorlds) {
+      progress(`Hämtar ${target.name}… (${step}/${totalSteps})`);
+      try {
+        const targetMarket = await fetchAllMarketValues(target.name);
+
+        for (const tItem of targetMarket) {
+          // Hard filter: must have active buy offers
+          if (!tItem.buy_offers || tItem.buy_offers <= 0) continue;
+          if (tItem.buy_offer <= 0) continue;
+
+          const sItem = startPrices[tItem.item_id];
+          if (!sItem) continue;
+
+          // Cross-world profit check
+          if (tItem.buy_offer <= sItem.sell_offer) continue;
+
+          const maxItems = Math.floor(goldCapital / sItem.sell_offer);
+          if (maxItems <= 0) continue;
+
+          const grossRevenue = maxItems * tItem.buy_offer;
+          const purchaseCost = maxItems * sItem.sell_offer;
+          const netProfit = grossRevenue - purchaseCost - transferCostGold;
+
+          if (netProfit <= 0) continue;
+
+          const meta = itemMap[tItem.item_id];
+          results.push({
+            item_id: tItem.item_id,
+            item_name: meta ? meta.wiki_name || meta.name : `Item #${tItem.item_id}`,
+            buy_price_start: sItem.sell_offer,
+            sell_price_target: tItem.buy_offer,
+            target_world: target.name,
+            target_pvp: target.pvp_type,
+            target_be: target.be_color,
+            qty: maxItems,
+            net_profit: netProfit,
+            gross_revenue: grossRevenue,
+            purchase_cost: purchaseCost,
+            buy_offers_target: tItem.buy_offers,
+            sell_offers_start: sItem.sell_offers,
+            day_sold_target: tItem.day_sold || 0,
+            day_bought_start: sItem.day_bought || 0,
+            data_age_target: worldUpdates[target.name],
+            month_avg_buy_target: tItem.month_average_buy || 0,
+          });
+        }
+        log(`${target.name}: done (running total: ${results.length} trades)`, 'ok');
+      } catch (e) {
+        log(`${target.name}: error — ${e.message}`, 'err');
+      }
+    }
+
+    // Done
+    $('statusMarket').textContent = results.length + ' trades found';
+    $('dotMarket').className = 'dot dot-ok';
+    log(`Scan complete! ${results.length} profitable trades found.`, 'ok');
+
+    // Summary
+    summaryRow.classList.add('active');
+    $('sumGold').textContent = formatGold(goldCapital) + ' gp';
+    $('sumTrades').textContent = results.length.toLocaleString();
+    const uniqueTargets = new Set(results.map(r => r.target_world));
+    $('sumWorlds').textContent = uniqueTargets.size;
+    const best = results.length ? Math.max(...results.map(r => r.net_profit)) : 0;
+    $('sumBest').textContent = formatGold(best) + ' gp';
+
+    // Render table
+    renderTable();
+    filtersRow.classList.add('active');
+    tableWrap.classList.add('active');
+    if (results.length === 0) {
+      emptyState.querySelector('p').textContent = 'Inga lönsamma trades hittades med dessa parametrar.';
+      emptyState.style.display = 'block';
+    }
+
+  } catch (e) {
+    log('Scan failed: ' + e.message, 'err');
+    alert('Fel: ' + e.message);
+    $('statusMarket').textContent = 'FEL';
+    $('dotMarket').className = 'dot dot-err';
+  } finally {
+    scanBtn.disabled = false;
+    progressWrap.classList.remove('active');
+  }
+}
+
+// ─── TABLE ─────────────────────────────────────────────────────────────────────
+const COLUMNS = [
+  { key: 'item_name', label: 'Item', type: 'string' },
+  { key: 'buy_price_start', label: 'Köppris (start)', type: 'number' },
+  { key: 'sell_price_target', label: 'Säljpris (target)', type: 'number' },
+  { key: 'target_world', label: 'Målvärld', type: 'string' },
+  { key: 'qty', label: 'Antal', type: 'number' },
+  { key: 'net_profit', label: 'Nettoprofit', type: 'number' },
+  { key: 'buy_offers_target', label: 'Buy offers', type: 'number' },
+  { key: 'day_sold_target', label: 'Dag sålda', type: 'number' },
+  { key: 'data_age_target', label: 'Data ålder', type: 'date' },
+];
+
+function renderTable() {
+  // Header
+  tableHead.innerHTML = '';
+  COLUMNS.forEach(col => {
+    const th = document.createElement('th');
+    th.textContent = col.label;
+    th.dataset.key = col.key;
+    if (col.key === sortCol) {
+      th.classList.add('sort-active');
+      th.innerHTML += `<span class="sort-arrow">${sortAsc ? '▲' : '▼'}</span>`;
+    }
+    th.addEventListener('click', () => {
+      if (sortCol === col.key) { sortAsc = !sortAsc; }
+      else { sortCol = col.key; sortAsc = col.type === 'string'; }
+      renderTable();
+    });
+    tableHead.appendChild(th);
+  });
+
+  // Filter
+  const nameFilter = ($('filterName').value || '').toLowerCase();
+  const minProfit = parseInt($('filterMinProfit').value) || 0;
+  const minOffers = parseInt($('filterMinOffers').value) || 1;
+
+  let filtered = results.filter(r => {
+    if (nameFilter && !r.item_name.toLowerCase().includes(nameFilter)) return false;
+    if (r.net_profit < minProfit) return false;
+    if (r.buy_offers_target < minOffers) return false;
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (sortCol === 'data_age_target') {
+      va = va ? new Date(va).getTime() : 0;
+      vb = vb ? new Date(vb).getTime() : 0;
+    }
+    if (typeof va === 'string') {
+      const cmp = va.localeCompare(vb);
+      return sortAsc ? cmp : -cmp;
+    }
+    return sortAsc ? va - vb : vb - va;
+  });
+
+  // Rows
+  tableBody.innerHTML = '';
+  const max = Math.min(filtered.length, 500); // cap for performance
+  for (let i = 0; i < max; i++) {
+    const r = filtered[i];
+    const tr = document.createElement('tr');
+    const age = dataAge(r.data_age_target);
+
+    tr.innerHTML = `
+      <td class="item-name" title="${r.item_name}">${r.item_name}</td>
+      <td>${r.buy_price_start.toLocaleString('sv-SE')}</td>
+      <td>${r.sell_price_target.toLocaleString('sv-SE')}</td>
+      <td class="world-name">${r.target_world} <span class="badge badge-be-${r.target_be}">${r.target_be === 'green' ? '🟢' : '🟡'}</span></td>
+      <td>${r.qty.toLocaleString('sv-SE')}</td>
+      <td class="profit-positive">${formatGold(r.net_profit)} gp</td>
+      <td>${r.buy_offers_target}</td>
+      <td>${r.day_sold_target}</td>
+      <td><span class="badge ${age.cls}">${age.text}</span></td>
+    `;
+    tableBody.appendChild(tr);
+  }
+
+  if (max < filtered.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="${COLUMNS.length}" style="text-align:center;color:var(--text-dim);font-family:Outfit">Visar ${max} av ${filtered.length} resultat</td>`;
+    tableBody.appendChild(tr);
+  }
+}
+
+// Filter events
+$('filterName').addEventListener('input', renderTable);
+$('filterMinProfit').addEventListener('input', renderTable);
+$('filterMinOffers').addEventListener('input', renderTable);
+
+// ─── START ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
