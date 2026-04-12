@@ -2,13 +2,13 @@ name: Scan Tibia Markets
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # Kl 05:00 svensk tid (UTC+2)
+    - cron: '0 2 * * *'  # Kl 05:00 svensk tid (UTC+2)
   workflow_dispatch:       # Manuell trigger via GitHub UI
 
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
