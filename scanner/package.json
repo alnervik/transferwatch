@@ -1,0 +1,11 @@
+{
+  "name": "transferwatch-scanner",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "scan": "node scanner.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
