@@ -67,17 +67,39 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .badge-be-green { background: rgba(34,197,94,0.12); color: #4ade80; }
 .badge-be-yellow { background: rgba(245,158,11,0.12); color: #fbbf24; }
 .badge-pvp { background: rgba(139,92,246,0.12); color: #a78bfa; font-size: 0.65rem; }
+.transfer-cost-note { font-size: 0.72rem; color: var(--text-muted); padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
+.transfer-cost-note span { color: var(--gold); }
 
 .world-items { display: none; border-top: 1px solid var(--border); background: var(--bg-expanded); overflow-x: auto; }
 .world-group.expanded .world-items { display: block; }
 .world-items table { width: 100%; border-collapse: collapse; }
-.world-items thead th { padding: 0.55rem 0.85rem; text-align: left; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: var(--bg); border-bottom: 1px solid var(--border); }
-.world-items tbody tr { border-bottom: 1px solid rgba(30,35,48,0.5); }
-.world-items tbody tr:last-child { border-bottom: none; }
-.world-items tbody tr:hover { background: rgba(59,130,246,0.04); }
+.world-items thead th { padding: 0.55rem 0.85rem; text-align: left; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1; }
+.world-items tbody tr.item-row { border-bottom: 1px solid rgba(30,35,48,0.5); cursor: pointer; transition: background 0.15s; }
+.world-items tbody tr.item-row:hover { background: rgba(59,130,246,0.06); }
+.world-items tbody tr.item-row.expanded-item { background: rgba(59,130,246,0.04); }
 .world-items td { padding: 0.5rem 0.85rem; white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
-.world-items td.item-name-cell { font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 500; max-width: 250px; overflow: hidden; text-overflow: ellipsis; }
+.world-items td.item-name-cell { font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 500; max-width: 250px; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.world-items td.item-name-cell .expand-hint { font-size: 0.65rem; color: var(--text-muted); margin-left: 0.3rem; }
 .world-items td.profit-cell { color: var(--green); font-weight: 600; }
+
+/* Buy offers breakdown */
+.offers-row { display: none; }
+.offers-row.visible { display: table-row; }
+.offers-row td { padding: 0; }
+.offers-detail { padding: 0.5rem 0.85rem 0.75rem 2.5rem; }
+.offers-detail .offers-label { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.35rem; font-family: 'Outfit', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.offers-detail .loading-text { font-size: 0.78rem; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+.offers-detail .error-text { font-size: 0.78rem; color: var(--red); font-family: 'JetBrains Mono', monospace; }
+.offers-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.offer-entry { display: grid; grid-template-columns: 3rem 8rem 6rem 6rem 8rem; gap: 0.5rem; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 0.25rem 0; border-bottom: 1px solid rgba(30,35,48,0.3); }
+.offer-entry:last-child { border-bottom: none; }
+.offer-entry .offer-idx { color: var(--text-muted); }
+.offer-entry .offer-price { color: var(--text); font-weight: 500; }
+.offer-entry .offer-amount { color: var(--text-dim); }
+.offer-entry .offer-margin { color: var(--green); }
+.offer-entry .offer-margin.negative { color: var(--red); }
+.offer-entry .offer-profit { color: var(--green); font-weight: 600; }
+.offer-entry .offer-profit.negative { color: var(--red); }
 
 .state-msg { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
 .state-msg .icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
@@ -90,6 +112,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 @media (max-width: 700px) {
   .world-header { grid-template-columns: 1.5rem 1fr repeat(2, auto); }
   .world-header .stat.hide-mobile { display: none; }
+  .offer-entry { grid-template-columns: 2rem 6rem 5rem 5rem 6rem; font-size: 0.72rem; }
 }
 </style>
 </head>
@@ -122,15 +145,16 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 
   <div class="summary" id="summaryRow" style="display:none;">
     <div class="summary-card"><div class="label">Gold-kapital</div><div class="value gold-text" id="sumGold">–</div></div>
+    <div class="summary-card"><div class="label">Transfer-kostnad</div><div class="value gold-text" id="sumTransferCost">–</div></div>
     <div class="summary-card"><div class="label">Bästa målvärld</div><div class="value green-text" id="sumBestWorld">–</div></div>
-    <div class="summary-card"><div class="label">Bästa total profit</div><div class="value green-text" id="sumBestProfit">–</div></div>
+    <div class="summary-card"><div class="label">Bästa nettoprofit</div><div class="value green-text" id="sumBestProfit">–</div></div>
     <div class="summary-card"><div class="label">Lönsamma världar</div><div class="value" id="sumWorldCount">–</div></div>
   </div>
 
   <div class="filter-row" id="filterRow" style="display:none;">
     <label>Sök item:</label>
     <input type="text" id="filterName" placeholder="Item-namn…">
-    <label>Min total profit:</label>
+    <label>Min nettoprofit:</label>
     <input type="number" id="filterMinProfit" value="0" placeholder="0">
   </div>
 
@@ -141,10 +165,11 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
-// KONFIG — Fyll i dina Supabase-uppgifter
+// CONFIG
 // ═══════════════════════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://vhvybrugkxkujgacekzi.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_viUDRVjIXhrfGYvde-gsRQ_anyvWNlB';
+const MARKET_API    = 'https://api.tibiamarket.top:8001';
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
@@ -163,15 +188,20 @@ const GREEN_BE = new Set([
 // ═══════════════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════════════
-let worldData = {};     // worldName -> { pvp_type, items, scanned_at }
-let itemMeta  = {};     // id -> metadata
-let worldGroups = [];   // computed results
+let worldData = {};
+let itemMeta  = {};
+let worldGroups = [];
+let transferCostGold = 0;   // calculated once per startvärld
+let currentStartName = '';
+
+// Cache for market_board results: "world:itemId" → offers array
+const boardCache = {};
 
 const $ = id => document.getElementById(id);
 function formatGold(n) {
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
+  if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'k';
   return n.toLocaleString('sv-SE');
 }
 function getBE(name) { return GREEN_BE.has(name) ? 'green' : 'yellow'; }
@@ -194,10 +224,52 @@ function timeAgo(dateStr) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// THROTTLED API FETCH QUEUE
+// ═══════════════════════════════════════════════════════════════════════════
+const FETCH_DELAY_MS = 1500;
+let fetchQueue = [];
+let fetchRunning = false;
+
+async function queueFetch(url) {
+  return new Promise((resolve, reject) => {
+    fetchQueue.push({ url, resolve, reject });
+    processQueue();
+  });
+}
+
+async function processQueue() {
+  if (fetchRunning || fetchQueue.length === 0) return;
+  fetchRunning = true;
+
+  while (fetchQueue.length > 0) {
+    const { url, resolve, reject } = fetchQueue.shift();
+    try {
+      const res = await fetch(url);
+      if (res.status === 429) {
+        await new Promise(r => setTimeout(r, 5000));
+        const res2 = await fetch(url);
+        if (!res2.ok) throw new Error('HTTP ' + res2.status);
+        resolve(await res2.json());
+      } else if (!res.ok) {
+        throw new Error('HTTP ' + res.status);
+      } else {
+        resolve(await res.json());
+      }
+    } catch (e) {
+      reject(e);
+    }
+    // Wait before next request
+    if (fetchQueue.length > 0) {
+      await new Promise(r => setTimeout(r, FETCH_DELAY_MS));
+    }
+  }
+  fetchRunning = false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // LOAD DATA
 // ═══════════════════════════════════════════════════════════════════════════
 async function loadData() {
-  // Item metadata
   try {
     const items = await fetch('item_metadata.json').then(r => r.json());
     items.forEach(it => { itemMeta[it.id] = it; });
@@ -208,7 +280,6 @@ async function loadData() {
     $('dotItems').className = 'dot dot-err';
   }
 
-  // Market data from Supabase
   try {
     const url = SUPABASE_URL + '/rest/v1/world_market_data?select=world_name,pvp_type,items,scanned_at';
     const res = await fetch(url, {
@@ -222,22 +293,19 @@ async function loadData() {
     });
 
     const count = Object.keys(worldData).length;
-    $('statusData').textContent = count + ' världar laddade';
+    $('statusData').textContent = count + ' världar';
     $('dotData').className = 'dot dot-ok';
 
-    // Scan age
     const times = rows.map(r => new Date(r.scanned_at).getTime());
     if (times.length) $('statusScanAge').textContent = timeAgo(new Date(Math.min(...times)).toISOString());
 
-    // Populate dropdown
     const sel = $('worldSelect');
     sel.innerHTML = '<option value="">— Välj startvärld —</option>';
     Object.keys(worldData).sort().forEach(name => {
       const w = worldData[name];
       const opt = document.createElement('option');
       opt.value = name;
-      const be = getBE(name) === 'green' ? '🟢' : '🟡';
-      opt.textContent = name + ' — ' + (PVP_SHORT[w.pvp_type] || w.pvp_type) + ' ' + be;
+      opt.textContent = name + ' — ' + (PVP_SHORT[w.pvp_type] || w.pvp_type) + ' ' + (getBE(name) === 'green' ? '🟢' : '🟡');
       sel.appendChild(opt);
     });
     sel.disabled = false;
@@ -246,26 +314,25 @@ async function loadData() {
   } catch (e) {
     $('statusData').textContent = 'FEL: ' + e.message;
     $('dotData').className = 'dot dot-err';
-    $('resultsArea').innerHTML = '<div class="state-msg"><div class="icon">⚠️</div><p>Kunde inte ladda data. Kontrollera Supabase-konfigurationen.</p></div>';
+    $('resultsArea').innerHTML = '<div class="state-msg"><div class="icon">⚠️</div><p>Kunde inte ladda data.</p></div>';
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CALCULATE — instant from cached Supabase data
+// CALCULATE — transfer cost at WORLD level, not per item
 // ═══════════════════════════════════════════════════════════════════════════
 function calculate() {
   const startName = $('worldSelect').value;
   const tcAmount = parseInt($('tcInput').value) || 0;
   if (!startName || tcAmount < 1) { worldGroups = []; renderResults(); return; }
 
+  currentStartName = startName;
   const sw = worldData[startName];
   if (!sw) return;
 
-  // Start prices lookup
   const startPrices = {};
   sw.items.forEach(it => { if (it.sell_offer > 0) startPrices[it.id] = it; });
 
-  // TC price on start world
   const tcItem = sw.items.find(it => it.id === TC_ITEM_ID);
   if (!tcItem || tcItem.buy_offer <= 0) {
     $('resultsArea').innerHTML = '<div class="state-msg"><div class="icon">⚠️</div><p>Ingen TC buy_offer på ' + startName + '.</p></div>';
@@ -273,9 +340,8 @@ function calculate() {
   }
   const tcBuy = tcItem.buy_offer;
   const goldCap = tcAmount * tcBuy;
-  const transferCost = TRANSFER_COST_TC * tcBuy;
+  transferCostGold = TRANSFER_COST_TC * tcBuy;
 
-  // Profits per target world
   worldGroups = [];
   for (const [tName, tw] of Object.entries(worldData)) {
     if (tName === startName) continue;
@@ -287,64 +353,53 @@ function calculate() {
       const sItem = startPrices[tItem.id];
       if (!sItem || tItem.buy_offer <= sItem.sell_offer) continue;
 
-      // Margin per item
       const margin = tItem.buy_offer - sItem.sell_offer;
       const marginPct = (margin / sItem.sell_offer) * 100;
-
-      // Realistic qty: capped at active buy_offers on THIS target server
-      // buy_offers = actual buyers waiting on this specific world right now
       const affordable = Math.floor(goldCap / sItem.sell_offer);
       const qty = Math.min(affordable, tItem.buy_offers);
       if (qty <= 0) continue;
 
-      const net = qty * tItem.buy_offer - qty * sItem.sell_offer - transferCost;
-      if (net <= 0) continue;
+      // Gross profit = margin × qty (NO transfer cost here)
+      const grossProfit = qty * margin;
+      if (grossProfit <= 0) continue;
 
       const meta = itemMeta[tItem.id];
       trades.push({
+        item_id: tItem.id,
         item_name: meta ? (meta.wiki_name || meta.name) : '#' + tItem.id,
-        buy_price: sItem.sell_offer,       // vad vi betalar på start
-        sell_price: tItem.buy_offer,        // vad vi säljer för på target
-        margin,                             // profit per styck
-        margin_pct: marginPct,
-        qty,                                // cappat vid buy_offers
-        affordable,                         // vad vi hade råd med
-        net_profit: net,
-        // Target world market info
-        t_buy_offers: tItem.buy_offers,     // aktiva buy offers på just denna server
+        buy_price: sItem.sell_offer,
+        sell_price: tItem.buy_offer,
+        margin, margin_pct: marginPct,
+        qty, affordable,
+        gross_profit: grossProfit,
+        t_buy_offers: tItem.buy_offers,
         t_day_bought: tItem.day_bought || 0,
-        // Start world market info
         s_sell_offers: sItem.sell_offers || 0,
         s_day_sold: sItem.day_sold || 0,
       });
     }
     if (!trades.length) continue;
+    trades.sort((a, b) => b.gross_profit - a.gross_profit);
 
-    // Sort by best profit per trade
-    trades.sort((a, b) => b.net_profit - a.net_profit);
+    const totalGross = trades.reduce((s, t) => s + t.gross_profit, 0);
+    const netProfit = totalGross - transferCostGold;
 
-    const totalProfit = trades.reduce((s, t) => s + t.net_profit, 0);
+    // Only show world if total profit covers transfer cost
+    if (netProfit <= 0) continue;
 
     worldGroups.push({
-      name: tName,
-      pvp_type: tw.pvp_type,
-      be: getBE(tName),
-      trades,
-      totalProfit,
-      bestItem: trades[0].item_name,
-      tradeCount: trades.length,
+      name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
+      trades, totalGross, netProfit,
       scanned_at: tw.scanned_at,
     });
   }
+  worldGroups.sort((a, b) => b.netProfit - a.netProfit);
 
-  // Sort by total profit across all trades on that world
-  worldGroups.sort((a, b) => b.totalProfit - a.totalProfit);
-
-  // Summary
   $('summaryRow').style.display = 'grid';
   $('sumGold').textContent = formatGold(goldCap) + ' gp';
+  $('sumTransferCost').textContent = formatGold(transferCostGold) + ' gp';
   $('sumBestWorld').textContent = worldGroups.length ? worldGroups[0].name : '–';
-  $('sumBestProfit').textContent = worldGroups.length ? formatGold(worldGroups[0].totalProfit) + ' gp' : '–';
+  $('sumBestProfit').textContent = worldGroups.length ? formatGold(worldGroups[0].netProfit) + ' gp' : '–';
   $('sumWorldCount').textContent = worldGroups.length;
   $('filterRow').style.display = 'flex';
   renderResults();
@@ -358,7 +413,7 @@ function renderResults() {
   const nameF = ($('filterName').value || '').toLowerCase();
   const minP = parseInt($('filterMinProfit').value) || 0;
 
-  let filtered = worldGroups.filter(g => g.totalProfit >= minP);
+  let filtered = worldGroups.filter(g => g.netProfit >= minP);
   if (nameF) filtered = filtered.filter(g => g.trades.some(t => t.item_name.toLowerCase().includes(nameF)));
 
   if (!filtered.length) {
@@ -378,38 +433,46 @@ function renderResults() {
     h += '<span class="arrow">▶</span>';
     h += '<span class="world-name-col">' + g.name + ' <span class="badge badge-be-' + g.be + '">' + beE + '</span> <span class="badge badge-pvp">' + pvp + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Trades</span><span class="stat-value">' + visT.length + '</span></span>';
-    h += '<span class="stat hide-mobile"><span class="stat-label">Bästa item</span><span class="stat-value">' + (visT[0] ? visT[0].item_name.substring(0, 22) : '–') + '</span></span>';
+    h += '<span class="stat hide-mobile"><span class="stat-label">Brutto</span><span class="stat-value">' + formatGold(g.totalGross) + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Data</span><span class="stat-value">' + timeAgo(g.scanned_at) + '</span></span>';
-    h += '<span class="stat"><span class="stat-label">Total profit</span><span class="stat-value profit-value">' + formatGold(g.totalProfit) + ' gp</span></span>';
+    h += '<span class="stat"><span class="stat-label">Netto profit</span><span class="stat-value profit-value">' + formatGold(g.netProfit) + ' gp</span></span>';
     h += '</div>';
 
-    h += '<div class="world-items"><table><thead><tr>';
-    h += '<th>Item</th>';
-    h += '<th title="Sell offer på startvärld (vad du köper för)">Köp (start)</th>';
-    h += '<th title="Buy offer på målvärld (vad du säljer för)">Sälj (target)</th>';
-    h += '<th title="Profit per styck (sälj - köp)">Marginal</th>';
-    h += '<th title="Realistiskt antal baserat på marknadens dagliga volym">Antal</th>';
-    h += '<th title="Nettoprofit efter transfer-kostnad">Profit</th>';
-    h += '<th title="Aktiva buy offers på målvärlden">Offers (T)</th>';
-    h += '<th title="Daglig köpvolym på målvärld">Dag köpta (T)</th>';
-    h += '<th title="Aktiva sell offers på startvärlden">Offers (S)</th>';
-    h += '<th title="Daglig säljvolym på startvärld">Dag sålda (S)</th>';
+    h += '<div class="world-items">';
+    h += '<div class="transfer-cost-note">Transfer: <span>' + formatGold(transferCostGold) + ' gp</span> (750 TC) dras en gång — netto = brutto − transfer</div>';
+    h += '<table><thead><tr>';
+    h += '<th></th><th>Item</th>';
+    h += '<th title="Sell offer på startvärld">Köp (start)</th>';
+    h += '<th title="Högsta buy offer på målvärld">Sälj (target)</th>';
+    h += '<th title="Profit per styck">Marginal</th>';
+    h += '<th title="Antal (cappat vid buy offers)">Antal</th>';
+    h += '<th title="Bruttoprofit (marginal × antal)">Bruttoprofit</th>';
+    h += '<th title="Aktiva buy offers på denna server">Buy offers</th>';
+    h += '<th title="Sell offers på startvärld">Sell offers (S)</th>';
     h += '</tr></thead><tbody>';
 
-    for (const t of visT) {
+    for (let i = 0; i < visT.length; i++) {
+      const t = visT[i];
+      const rowId = g.name + ':' + t.item_id;
       const marginCls = t.margin_pct >= 20 ? ' profit-cell' : '';
-      h += '<tr>';
-      h += '<td class="item-name-cell" title="' + t.item_name + '">' + t.item_name + '</td>';
+
+      h += '<tr class="item-row" data-row-id="' + rowId + '" data-world="' + g.name + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" onclick="toggleOffers(this)">';
+      h += '<td style="font-size:0.65rem;color:var(--text-muted);width:1.5rem;">▶</td>';
+      h += '<td class="item-name-cell" title="Klicka för buy offers breakdown">' + t.item_name + '</td>';
       h += '<td>' + t.buy_price.toLocaleString('sv-SE') + '</td>';
       h += '<td>' + t.sell_price.toLocaleString('sv-SE') + '</td>';
       h += '<td' + marginCls + '>' + formatGold(t.margin) + ' (' + t.margin_pct.toFixed(0) + '%)</td>';
-      h += '<td title="Har råd med ' + t.affordable.toLocaleString('sv-SE') + ', cappat vid marknadsvolym">' + t.qty.toLocaleString('sv-SE') + '</td>';
-      h += '<td class="profit-cell">' + formatGold(t.net_profit) + ' gp</td>';
+      h += '<td>' + t.qty.toLocaleString('sv-SE') + '</td>';
+      h += '<td class="profit-cell">' + formatGold(t.gross_profit) + ' gp</td>';
       h += '<td>' + t.t_buy_offers + '</td>';
-      h += '<td>' + t.t_day_bought + '</td>';
       h += '<td>' + t.s_sell_offers + '</td>';
-      h += '<td>' + t.s_day_sold + '</td>';
       h += '</tr>';
+
+      // Expandable row for buy offers breakdown
+      h += '<tr class="offers-row" id="offers-' + rowId.replace(/[^a-zA-Z0-9]/g, '_') + '"><td colspan="9"><div class="offers-detail">';
+      h += '<div class="offers-label">Buy offers på ' + g.name + '</div>';
+      h += '<div class="offers-content">Klicka för att ladda offers…</div>';
+      h += '</div></td></tr>';
     }
     h += '</tbody></table></div></div>';
   }
@@ -418,6 +481,89 @@ function renderResults() {
 }
 
 function toggleGroup(el) { el.closest('.world-group').classList.toggle('expanded'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOGGLE ITEM → FETCH BUY OFFERS FROM /market_board
+// ═══════════════════════════════════════════════════════════════════════════
+async function toggleOffers(rowEl) {
+  const rowId = rowEl.dataset.rowId;
+  const safeId = 'offers-' + rowId.replace(/[^a-zA-Z0-9]/g, '_');
+  const offersRow = document.getElementById(safeId);
+  if (!offersRow) return;
+
+  // Toggle visibility
+  const isVisible = offersRow.classList.contains('visible');
+  if (isVisible) {
+    offersRow.classList.remove('visible');
+    rowEl.classList.remove('expanded-item');
+    rowEl.querySelector('td').textContent = '▶';
+    return;
+  }
+
+  offersRow.classList.add('visible');
+  rowEl.classList.add('expanded-item');
+  rowEl.querySelector('td').textContent = '▼';
+
+  const contentEl = offersRow.querySelector('.offers-content');
+  const worldName = rowEl.dataset.world;
+  const itemId = rowEl.dataset.item;
+  const buyPrice = parseInt(rowEl.dataset.buyPrice);
+  const cacheKey = worldName + ':' + itemId;
+
+  // Already cached?
+  if (boardCache[cacheKey]) {
+    renderOffers(contentEl, boardCache[cacheKey], buyPrice);
+    return;
+  }
+
+  // Fetch via throttled queue
+  contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar offers… (köad)</span>';
+
+  try {
+    const url = MARKET_API + '/market_board?server=' + encodeURIComponent(worldName) + '&item_id=' + itemId;
+    const data = await queueFetch(url);
+
+    // Response: { id, sellers: [...], buyers: [...], update_time }
+    // buyers = people wanting to buy = we sell to them
+    const buyOffers = (data.buyers || []).sort((a, b) => b.price - a.price);
+
+    boardCache[cacheKey] = buyOffers;
+    renderOffers(contentEl, buyOffers, buyPrice);
+  } catch (e) {
+    contentEl.innerHTML = '<span class="error-text">Fel: ' + e.message + '</span>';
+  }
+}
+
+function renderOffers(el, offers, buyPrice) {
+  if (!offers.length) {
+    el.innerHTML = '<span class="loading-text">Inga buy offers hittades.</span>';
+    return;
+  }
+
+  let h = '<div class="offers-list">';
+  h += '<div class="offer-entry" style="font-weight:600;color:var(--text-dim);font-size:0.68rem;">';
+  h += '<span>#</span><span>PRIS</span><span>ANTAL</span><span>MARGINAL</span><span>PROFIT</span>';
+  h += '</div>';
+
+  for (let i = 0; i < offers.length; i++) {
+    const o = offers[i];
+    const price = o.price || 0;
+    const amount = o.amount || 1;
+    const margin = price - buyPrice;
+    const profit = margin * amount;
+    const negCls = margin < 0 ? ' negative' : '';
+
+    h += '<div class="offer-entry">';
+    h += '<span class="offer-idx">' + (i + 1) + '</span>';
+    h += '<span class="offer-price">' + price.toLocaleString('sv-SE') + ' gp</span>';
+    h += '<span class="offer-amount">×' + amount.toLocaleString('sv-SE') + '</span>';
+    h += '<span class="offer-margin' + negCls + '">' + (margin >= 0 ? '+' : '') + formatGold(margin) + '/st</span>';
+    h += '<span class="offer-profit' + negCls + '">' + (profit >= 0 ? '+' : '') + formatGold(profit) + ' gp</span>';
+    h += '</div>';
+  }
+  h += '</div>';
+  el.innerHTML = h;
+}
 
 // Events
 $('worldSelect').addEventListener('change', calculate);
