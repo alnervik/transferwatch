@@ -47,8 +47,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem 1rem; }
 .summary-card .label { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
 .summary-card .value { font-size: 1.25rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-.gold-text { color: var(--gold); }
-.green-text { color: var(--green); }
+.gold-text { color: var(--gold); } .green-text { color: var(--green); }
 
 .world-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .world-group { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-card); overflow: hidden; transition: border-color 0.2s; }
@@ -67,6 +66,8 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .badge-be-green { background: rgba(34,197,94,0.12); color: #4ade80; }
 .badge-be-yellow { background: rgba(245,158,11,0.12); color: #fbbf24; }
 .badge-pvp { background: rgba(139,92,246,0.12); color: #a78bfa; font-size: 0.65rem; }
+.badge-verified { background: rgba(34,197,94,0.1); color: #4ade80; font-size: 0.62rem; }
+.badge-estimate { background: rgba(245,158,11,0.1); color: #fbbf24; font-size: 0.62rem; }
 .transfer-cost-note { font-size: 0.72rem; color: var(--text-muted); padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
 .transfer-cost-note span { color: var(--gold); }
 
@@ -79,10 +80,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .world-items tbody tr.item-row.expanded-item { background: rgba(59,130,246,0.04); }
 .world-items td { padding: 0.5rem 0.85rem; white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
 .world-items td.item-name-cell { font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 500; max-width: 250px; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-.world-items td.item-name-cell .expand-hint { font-size: 0.65rem; color: var(--text-muted); margin-left: 0.3rem; }
 .world-items td.profit-cell { color: var(--green); font-weight: 600; }
+.world-items td.estimate-cell { color: var(--gold); font-weight: 500; }
 
-/* Buy offers breakdown */
 .offers-row { display: none; }
 .offers-row.visible { display: table-row; }
 .offers-row td { padding: 0; }
@@ -95,7 +95,17 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .board-panel { min-width: 0; }
 .board-panel .offers-label { margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
 
-/* Matched trades */
+.offers-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.offer-entry { display: grid; grid-template-columns: 3rem 8rem 6rem 6rem 8rem; gap: 0.5rem; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 0.25rem 0; border-bottom: 1px solid rgba(30,35,48,0.3); }
+.offer-entry:last-child { border-bottom: none; }
+.offer-entry .offer-idx { color: var(--text-muted); }
+.offer-entry .offer-price { color: var(--text); font-weight: 500; }
+.offer-entry .offer-amount { color: var(--text-dim); }
+.offer-entry .offer-margin { color: var(--green); }
+.offer-entry .offer-margin.negative { color: var(--red); }
+.offer-entry .offer-profit { color: var(--green); font-weight: 600; }
+.offer-entry .offer-profit.negative { color: var(--red); }
+
 .matches-list { margin-bottom: 0.5rem; }
 .match-header { display: grid; grid-template-columns: 2rem 2rem 1fr 1fr 8rem; gap: 0.4rem; font-weight: 600; color: var(--text-dim); font-size: 0.68rem; font-family: 'JetBrains Mono', monospace; padding: 0.3rem 0; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
 .match-entry { display: grid; grid-template-columns: 2rem 2rem 1fr 1fr 8rem; gap: 0.4rem; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 0.3rem 0; border-bottom: 1px solid rgba(30,35,48,0.3); transition: opacity 0.2s; }
@@ -108,21 +118,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .match-margin { color: var(--green); font-weight: 600; }
 .match-margin.negative { color: var(--red); }
 .match-total { margin-top: 0.5rem; padding: 0.5rem 0; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
-@media (max-width: 700px) { .match-header, .match-entry { grid-template-columns: 1.8rem 1.5rem 1fr 1fr 6rem; font-size: 0.72rem; } }
-.offers-list { display: flex; flex-direction: column; gap: 0.25rem; }
-.offer-entry { display: grid; grid-template-columns: 3rem 8rem 6rem 6rem 8rem; gap: 0.5rem; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 0.25rem 0; border-bottom: 1px solid rgba(30,35,48,0.3); }
-.offer-entry:last-child { border-bottom: none; }
-.offer-entry .offer-idx { color: var(--text-muted); }
-.offer-entry .offer-price { color: var(--text); font-weight: 500; }
-.offer-entry .offer-amount { color: var(--text-dim); }
-.offer-entry .offer-margin { color: var(--green); }
-.offer-entry .offer-margin.negative { color: var(--red); }
-.offer-entry .offer-profit { color: var(--green); font-weight: 600; }
-.offer-entry .offer-profit.negative { color: var(--red); }
 
 .state-msg { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
 .state-msg .icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
-
 .filter-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
 .filter-row label { font-size: 0.75rem; color: var(--text-dim); }
 .filter-row input { padding: 0.3rem 0.5rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 0.82rem; outline: none; width: 140px; }
@@ -132,6 +130,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
   .world-header { grid-template-columns: 1.5rem 1fr repeat(2, auto); }
   .world-header .stat.hide-mobile { display: none; }
   .offer-entry { grid-template-columns: 2rem 6rem 5rem 5rem 6rem; font-size: 0.72rem; }
+  .match-header, .match-entry { grid-template-columns: 1.8rem 1.5rem 1fr 1fr 6rem; font-size: 0.72rem; }
 }
 </style>
 </head>
@@ -141,14 +140,15 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     <div class="header-icon">⚔️</div>
     <div>
       <h1>Transfer<span>Watch</span></h1>
-      <div class="header-sub">Cross-world arbitrage — grupperat per målvärld</div>
+      <div class="header-sub">Cross-world arbitrage — realistisk profit via matchade offers</div>
     </div>
   </div>
 
   <div class="status-bar">
-    <span><span class="dot dot-wait" id="dotData"></span>Data: <span id="statusData">laddar…</span></span>
+    <span><span class="dot dot-wait" id="dotData"></span>Världar: <span id="statusData">laddar…</span></span>
+    <span><span class="dot dot-wait" id="dotOffers"></span>Offers: <span id="statusOffers">–</span></span>
     <span><span class="dot dot-wait" id="dotItems"></span>Items: <span id="statusItems">–</span></span>
-    <span>Senaste scan: <strong id="statusScanAge">–</strong></span>
+    <span>Scan: <strong id="statusScanAge">–</strong></span>
   </div>
 
   <div class="controls">
@@ -178,24 +178,19 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
   </div>
 
   <div id="resultsArea">
-    <div class="state-msg"><div class="icon">📡</div><p>Laddar marknadsdata från Supabase…</p></div>
+    <div class="state-msg"><div class="icon">📡</div><p>Laddar marknadsdata…</p></div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://vhvybrugkxkujgacekzi.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_viUDRVjIXhrfGYvde-gsRQ_anyvWNlB';
 const MARKET_API    = 'https://api.tibiamarket.top:8001';
-
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
 
 const PVP_RANK = { 'Optional PvP': 0, 'Open PvP': 1, 'Retro Open PvP': 2, 'Retro Hardcore PvP': 3 };
 const PVP_SHORT = { 'Optional PvP': 'Opt', 'Open PvP': 'Open', 'Retro Open PvP': 'R-Open', 'Retro Hardcore PvP': 'R-HC' };
-
 const GREEN_BE = new Set([
   'Aethera','Blumera','Bravoria','Cantabra','Citra','Collabra','Descubra','Dia','Dracobra',
   'Eclipta','Escura','Etebra','Gladibra','Honbra','Hostera','Idyllia','Ignitera','Issobra',
@@ -204,17 +199,14 @@ const GREEN_BE = new Set([
   'Tempestera','Terribra','Tornabra','Unebra','Ustebra','Venebra','Victoris','Yovera','Yubra'
 ]);
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════════════════════
-let worldData = {};
-let itemMeta  = {};
+// ─── STATE ────────────────────────────────────────────────────────────────
+let worldData = {};       // worldName → { pvp_type, items, scanned_at }
+let itemMeta  = {};       // itemId → metadata
+let offersData = {};      // "world:itemId" → { sellers: [...], buyers: [...] }
 let worldGroups = [];
-let transferCostGold = 0;   // calculated once per startvärld
+let transferCostGold = 0;
 let currentStartName = '';
-
-// Cache for market_board results: "world:itemId" → offers array
-const boardCache = {};
+const boardCache = {};    // for live-fetch fallback
 
 const $ = id => document.getElementById(id);
 function formatGold(n) {
@@ -224,7 +216,6 @@ function formatGold(n) {
   return n.toLocaleString('sv-SE');
 }
 function getBE(name) { return GREEN_BE.has(name) ? 'green' : 'yellow'; }
-
 function canTransfer(fromName, fromPvp, toName, toPvp) {
   const fr = PVP_RANK[fromPvp], tr = PVP_RANK[toPvp];
   if (fr === undefined || tr === undefined) return false;
@@ -232,7 +223,6 @@ function canTransfer(fromName, fromPvp, toName, toPvp) {
   if (getBE(fromName) === 'yellow' && getBE(toName) === 'green') return false;
   return true;
 }
-
 function timeAgo(dateStr) {
   const ms = Date.now() - new Date(dateStr).getTime();
   const mins = Math.round(ms / 60000);
@@ -242,9 +232,30 @@ function timeAgo(dateStr) {
   return Math.round(hrs / 24) + 'd sedan';
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// THROTTLED API FETCH QUEUE
-// ═══════════════════════════════════════════════════════════════════════════
+// ─── MATCH OFFERS → REALISTIC PROFIT ──────────────────────────────────────
+function matchOffers(sellers, buyers) {
+  // Expand into individual units
+  const sellUnits = [];
+  (sellers || []).forEach(s => { for (let i = 0; i < (s.amount || 1); i++) sellUnits.push(s.price); });
+  sellUnits.sort((a, b) => a - b); // cheapest first
+
+  const buyUnits = [];
+  (buyers || []).forEach(b => { for (let i = 0; i < (b.amount || 1); i++) buyUnits.push(b.price); });
+  buyUnits.sort((a, b) => b - a); // highest first
+
+  let profit = 0;
+  let matchCount = 0;
+  const n = Math.min(sellUnits.length, buyUnits.length);
+  for (let i = 0; i < n; i++) {
+    const margin = buyUnits[i] - sellUnits[i];
+    if (margin <= 0) break;
+    profit += margin;
+    matchCount++;
+  }
+  return { profit, matchCount, sellCount: sellUnits.length, buyCount: buyUnits.length };
+}
+
+// ─── THROTTLED LIVE FETCH QUEUE ──────────────────────────────────────────
 const FETCH_DELAY_MS = 1500;
 let fetchQueue = [];
 let fetchRunning = false;
@@ -255,11 +266,9 @@ async function queueFetch(url) {
     processQueue();
   });
 }
-
 async function processQueue() {
   if (fetchRunning || fetchQueue.length === 0) return;
   fetchRunning = true;
-
   while (fetchQueue.length > 0) {
     const { url, resolve, reject } = fetchQueue.shift();
     try {
@@ -269,26 +278,19 @@ async function processQueue() {
         const res2 = await fetch(url);
         if (!res2.ok) throw new Error('HTTP ' + res2.status);
         resolve(await res2.json());
-      } else if (!res.ok) {
-        throw new Error('HTTP ' + res.status);
-      } else {
-        resolve(await res.json());
-      }
-    } catch (e) {
-      reject(e);
-    }
-    // Wait before next request
-    if (fetchQueue.length > 0) {
-      await new Promise(r => setTimeout(r, FETCH_DELAY_MS));
-    }
+      } else if (!res.ok) { throw new Error('HTTP ' + res.status); }
+      else { resolve(await res.json()); }
+    } catch (e) { reject(e); }
+    if (fetchQueue.length > 0) await new Promise(r => setTimeout(r, FETCH_DELAY_MS));
   }
   fetchRunning = false;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LOAD DATA
-// ═══════════════════════════════════════════════════════════════════════════
+// ─── LOAD DATA ──────────────────────────────────────────────────────────
 async function loadData() {
+  const sbHeaders = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON };
+
+  // Item metadata
   try {
     const items = await fetch('item_metadata.json').then(r => r.json());
     items.forEach(it => { itemMeta[it.id] = it; });
@@ -299,20 +301,14 @@ async function loadData() {
     $('dotItems').className = 'dot dot-err';
   }
 
+  // World market data
   try {
-    const url = SUPABASE_URL + '/rest/v1/world_market_data?select=world_name,pvp_type,items,scanned_at';
-    const res = await fetch(url, {
-      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
-    });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/world_market_data?select=world_name,pvp_type,items,scanned_at', { headers: sbHeaders });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
+    rows.forEach(r => { worldData[r.world_name] = { pvp_type: r.pvp_type, items: r.items, scanned_at: r.scanned_at }; });
 
-    rows.forEach(row => {
-      worldData[row.world_name] = { pvp_type: row.pvp_type, items: row.items, scanned_at: row.scanned_at };
-    });
-
-    const count = Object.keys(worldData).length;
-    $('statusData').textContent = count + ' världar';
+    $('statusData').textContent = Object.keys(worldData).length + ' världar';
     $('dotData').className = 'dot dot-ok';
 
     const times = rows.map(r => new Date(r.scanned_at).getTime());
@@ -328,18 +324,32 @@ async function loadData() {
       sel.appendChild(opt);
     });
     sel.disabled = false;
-
-    $('resultsArea').innerHTML = '<div class="state-msg"><div class="icon">🔍</div><p>Välj startvärld ovan för att se lönsamma transfers.</p></div>';
   } catch (e) {
-    $('statusData').textContent = 'FEL: ' + e.message;
+    $('statusData').textContent = 'FEL';
     $('dotData').className = 'dot dot-err';
-    $('resultsArea').innerHTML = '<div class="state-msg"><div class="icon">⚠️</div><p>Kunde inte ladda data.</p></div>';
   }
+
+  // Item offers (phase 2 data)
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/item_offers?select=world_name,item_id,sellers,buyers', { headers: sbHeaders });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    rows.forEach(r => {
+      offersData[r.world_name + ':' + r.item_id] = { sellers: r.sellers, buyers: r.buyers };
+      // Pre-populate boardCache for click-to-expand
+      boardCache[r.world_name + ':' + r.item_id] = r;
+    });
+    $('statusOffers').textContent = rows.length + ' offers';
+    $('dotOffers').className = 'dot dot-ok';
+  } catch (e) {
+    $('statusOffers').textContent = 'ej tillgänglig';
+    $('dotOffers').className = 'dot dot-wait';
+  }
+
+  $('resultsArea').innerHTML = '<div class="state-msg"><div class="icon">🔍</div><p>Välj startvärld ovan för att se lönsamma transfers.</p></div>';
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CALCULATE — transfer cost at WORLD level, not per item
-// ═══════════════════════════════════════════════════════════════════════════
+// ─── CALCULATE ──────────────────────────────────────────────────────────
 function calculate() {
   const startName = $('worldSelect').value;
   const tcAmount = parseInt($('tcInput').value) || 0;
@@ -374,13 +384,27 @@ function calculate() {
 
       const margin = tItem.buy_offer - sItem.sell_offer;
       const marginPct = (margin / sItem.sell_offer) * 100;
-      const affordable = Math.floor(goldCap / sItem.sell_offer);
-      const qty = Math.min(affordable, tItem.buy_offers);
-      if (qty <= 0) continue;
 
-      // Gross profit = margin × qty (NO transfer cost here)
-      const grossProfit = qty * margin;
-      if (grossProfit <= 0) continue;
+      // Check for pre-fetched offers data
+      const startOffers = offersData[startName + ':' + tItem.id];
+      const targetOffers = offersData[tName + ':' + tItem.id];
+      const hasOffers = !!(startOffers && targetOffers);
+
+      let grossProfit, qty, verified;
+      if (hasOffers) {
+        // REALISTIC: match actual sell offers vs buy offers
+        const match = matchOffers(startOffers.sellers, targetOffers.buyers);
+        grossProfit = match.profit;
+        qty = match.matchCount;
+        verified = true;
+      } else {
+        // ESTIMATE: fallback to market_values data
+        const affordable = Math.floor(goldCap / sItem.sell_offer);
+        qty = Math.min(affordable, tItem.buy_offers);
+        grossProfit = qty * margin;
+        verified = false;
+      }
+      if (grossProfit <= 0 || qty <= 0) continue;
 
       const meta = itemMeta[tItem.id];
       trades.push({
@@ -389,12 +413,10 @@ function calculate() {
         buy_price: sItem.sell_offer,
         sell_price: tItem.buy_offer,
         margin, margin_pct: marginPct,
-        qty, affordable,
-        gross_profit: grossProfit,
+        qty, gross_profit: grossProfit,
+        verified,
         t_buy_offers: tItem.buy_offers,
-        t_day_bought: tItem.day_bought || 0,
         s_sell_offers: sItem.sell_offers || 0,
-        s_day_sold: sItem.day_sold || 0,
       });
     }
     if (!trades.length) continue;
@@ -402,13 +424,14 @@ function calculate() {
 
     const totalGross = trades.reduce((s, t) => s + t.gross_profit, 0);
     const netProfit = totalGross - transferCostGold;
-
-    // Only show world if total profit covers transfer cost
     if (netProfit <= 0) continue;
+
+    const verifiedCount = trades.filter(t => t.verified).length;
 
     worldGroups.push({
       name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
       trades, totalGross, netProfit,
+      verifiedCount, tradeCount: trades.length,
       scanned_at: tw.scanned_at,
     });
   }
@@ -424,9 +447,7 @@ function calculate() {
   renderResults();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════════════════════
+// ─── RENDER ─────────────────────────────────────────────────────────────
 function renderResults() {
   const area = $('resultsArea');
   const nameF = ($('filterName').value || '').toLowerCase();
@@ -452,44 +473,41 @@ function renderResults() {
     h += '<span class="arrow">▶</span>';
     h += '<span class="world-name-col">' + g.name + ' <span class="badge badge-be-' + g.be + '">' + beE + '</span> <span class="badge badge-pvp">' + pvp + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Trades</span><span class="stat-value">' + visT.length + '</span></span>';
-    h += '<span class="stat hide-mobile"><span class="stat-label">Brutto</span><span class="stat-value">' + formatGold(g.totalGross) + '</span></span>';
+    h += '<span class="stat hide-mobile"><span class="stat-label">Verifierade</span><span class="stat-value">' + g.verifiedCount + '/' + g.tradeCount + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Data</span><span class="stat-value">' + timeAgo(g.scanned_at) + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Netto profit</span><span class="stat-value profit-value">' + formatGold(g.netProfit) + ' gp</span></span>';
     h += '</div>';
 
     h += '<div class="world-items">';
-    h += '<div class="transfer-cost-note">Transfer: <span>' + formatGold(transferCostGold) + ' gp</span> (750 TC) dras en gång — netto = brutto − transfer</div>';
+    h += '<div class="transfer-cost-note">Transfer: <span>' + formatGold(transferCostGold) + ' gp</span> (750 TC) dras en gång</div>';
     h += '<table><thead><tr>';
     h += '<th></th><th>Item</th>';
-    h += '<th title="Sell offer på startvärld">Köp (start)</th>';
-    h += '<th title="Högsta buy offer på målvärld">Sälj (target)</th>';
-    h += '<th title="Profit per styck">Marginal</th>';
-    h += '<th title="Antal (cappat vid buy offers)">Antal</th>';
-    h += '<th title="Bruttoprofit (marginal × antal)">Bruttoprofit</th>';
-    h += '<th title="Aktiva buy offers på denna server">Buy offers</th>';
-    h += '<th title="Sell offers på startvärld">Sell offers (S)</th>';
+    h += '<th>Köp (start)</th><th>Sälj (target)</th>';
+    h += '<th>Marginal</th><th>Antal</th><th>Bruttoprofit</th>';
+    h += '<th>Buy offers</th><th>Sell offers (S)</th>';
     h += '</tr></thead><tbody>';
 
-    for (let i = 0; i < visT.length; i++) {
-      const t = visT[i];
+    for (const t of visT) {
       const rowId = g.name + ':' + t.item_id;
-      const marginCls = t.margin_pct >= 20 ? ' profit-cell' : '';
+      const profitCls = t.verified ? 'profit-cell' : 'estimate-cell';
+      const tag = t.verified
+        ? '<span class="badge badge-verified">✓</span>'
+        : '<span class="badge badge-estimate">~est</span>';
 
       h += '<tr class="item-row" data-row-id="' + rowId + '" data-world="' + g.name + '" data-start="' + currentStartName + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" data-sell-price="' + t.sell_price + '" onclick="toggleOffers(this)">';
       h += '<td style="font-size:0.65rem;color:var(--text-muted);width:1.5rem;">▶</td>';
-      h += '<td class="item-name-cell" title="Klicka för buy offers breakdown">' + t.item_name + '</td>';
+      h += '<td class="item-name-cell">' + t.item_name + ' ' + tag + '</td>';
       h += '<td>' + t.buy_price.toLocaleString('sv-SE') + '</td>';
       h += '<td>' + t.sell_price.toLocaleString('sv-SE') + '</td>';
-      h += '<td' + marginCls + '>' + formatGold(t.margin) + ' (' + t.margin_pct.toFixed(0) + '%)</td>';
+      h += '<td>' + formatGold(t.margin) + ' (' + t.margin_pct.toFixed(0) + '%)</td>';
       h += '<td>' + t.qty.toLocaleString('sv-SE') + '</td>';
-      h += '<td class="profit-cell">' + formatGold(t.gross_profit) + ' gp</td>';
+      h += '<td class="' + profitCls + '">' + formatGold(t.gross_profit) + ' gp</td>';
       h += '<td>' + t.t_buy_offers + '</td>';
       h += '<td>' + t.s_sell_offers + '</td>';
       h += '</tr>';
 
-      // Expandable row for buy offers breakdown
       h += '<tr class="offers-row" id="offers-' + rowId.replace(/[^a-zA-Z0-9]/g, '_') + '"><td colspan="9"><div class="offers-detail">';
-      h += '<div class="offers-content">Klicka för att ladda offers…</div>';
+      h += '<div class="offers-content">Klicka för att visa matchade offers…</div>';
       h += '</div></td></tr>';
     }
     h += '</tbody></table></div></div>';
@@ -500,23 +518,19 @@ function renderResults() {
 
 function toggleGroup(el) { el.closest('.world-group').classList.toggle('expanded'); }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TOGGLE ITEM → FETCH SELLERS (start) + BUYERS (target) FROM /market_board
-// ═══════════════════════════════════════════════════════════════════════════
+// ─── TOGGLE ITEM → SHOW/FETCH OFFERS ───────────────────────────────────
 async function toggleOffers(rowEl) {
   const rowId = rowEl.dataset.rowId;
   const safeId = 'offers-' + rowId.replace(/[^a-zA-Z0-9]/g, '_');
   const offersRow = document.getElementById(safeId);
   if (!offersRow) return;
 
-  const isVisible = offersRow.classList.contains('visible');
-  if (isVisible) {
+  if (offersRow.classList.contains('visible')) {
     offersRow.classList.remove('visible');
     rowEl.classList.remove('expanded-item');
     rowEl.querySelector('td').textContent = '▶';
     return;
   }
-
   offersRow.classList.add('visible');
   rowEl.classList.add('expanded-item');
   rowEl.querySelector('td').textContent = '▼';
@@ -525,36 +539,38 @@ async function toggleOffers(rowEl) {
   const targetWorld = rowEl.dataset.world;
   const startWorld = rowEl.dataset.start;
   const itemId = rowEl.dataset.item;
-  const buyPrice = parseInt(rowEl.dataset.buyPrice);   // sell_offer on start (our buy cost)
-  const sellPrice = parseInt(rowEl.dataset.sellPrice);  // buy_offer on target (our sell price)
-
   const cacheKey = startWorld + '>' + targetWorld + ':' + itemId;
 
-  // Already cached?
+  // Check if we already have data (from Supabase or previous live fetch)
   if (boardCache[cacheKey]) {
     renderBoardDetail(contentEl, boardCache[cacheKey], startWorld, targetWorld);
     return;
   }
 
-  contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar offers från ' + startWorld + ' + ' + targetWorld + '… (köad)</span>';
-
-  try {
-    // Fetch both worlds — both go through the throttled queue
-    const startUrl = MARKET_API + '/market_board?server=' + encodeURIComponent(startWorld) + '&item_id=' + itemId;
-    const targetUrl = MARKET_API + '/market_board?server=' + encodeURIComponent(targetWorld) + '&item_id=' + itemId;
-
-    const [startData, targetData] = await Promise.all([
-      queueFetch(startUrl),
-      queueFetch(targetUrl)
-    ]);
-
+  // Try to build from offersData (pre-fetched)
+  const sKey = startWorld + ':' + itemId;
+  const tKey = targetWorld + ':' + itemId;
+  if (offersData[sKey] && offersData[tKey]) {
     const result = {
-      sellers: (startData.sellers || []).sort((a, b) => a.price - b.price),   // cheapest first
-      buyers:  (targetData.buyers || []).sort((a, b) => b.price - a.price),   // highest first
-      startWorld,
-      targetWorld,
+      sellers: (offersData[sKey].sellers || []).sort((a, b) => a.price - b.price),
+      buyers:  (offersData[tKey].buyers  || []).sort((a, b) => b.price - a.price),
     };
+    boardCache[cacheKey] = result;
+    renderBoardDetail(contentEl, result, startWorld, targetWorld);
+    return;
+  }
 
+  // Live fetch as fallback
+  contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar offers från ' + startWorld + ' + ' + targetWorld + '… (köad)</span>';
+  try {
+    const [startData, targetData] = await Promise.all([
+      queueFetch(MARKET_API + '/market_board?server=' + encodeURIComponent(startWorld) + '&item_id=' + itemId),
+      queueFetch(MARKET_API + '/market_board?server=' + encodeURIComponent(targetWorld) + '&item_id=' + itemId)
+    ]);
+    const result = {
+      sellers: (startData.sellers || []).sort((a, b) => a.price - b.price),
+      buyers:  (targetData.buyers || []).sort((a, b) => b.price - a.price),
+    };
     boardCache[cacheKey] = result;
     renderBoardDetail(contentEl, result, startWorld, targetWorld);
   } catch (e) {
@@ -563,133 +579,76 @@ async function toggleOffers(rowEl) {
 }
 
 function renderBoardDetail(el, data, startWorld, targetWorld) {
-  // ─── MATCH sell offers against buy offers ───
-  // Expand into individual units, match cheapest sell → highest buy
   const sellUnits = [];
-  data.sellers.forEach(s => {
-    for (let i = 0; i < (s.amount || 1); i++) sellUnits.push(s.price);
-  });
+  (data.sellers||[]).forEach(s => { for (let i = 0; i < (s.amount||1); i++) sellUnits.push(s.price); });
+  sellUnits.sort((a, b) => a - b);
   const buyUnits = [];
-  data.buyers.forEach(b => {
-    for (let i = 0; i < (b.amount || 1); i++) buyUnits.push(b.price);
-  });
+  (data.buyers||[]).forEach(b => { for (let i = 0; i < (b.amount||1); i++) buyUnits.push(b.price); });
+  buyUnits.sort((a, b) => b - a);
 
-  // Build matched trades
   const matches = [];
-  const tradeCount = Math.min(sellUnits.length, buyUnits.length);
-  for (let i = 0; i < tradeCount; i++) {
-    const buyAt = sellUnits[i];   // we buy from seller (cheapest first)
-    const sellAt = buyUnits[i];   // we sell to buyer (highest first)
-    const margin = sellAt - buyAt;
-    matches.push({ idx: i + 1, buyAt, sellAt, margin, profitable: margin > 0 });
+  const n = Math.min(sellUnits.length, buyUnits.length);
+  for (let i = 0; i < n; i++) {
+    matches.push({ idx: i+1, buyAt: sellUnits[i], sellAt: buyUnits[i], margin: buyUnits[i] - sellUnits[i], profitable: buyUnits[i] > sellUnits[i] });
   }
 
-  // Generate a unique ID for this detail panel
   const panelId = 'mp_' + Math.random().toString(36).substr(2, 8);
+  let h = '<div class="offers-label" style="margin-bottom:0.5rem;">🔀 Matchade trades (' + startWorld + ' → ' + targetWorld + ')</div>';
 
-  let h = '';
-
-  // ─── MATCHED TRADES section ───
-  h += '<div class="offers-label" style="margin-bottom:0.5rem;">🔀 Matchade trades (' + startWorld + ' → ' + targetWorld + ')</div>';
-
-  if (matches.length === 0) {
-    h += '<div style="color:var(--text-muted);font-size:0.78rem;padding:0.3rem 0;">Inga offers att matcha.</div>';
+  if (!matches.length) {
+    h += '<div style="color:var(--text-muted);font-size:0.78rem;">Inga offers att matcha.</div>';
   } else {
     h += '<div class="matches-list" id="' + panelId + '">';
-    h += '<div class="match-header">';
-    h += '<span class="match-chk-col"></span>';
-    h += '<span>#</span><span>KÖP (start)</span><span>SÄLJ (target)</span><span>MARGINAL</span>';
-    h += '</div>';
-
+    h += '<div class="match-header"><span></span><span>#</span><span>KÖP (start)</span><span>SÄLJ (target)</span><span>MARGINAL</span></div>';
     for (const m of matches) {
-      const negCls = m.margin < 0 ? ' negative' : '';
-      const checked = m.profitable ? ' checked' : '';
+      const neg = m.margin < 0 ? ' negative' : '';
+      const chk = m.profitable ? ' checked' : '';
       h += '<div class="match-entry' + (m.profitable ? '' : ' unprofitable') + '">';
-      h += '<span class="match-chk-col"><input type="checkbox" data-panel="' + panelId + '" data-margin="' + m.margin + '"' + checked + ' onchange="updateMatchTotal(this)"></span>';
+      h += '<span class="match-chk-col"><input type="checkbox" data-panel="' + panelId + '" data-margin="' + m.margin + '"' + chk + ' onchange="updateMatchTotal(this)"></span>';
       h += '<span class="match-idx">' + m.idx + '</span>';
-      h += '<span class="match-price">' + m.buyAt.toLocaleString('sv-SE') + ' gp</span>';
-      h += '<span class="match-price">' + m.sellAt.toLocaleString('sv-SE') + ' gp</span>';
-      h += '<span class="match-margin' + negCls + '">' + (m.margin >= 0 ? '+' : '') + formatGold(m.margin) + '</span>';
+      h += '<span class="match-price">' + m.buyAt.toLocaleString('sv-SE') + '</span>';
+      h += '<span class="match-price">' + m.sellAt.toLocaleString('sv-SE') + '</span>';
+      h += '<span class="match-margin' + neg + '">' + (m.margin>=0?'+':'') + formatGold(m.margin) + '</span>';
       h += '</div>';
     }
     h += '</div>';
+    const autoTotal = matches.filter(m => m.profitable).reduce((s,m) => s + m.margin, 0);
+    const profCount = matches.filter(m => m.profitable).length;
+    h += '<div class="match-total" id="' + panelId + '_total">Realistisk profit: <strong class="green-text">' + formatGold(autoTotal) + ' gp</strong> <span style="color:var(--text-muted);">(' + profCount + '/' + matches.length + ' lönsamma)</span></div>';
 
-    // Total
-    const autoTotal = matches.filter(m => m.profitable).reduce((s, m) => s + m.margin, 0);
-    const profitableCount = matches.filter(m => m.profitable).length;
-    h += '<div class="match-total" id="' + panelId + '_total">';
-    h += '<span>Realistisk profit: <strong class="green-text">' + formatGold(autoTotal) + ' gp</strong></span>';
-    h += '<span style="margin-left:1rem;color:var(--text-muted);">(' + profitableCount + '/' + matches.length + ' lönsamma trades)</span>';
-    h += '</div>';
-
-    // Extra info
-    if (sellUnits.length < buyUnits.length) {
-      h += '<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;">';
-      h += '⚠️ Fler buy offers (' + buyUnits.length + ') än sell offers (' + sellUnits.length + ') — begränsat av tillgång på ' + startWorld;
-      h += '</div>';
-    } else if (buyUnits.length < sellUnits.length) {
-      h += '<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;">';
-      h += '⚠️ Fler sell offers (' + sellUnits.length + ') än buy offers (' + buyUnits.length + ') — begränsat av efterfrågan på ' + targetWorld;
-      h += '</div>';
+    if (sellUnits.length !== buyUnits.length) {
+      const msg = sellUnits.length < buyUnits.length
+        ? 'Fler buy offers (' + buyUnits.length + ') än sell offers (' + sellUnits.length + ') — begränsat av tillgång på ' + startWorld
+        : 'Fler sell offers (' + sellUnits.length + ') än buy offers (' + buyUnits.length + ') — begränsat av efterfrågan på ' + targetWorld;
+      h += '<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;">⚠️ ' + msg + '</div>';
     }
   }
 
-  // ─── RAW OFFERS below for reference ───
+  // Raw offers
   h += '<div class="board-panels" style="margin-top:1rem;">';
-
-  // Sellers
-  h += '<div class="board-panel">';
-  h += '<div class="offers-label">📦 Alla säljare på ' + startWorld + ' <span style="color:var(--text-muted);font-weight:400;">(lägst pris först)</span></div>';
-  if (!data.sellers.length) {
-    h += '<div style="color:var(--text-muted);font-size:0.78rem;">Inga sell offers.</div>';
-  } else {
-    h += '<div class="offers-list">';
-    h += '<div class="offer-entry" style="font-weight:600;color:var(--text-dim);font-size:0.68rem;"><span>#</span><span>PRIS</span><span>ANTAL</span><span></span><span></span></div>';
-    data.sellers.forEach((o, i) => {
-      h += '<div class="offer-entry"><span class="offer-idx">' + (i+1) + '</span><span class="offer-price">' + o.price.toLocaleString('sv-SE') + ' gp</span><span class="offer-amount">×' + (o.amount||1).toLocaleString('sv-SE') + '</span><span></span><span></span></div>';
-    });
-    h += '</div>';
-  }
-  h += '</div>';
-
-  // Buyers
-  h += '<div class="board-panel">';
-  h += '<div class="offers-label">💰 Alla köpare på ' + targetWorld + ' <span style="color:var(--text-muted);font-weight:400;">(högst pris först)</span></div>';
-  if (!data.buyers.length) {
-    h += '<div style="color:var(--text-muted);font-size:0.78rem;">Inga buy offers.</div>';
-  } else {
-    h += '<div class="offers-list">';
-    h += '<div class="offer-entry" style="font-weight:600;color:var(--text-dim);font-size:0.68rem;"><span>#</span><span>PRIS</span><span>ANTAL</span><span></span><span></span></div>';
-    data.buyers.forEach((o, i) => {
-      h += '<div class="offer-entry"><span class="offer-idx">' + (i+1) + '</span><span class="offer-price">' + o.price.toLocaleString('sv-SE') + ' gp</span><span class="offer-amount">×' + (o.amount||1).toLocaleString('sv-SE') + '</span><span></span><span></span></div>';
-    });
-    h += '</div>';
-  }
-  h += '</div>';
-
-  h += '</div>';
+  h += '<div class="board-panel"><div class="offers-label">📦 Säljare ' + startWorld + '</div>';
+  if (data.sellers?.length) { h += renderRawOffers(data.sellers); } else { h += '<div style="color:var(--text-muted);font-size:0.78rem;">Inga.</div>'; }
+  h += '</div><div class="board-panel"><div class="offers-label">💰 Köpare ' + targetWorld + '</div>';
+  if (data.buyers?.length) { h += renderRawOffers(data.buyers); } else { h += '<div style="color:var(--text-muted);font-size:0.78rem;">Inga.</div>'; }
+  h += '</div></div>';
   el.innerHTML = h;
 }
 
-// Update total when checkbox toggled
-function updateMatchTotal(checkbox) {
-  const panelId = checkbox.dataset.panel;
-  const panel = document.getElementById(panelId);
-  const totalEl = document.getElementById(panelId + '_total');
-  if (!panel || !totalEl) return;
-
-  const boxes = panel.querySelectorAll('input[type="checkbox"]');
-  let total = 0;
-  let checked = 0;
-  boxes.forEach(cb => {
-    if (cb.checked) {
-      total += parseInt(cb.dataset.margin);
-      checked++;
-    }
+function renderRawOffers(offers) {
+  let h = '<div class="offers-list"><div class="offer-entry" style="font-weight:600;color:var(--text-dim);font-size:0.68rem;"><span>#</span><span>PRIS</span><span>ANTAL</span><span></span><span></span></div>';
+  offers.forEach((o, i) => {
+    h += '<div class="offer-entry"><span class="offer-idx">' + (i+1) + '</span><span class="offer-price">' + o.price.toLocaleString('sv-SE') + ' gp</span><span class="offer-amount">×' + (o.amount||1) + '</span><span></span><span></span></div>';
   });
+  return h + '</div>';
+}
 
-  totalEl.innerHTML = '<span>Realistisk profit: <strong class="' + (total >= 0 ? 'green-text' : '') + '">' + formatGold(total) + ' gp</strong></span>'
-    + '<span style="margin-left:1rem;color:var(--text-muted);">(' + checked + '/' + boxes.length + ' valda)</span>';
+function updateMatchTotal(cb) {
+  const panel = document.getElementById(cb.dataset.panel);
+  const totalEl = document.getElementById(cb.dataset.panel + '_total');
+  if (!panel || !totalEl) return;
+  let total = 0, checked = 0;
+  panel.querySelectorAll('input[type="checkbox"]').forEach(c => { if (c.checked) { total += parseInt(c.dataset.margin); checked++; } });
+  totalEl.innerHTML = 'Realistisk profit: <strong class="' + (total>=0?'green-text':'') + '">' + formatGold(total) + ' gp</strong> <span style="color:var(--text-muted);">(' + checked + ' valda)</span>';
 }
 
 // Events
@@ -698,7 +657,6 @@ $('tcInput').addEventListener('input', calculate);
 $('filterName').addEventListener('input', renderResults);
 $('filterMinProfit').addEventListener('input', renderResults);
 
-// Init
 loadData();
 </script>
 </body>
