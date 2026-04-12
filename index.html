@@ -21,7 +21,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-.app { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+.app { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
 
 .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--border); }
 .header-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent), #6366f1); border-radius: var(--radius); display: grid; place-items: center; font-size: 1.4rem; flex-shrink: 0; }
@@ -68,7 +68,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .badge-be-yellow { background: rgba(245,158,11,0.12); color: #fbbf24; }
 .badge-pvp { background: rgba(139,92,246,0.12); color: #a78bfa; font-size: 0.65rem; }
 
-.world-items { display: none; border-top: 1px solid var(--border); background: var(--bg-expanded); }
+.world-items { display: none; border-top: 1px solid var(--border); background: var(--bg-expanded); overflow-x: auto; }
 .world-group.expanded .world-items { display: block; }
 .world-items table { width: 100%; border-collapse: collapse; }
 .world-items thead th { padding: 0.55rem 0.85rem; text-align: left; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: var(--bg); border-bottom: 1px solid var(--border); }
@@ -286,33 +286,58 @@ function calculate() {
       if (!tItem.buy_offers || tItem.buy_offers <= 0 || tItem.buy_offer <= 0) continue;
       const sItem = startPrices[tItem.id];
       if (!sItem || tItem.buy_offer <= sItem.sell_offer) continue;
-      const qty = Math.floor(goldCap / sItem.sell_offer);
+
+      // Margin per item
+      const margin = tItem.buy_offer - sItem.sell_offer;
+      const marginPct = (margin / sItem.sell_offer) * 100;
+
+      // Realistic qty: capped at active buy_offers on THIS target server
+      // buy_offers = actual buyers waiting on this specific world right now
+      const affordable = Math.floor(goldCap / sItem.sell_offer);
+      const qty = Math.min(affordable, tItem.buy_offers);
       if (qty <= 0) continue;
+
       const net = qty * tItem.buy_offer - qty * sItem.sell_offer - transferCost;
       if (net <= 0) continue;
 
       const meta = itemMeta[tItem.id];
       trades.push({
         item_name: meta ? (meta.wiki_name || meta.name) : '#' + tItem.id,
-        buy_price: sItem.sell_offer,
-        sell_price: tItem.buy_offer,
-        qty, net_profit: net,
-        buy_offers: tItem.buy_offers,
-        day_sold: tItem.day_sold || 0,
+        buy_price: sItem.sell_offer,       // vad vi betalar på start
+        sell_price: tItem.buy_offer,        // vad vi säljer för på target
+        margin,                             // profit per styck
+        margin_pct: marginPct,
+        qty,                                // cappat vid buy_offers
+        affordable,                         // vad vi hade råd med
+        net_profit: net,
+        // Target world market info
+        t_buy_offers: tItem.buy_offers,     // aktiva buy offers på just denna server
+        t_day_bought: tItem.day_bought || 0,
+        // Start world market info
+        s_sell_offers: sItem.sell_offers || 0,
+        s_day_sold: sItem.day_sold || 0,
       });
     }
     if (!trades.length) continue;
+
+    // Sort by best profit per trade
     trades.sort((a, b) => b.net_profit - a.net_profit);
+
+    const totalProfit = trades.reduce((s, t) => s + t.net_profit, 0);
 
     worldGroups.push({
       name: tName,
       pvp_type: tw.pvp_type,
       be: getBE(tName),
       trades,
-      totalProfit: trades.reduce((s, t) => s + t.net_profit, 0),
+      totalProfit,
+      bestItem: trades[0].item_name,
+      tradeCount: trades.length,
       scanned_at: tw.scanned_at,
     });
   }
+
+  // Sort by total profit across all trades on that world
   worldGroups.sort((a, b) => b.totalProfit - a.totalProfit);
 
   // Summary
@@ -352,24 +377,38 @@ function renderResults() {
     h += '<div class="world-header" onclick="toggleGroup(this)">';
     h += '<span class="arrow">▶</span>';
     h += '<span class="world-name-col">' + g.name + ' <span class="badge badge-be-' + g.be + '">' + beE + '</span> <span class="badge badge-pvp">' + pvp + '</span></span>';
-    h += '<span class="stat"><span class="stat-label">Items</span><span class="stat-value">' + visT.length + '</span></span>';
+    h += '<span class="stat"><span class="stat-label">Trades</span><span class="stat-value">' + visT.length + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Bästa item</span><span class="stat-value">' + (visT[0] ? visT[0].item_name.substring(0, 22) : '–') + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Data</span><span class="stat-value">' + timeAgo(g.scanned_at) + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Total profit</span><span class="stat-value profit-value">' + formatGold(g.totalProfit) + ' gp</span></span>';
     h += '</div>';
 
     h += '<div class="world-items"><table><thead><tr>';
-    h += '<th>Item</th><th>Köppris (start)</th><th>Säljpris (target)</th><th>Antal</th><th>Profit</th><th>Buy offers</th><th>Dag sålda</th>';
+    h += '<th>Item</th>';
+    h += '<th title="Sell offer på startvärld (vad du köper för)">Köp (start)</th>';
+    h += '<th title="Buy offer på målvärld (vad du säljer för)">Sälj (target)</th>';
+    h += '<th title="Profit per styck (sälj - köp)">Marginal</th>';
+    h += '<th title="Realistiskt antal baserat på marknadens dagliga volym">Antal</th>';
+    h += '<th title="Nettoprofit efter transfer-kostnad">Profit</th>';
+    h += '<th title="Aktiva buy offers på målvärlden">Offers (T)</th>';
+    h += '<th title="Daglig köpvolym på målvärld">Dag köpta (T)</th>';
+    h += '<th title="Aktiva sell offers på startvärlden">Offers (S)</th>';
+    h += '<th title="Daglig säljvolym på startvärld">Dag sålda (S)</th>';
     h += '</tr></thead><tbody>';
+
     for (const t of visT) {
+      const marginCls = t.margin_pct >= 20 ? ' profit-cell' : '';
       h += '<tr>';
       h += '<td class="item-name-cell" title="' + t.item_name + '">' + t.item_name + '</td>';
       h += '<td>' + t.buy_price.toLocaleString('sv-SE') + '</td>';
       h += '<td>' + t.sell_price.toLocaleString('sv-SE') + '</td>';
-      h += '<td>' + t.qty.toLocaleString('sv-SE') + '</td>';
+      h += '<td' + marginCls + '>' + formatGold(t.margin) + ' (' + t.margin_pct.toFixed(0) + '%)</td>';
+      h += '<td title="Har råd med ' + t.affordable.toLocaleString('sv-SE') + ', cappat vid marknadsvolym">' + t.qty.toLocaleString('sv-SE') + '</td>';
       h += '<td class="profit-cell">' + formatGold(t.net_profit) + ' gp</td>';
-      h += '<td>' + t.buy_offers + '</td>';
-      h += '<td>' + t.day_sold + '</td>';
+      h += '<td>' + t.t_buy_offers + '</td>';
+      h += '<td>' + t.t_day_bought + '</td>';
+      h += '<td>' + t.s_sell_offers + '</td>';
+      h += '<td>' + t.s_day_sold + '</td>';
       h += '</tr>';
     }
     h += '</tbody></table></div></div>';
