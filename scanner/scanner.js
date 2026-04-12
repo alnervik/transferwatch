@@ -11,7 +11,7 @@ const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const PAGE_LIMIT = 5000;
 const THROTTLE_MS = 10000;
 const MAX_RETRIES = 5;
-const MAX_BOARD_FETCHES = 800;  // cap phase 2 at ~27 min
+const MAX_BOARD_FETCHES = 200;  // cap phase 2 at ~27 min
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
@@ -236,7 +236,7 @@ async function main() {
         const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer)); // rough cap
         const estProfit = margin * qty;
 
-        if (estProfit <= 0) continue;
+        if (estProfit <= 500000) continue;
 
         // Need sellers on start world
         const startKey = `${startName}:${itemIdStr}`;
