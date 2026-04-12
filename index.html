@@ -499,7 +499,7 @@ const MARKET_API = 'https://api.tibiamarket.top:8001';
 const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
-const PAGE_LIMIT = 100;
+const PAGE_LIMIT = 5000; // API might support higher limits — reduces calls dramatically
 
 // PvP hierarchy (higher index = more restrictive)
 const PVP_RANK = {
@@ -591,15 +591,61 @@ function dataAge(lastUpdate) {
   return { text: Math.round(diff / 1440) + 'd', cls: 'badge-old' };
 }
 
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Throttle: minimum delay between API calls
+const THROTTLE_MS = 350;
+let lastFetchTime = 0;
+
+async function throttle() {
+  const now = Date.now();
+  const wait = THROTTLE_MS - (now - lastFetchTime);
+  if (wait > 0) await sleep(wait);
+  lastFetchTime = Date.now();
 }
 
-// Fetch all pages from /market_values
-async function fetchAllMarketValues(server) {
+async function fetchJSON(url, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    await throttle();
+    try {
+      const res = await fetch(url);
+      if (res.status === 429) {
+        const backoff = Math.min(2000 * attempt, 8000);
+        log(`Rate limited (429), väntar ${backoff / 1000}s… (försök ${attempt}/${retries})`, 'warn');
+        await sleep(backoff);
+        continue;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+      return res.json();
+    } catch (e) {
+      if (attempt === retries) throw e;
+      if (!e.message.includes('429')) {
+        const backoff = 1000 * attempt;
+        log(`Fetch error, retry in ${backoff / 1000}s: ${e.message}`, 'warn');
+        await sleep(backoff);
+      }
+    }
+  }
+}
+
+// Fetch all pages from /market_values, optionally filtering by item_ids
+async function fetchAllMarketValues(server, itemIds = null) {
   let all = [];
+
+  // If specific item IDs requested, batch them to avoid URL length issues
+  if (itemIds && itemIds.length > 0) {
+    const BATCH_SIZE = 150; // ~150 IDs per request keeps URL safe
+    for (let i = 0; i < itemIds.length; i += BATCH_SIZE) {
+      const batch = itemIds.slice(i, i + BATCH_SIZE);
+      const ids = batch.join(',');
+      const url = `${MARKET_API}/market_values?server=${encodeURIComponent(server)}&item_ids=${ids}&limit=${PAGE_LIMIT}`;
+      const data = await fetchJSON(url);
+      if (Array.isArray(data)) all = all.concat(data);
+    }
+    return all;
+  }
+
+  // No item_ids filter — paginate through everything
   let skip = 0;
   while (true) {
     const url = `${MARKET_API}/market_values?server=${encodeURIComponent(server)}&skip=${skip}&limit=${PAGE_LIMIT}`;
@@ -744,6 +790,10 @@ async function runScan() {
     });
     log(`Items with sell offers on start: ${Object.keys(startPrices).length}`);
 
+    // Only query target worlds for items we can actually buy on start
+    const relevantItemIds = Object.keys(startPrices).map(Number);
+    log(`Will query ${relevantItemIds.length} item IDs per target world (~${Math.ceil(relevantItemIds.length / 150)} API calls each)`);
+
     $('statusMarket').textContent = 'scanning…';
     $('dotMarket').className = 'dot dot-wait';
 
@@ -751,7 +801,7 @@ async function runScan() {
     for (const target of targetWorlds) {
       progress(`Hämtar ${target.name}… (${step}/${totalSteps})`);
       try {
-        const targetMarket = await fetchAllMarketValues(target.name);
+        const targetMarket = await fetchAllMarketValues(target.name, relevantItemIds);
 
         for (const tItem of targetMarket) {
           // Hard filter: must have active buy offers
