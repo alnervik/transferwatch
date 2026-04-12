@@ -9,7 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 const MARKET_API = 'https://api.tibiamarket.top:8001';
 const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const PAGE_LIMIT = 5000;
-const THROTTLE_MS = 5000;
+const THROTTLE_MS = 10000;
 const MAX_RETRIES = 5;
 const MAX_BOARD_FETCHES = 800;  // cap phase 2 at ~27 min
 
