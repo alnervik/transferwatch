@@ -9,9 +9,8 @@ import { createClient } from '@supabase/supabase-js';
 const MARKET_API = 'https://api.tibiamarket.top:8001';
 const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const PAGE_LIMIT = 5000;
-const THROTTLE_MS = 10000;
 const MAX_RETRIES = 5;
-const MAX_BOARD_FETCHES = 200;  // cap phase 2 at ~27 min
+const MAX_BOARD_FETCHES = 200;
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
@@ -53,34 +52,56 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-let lastFetchTime = 0;
+
+// Smart rate limiter: burst 4 requests, pause, long pause every ~85 requests
+const BURST_SIZE = 4;          // requests per burst
+const BURST_DELAY = 2000;      // 2s between requests in a burst
+const BURST_PAUSE = 20000;     // 20s pause between bursts
+const LONG_PAUSE_EVERY = 85;   // long pause after this many requests
+const LONG_PAUSE_MS = 180000;  // 3 min long pause to fully reset bucket
+
+let requestCount = 0;
+let burstCount = 0;
 
 async function throttledFetch(url) {
-  const now = Date.now();
-  const wait = THROTTLE_MS - (now - lastFetchTime);
-  if (wait > 0) await sleep(wait);
-  lastFetchTime = Date.now();
+  // Long pause to reset the ~100-request bucket
+  if (requestCount > 0 && requestCount % LONG_PAUSE_EVERY === 0) {
+    console.log(`\n  ⏸️  Long pause: ${LONG_PAUSE_MS / 1000}s to reset rate limit bucket (${requestCount} requests done)...\n`);
+    await sleep(LONG_PAUSE_MS);
+    burstCount = 0;
+  }
+
+  // Burst pause: after BURST_SIZE requests, wait longer
+  if (burstCount > 0 && burstCount % BURST_SIZE === 0) {
+    await sleep(BURST_PAUSE);
+    burstCount = 0;
+  } else if (burstCount > 0) {
+    await sleep(BURST_DELAY);
+  }
+
+  requestCount++;
+  burstCount++;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await fetch(url);
       if (res.status === 429) {
-        const backoff = Math.min(4000 * attempt, 20000);
+        // Hit rate limit — back off aggressively
+        const backoff = Math.min(30000 * attempt, 120000);
         console.log(`  ⏳ Rate limited, waiting ${backoff / 1000}s (attempt ${attempt}/${MAX_RETRIES})`);
         await sleep(backoff);
-        lastFetchTime = Date.now();
         continue;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     } catch (e) {
       if (attempt === MAX_RETRIES) throw e;
-      const backoff = 3000 * attempt;
+      const backoff = 5000 * attempt;
       console.log(`  ⚠️ Error: ${e.message}, retry in ${backoff / 1000}s (${attempt}/${MAX_RETRIES})`);
       await sleep(backoff);
     }
   }
-  throw new Error('All retries exhausted (429)');
+  throw new Error('All retries exhausted');
 }
 
 async function fetchWorldMarket(server) {
@@ -169,8 +190,10 @@ async function main() {
     console.log(`\nPhase 1 done: ${scanned} worlds in ${phase1Time} min\n`);
 
     // Pause between phases to let rate limit reset
-    console.log('⏸️  Pausing 60s to let rate limit reset...\n');
-    await sleep(60000);
+    console.log('⏸️  Pausing 120s to let rate limit fully reset...\n');
+    await sleep(120000);
+    requestCount = 0;
+    burstCount = 0;
 
   } else {
     // ═══════════════════════════════════════════════════════════════════════
@@ -236,7 +259,7 @@ async function main() {
         const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer)); // rough cap
         const estProfit = margin * qty;
 
-        if (estProfit <= 500000) continue;
+        if (estProfit <= 500000) continue;  // skip low-value trades
 
         // Need sellers on start world
         const startKey = `${startName}:${itemIdStr}`;

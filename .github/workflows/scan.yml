@@ -2,7 +2,7 @@ name: Scan Tibia Markets
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Kl 04:00 svensk tid (UTC+2)
+  - cron: '54 1 * * *'  # Kl 03:54 svensk tid (UTC+2)
   workflow_dispatch:       # Manuell trigger via GitHub UI
 
 jobs:
