@@ -196,18 +196,33 @@ async function main() {
     requestCount = 0;
 
   } else {
-    // Load from Supabase
+    // Load from Supabase — fetch world list first, then items per world
+    // (loading all at once can timeout on free tier)
     console.log('═══ Loading world data from Supabase ═══\n');
-    const { data: rows, error } = await supabase
-      .from('world_market_data')
-      .select('world_name, pvp_type, items');
-    if (error) throw new Error('Supabase: ' + error.message);
 
-    for (const row of rows) {
-      worldMarket[row.world_name] = row.items;
-      worldPvp[row.world_name] = row.pvp_type;
+    const { data: worldList, error: listErr } = await supabase
+      .from('world_market_data')
+      .select('world_name, pvp_type');
+    if (listErr) throw new Error('Supabase: ' + listErr.message);
+
+    console.log(`   ${worldList.length} worlds found, loading items...`);
+
+    for (const w of worldList) {
+      const { data: row, error: rowErr } = await supabase
+        .from('world_market_data')
+        .select('items')
+        .eq('world_name', w.world_name)
+        .single();
+
+      if (rowErr) {
+        console.log(`   ⚠️ ${w.world_name}: ${rowErr.message}`);
+        continue;
+      }
+      worldMarket[w.world_name] = row.items;
+      worldPvp[w.world_name] = w.pvp_type;
     }
-    console.log(`✅ ${rows.length} worlds loaded\n`);
+
+    console.log(`✅ ${Object.keys(worldMarket).length} worlds loaded\n`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
