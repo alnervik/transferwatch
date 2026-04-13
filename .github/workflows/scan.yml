@@ -2,28 +2,81 @@ name: Scan Tibia Markets
 
 on:
   schedule:
-  - cron: '54 1 * * *'  # Kl 03:54 svensk tid (UTC+2)
+    - cron: '54 1 * * *'  # Kl 03:54 svensk tid (UTC+2)
   workflow_dispatch:       # Manuell trigger via GitHub UI
 
 jobs:
-  scan:
+  phase1:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
-
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Install dependencies
         working-directory: scanner
         run: npm install
-
-      - name: Run scanner
+      - name: Run Phase 1
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: node scanner.js
+        run: node scanner.js --phase1
+
+  phase2-batch1:
+    needs: phase1
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        working-directory: scanner
+        run: npm install
+      - name: Run Phase 2 — Batch 1 (#1–85)
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node scanner.js --phase2 --skip=0 --take=85
+
+  phase2-batch2:
+    needs: phase1
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        working-directory: scanner
+        run: npm install
+      - name: Run Phase 2 — Batch 2 (#86–170)
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node scanner.js --phase2 --skip=85 --take=85
+
+  phase2-batch3:
+    needs: phase1
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        working-directory: scanner
+        run: npm install
+      - name: Run Phase 2 — Batch 3 (#171–255)
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node scanner.js --phase2 --skip=170 --take=85

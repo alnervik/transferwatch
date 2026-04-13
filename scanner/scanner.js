@@ -1,7 +1,12 @@
-// TransferWatch Scanner — Two-Phase
-// Phase 1: Fetch market_values for all worlds
-// Phase 2: Fetch market_board for items in profitable trades
-// Körs via GitHub Actions cron eller manuellt: npm run scan
+// TransferWatch Scanner
+// Phase 1: Fetch market_values for all worlds → Supabase
+// Phase 2: Fetch market_board for profitable trades → Supabase
+//
+// Usage:
+//   node scanner.js                           # Both phases
+//   node scanner.js --phase1                  # Only phase 1
+//   node scanner.js --phase2                  # Only phase 2 (reads phase 1 from Supabase)
+//   node scanner.js --phase2 --skip=85 --take=85   # Phase 2, skip 85, fetch next 85
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -10,10 +15,13 @@ const MARKET_API = 'https://api.tibiamarket.top:8001';
 const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const PAGE_LIMIT = 5000;
 const MAX_RETRIES = 5;
-const MAX_BOARD_FETCHES = 200;
+const MAX_BOARD_FETCHES = 255;  // total across all batches (3 × 85)
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
+
+// Rate limiter: 1 request → 12s pause → repeat (safe, no 429s)
+const REQUEST_PAUSE = 12000;
 
 // PvP transfer rules
 const PVP_RANK = {
@@ -47,46 +55,24 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY');
   process.exit(1);
 }
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// Smart rate limiter: burst 4 requests, pause, long pause every ~85 requests
-const BURST_SIZE = 4;          // requests per burst
-const BURST_DELAY = 2000;      // 3s between requests in a burst
-const BURST_PAUSE = 15000;     // 15s pause between bursts
-const LONG_PAUSE_EVERY = 85;   // long pause after this many requests
-const LONG_PAUSE_MS = 180000;  // 3 min long pause to fully reset bucket
-
 let requestCount = 0;
-let burstCount = 0;
 
 async function throttledFetch(url) {
-  // Long pause to reset the ~100-request bucket
-  if (requestCount > 0 && requestCount % LONG_PAUSE_EVERY === 0) {
-    console.log(`\n  ⏸️  Long pause: ${LONG_PAUSE_MS / 1000}s to reset rate limit bucket (${requestCount} requests done)...\n`);
-    await sleep(LONG_PAUSE_MS);
-    burstCount = 0;
+  // Pause before every request (except the first)
+  if (requestCount > 0) {
+    await sleep(REQUEST_PAUSE);
   }
-
-  // Burst pause: after BURST_SIZE requests, wait longer
-  if (burstCount > 0 && burstCount % BURST_SIZE === 0) {
-    await sleep(BURST_PAUSE);
-    burstCount = 0;
-  } else if (burstCount > 0) {
-    await sleep(BURST_DELAY);
-  }
-
   requestCount++;
-  burstCount++;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await fetch(url);
       if (res.status === 429) {
-        // Hit rate limit — back off aggressively
         const backoff = Math.min(30000 * attempt, 120000);
         console.log(`  ⏳ Rate limited, waiting ${backoff / 1000}s (attempt ${attempt}/${MAX_RETRIES})`);
         await sleep(backoff);
@@ -97,7 +83,7 @@ async function throttledFetch(url) {
     } catch (e) {
       if (attempt === MAX_RETRIES) throw e;
       const backoff = 5000 * attempt;
-      console.log(`  ⚠️ Error: ${e.message}, retry in ${backoff / 1000}s (${attempt}/${MAX_RETRIES})`);
+      console.log(`  ⚠️ Error: ${e.message}, retry in ${backoff / 1000}s`);
       await sleep(backoff);
     }
   }
@@ -132,35 +118,47 @@ function trimItems(items) {
     }));
 }
 
+// ─── PARSE FLAGS ───────────────────────────────────────────────────────────
+function getFlag(name) {
+  const arg = process.argv.find(a => a.startsWith(`--${name}=`));
+  return arg ? arg.split('=')[1] : null;
+}
+
+const PHASE1_ONLY = process.argv.includes('--phase1');
+const PHASE2_ONLY = process.argv.includes('--phase2');
+const SKIP_COUNT = parseInt(getFlag('skip') || '0');
+const TAKE_COUNT = parseInt(getFlag('take') || '0');  // 0 = take all remaining
+
 // ─── MAIN ──────────────────────────────────────────────────────────────────
 async function main() {
   const startTime = Date.now();
-  const PHASE2_ONLY = process.argv.includes('--phase2');
-  console.log('🔍 TransferWatch Scanner starting...');
-  if (PHASE2_ONLY) console.log('   ⚡ Phase 2 only — loading world data from Supabase');
+  console.log('🔍 TransferWatch Scanner');
+  if (PHASE1_ONLY) console.log('   Mode: Phase 1 only');
+  else if (PHASE2_ONLY) console.log('   Mode: Phase 2 only (data from Supabase)');
+  else console.log('   Mode: Full scan (phase 1 + 2)');
+  if (SKIP_COUNT > 0) console.log(`   Skip: ${SKIP_COUNT}`);
+  if (TAKE_COUNT > 0) console.log(`   Take: ${TAKE_COUNT}`);
   console.log('');
 
-  const worldMarket = {};  // worldName → trimmed items array
-  const worldPvp = {};     // worldName → pvp_type
+  const worldMarket = {};
+  const worldPvp = {};
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // PHASE 1
+  // ═══════════════════════════════════════════════════════════════════════
   if (!PHASE2_ONLY) {
-    // ═══════════════════════════════════════════════════════════════════════
-    // PHASE 1: Fetch market_values for all worlds
-    // ═══════════════════════════════════════════════════════════════════════
     console.log('═══ PHASE 1: Market Values ═══\n');
 
-    console.log('📡 Fetching world list from TibiaData...');
     const worldResponse = await fetch(`${TIBIADATA_API}/worlds`).then(r => r.json());
     const allWorlds = (worldResponse.worlds.regular_worlds || [])
       .filter(w => w.transfer_type === 'regular');
-    console.log(`   Found ${allWorlds.length} transferable worlds\n`);
+    console.log(`📡 ${allWorlds.length} transferable worlds\n`);
 
     let scanned = 0, failed = 0;
 
     for (const world of allWorlds) {
       const idx = scanned + failed + 1;
       process.stdout.write(`[${idx}/${allWorlds.length}] ${world.name}... `);
-
       try {
         const rawItems = await fetchWorldMarket(world.name);
         const trimmed = trimItems(rawItems);
@@ -186,41 +184,38 @@ async function main() {
       }
     }
 
-    const phase1Time = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
-    console.log(`\nPhase 1 done: ${scanned} worlds in ${phase1Time} min\n`);
+    console.log(`\nPhase 1 done: ${scanned}/${allWorlds.length} worlds\n`);
 
-    // Pause between phases to let rate limit reset
-    console.log('⏸️  Pausing 120s to let rate limit fully reset...\n');
-    await sleep(120000);
+    if (PHASE1_ONLY) {
+      const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+      console.log(`⏱️  ${elapsed} min — run --phase2 to fetch offers`);
+      return;
+    }
+
+    // Reset request counter between phases
     requestCount = 0;
-    burstCount = 0;
 
   } else {
-    // ═══════════════════════════════════════════════════════════════════════
-    // PHASE 2 ONLY: Load world data from Supabase
-    // ═══════════════════════════════════════════════════════════════════════
+    // Load from Supabase
     console.log('═══ Loading world data from Supabase ═══\n');
-
     const { data: rows, error } = await supabase
       .from('world_market_data')
       .select('world_name, pvp_type, items');
-
-    if (error) throw new Error('Supabase load failed: ' + error.message);
+    if (error) throw new Error('Supabase: ' + error.message);
 
     for (const row of rows) {
       worldMarket[row.world_name] = row.items;
       worldPvp[row.world_name] = row.pvp_type;
     }
-
-    console.log(`   Loaded ${rows.length} worlds from Supabase\n`);
+    console.log(`✅ ${rows.length} worlds loaded\n`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // PHASE 2: Find profitable trades → fetch market_board for those items
+  // PHASE 2: Find profitable trades → fetch market_board
   // ═══════════════════════════════════════════════════════════════════════
-  console.log('═══ PHASE 2: Market Board (offers detail) ═══\n');
+  console.log('═══ PHASE 2: Market Board ═══\n');
 
-  // Build price indexes per world: itemId → item data
+  // Build indexes
   const worldIndex = {};
   for (const [name, items] of Object.entries(worldMarket)) {
     const idx = {};
@@ -228,15 +223,10 @@ async function main() {
     worldIndex[name] = idx;
   }
 
-  // Find all unique (world, itemId) pairs needed for profitable trades
-  // We need: sellers on start world + buyers on target world
-  const neededPairs = new Set();  // "world:itemId"
+  // Find profitable pairs
+  const neededPairs = new Set();
+  const pairScores = {};
   const worldNames = Object.keys(worldMarket);
-
-  // Score each pair for prioritization (higher estimated profit → fetch first)
-  const pairScores = {};  // "world:itemId" → estimated max profit
-
-  console.log('🔎 Scanning all world pairs for profitable trades...');
 
   for (const startName of worldNames) {
     const startIdx = worldIndex[startName];
@@ -250,23 +240,19 @@ async function main() {
 
       for (const [itemIdStr, tItem] of Object.entries(targetIdx)) {
         if (!tItem.buy_offers || tItem.buy_offer <= 0) continue;
-
         const sItem = startIdx[itemIdStr];
         if (!sItem || sItem.sell_offer <= 0) continue;
         if (tItem.buy_offer <= sItem.sell_offer) continue;
 
         const margin = tItem.buy_offer - sItem.sell_offer;
-        const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer)); // rough cap
+        const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer));
         const estProfit = margin * qty;
+        if (estProfit <= 500000) continue;
 
-        if (estProfit <= 500000) continue;  // skip low-value trades
-
-        // Need sellers on start world
         const startKey = `${startName}:${itemIdStr}`;
         neededPairs.add(startKey);
         pairScores[startKey] = Math.max(pairScores[startKey] || 0, estProfit);
 
-        // Need buyers on target world
         const targetKey = `${targetName}:${itemIdStr}`;
         neededPairs.add(targetKey);
         pairScores[targetKey] = Math.max(pairScores[targetKey] || 0, estProfit);
@@ -274,66 +260,61 @@ async function main() {
     }
   }
 
-  console.log(`   Found ${neededPairs.size} unique (world, item) pairs\n`);
-
-  // Sort by estimated profit and cap
-  const sortedPairs = [...neededPairs]
+  // Sort by profit, apply skip/take
+  const allSorted = [...neededPairs]
     .sort((a, b) => (pairScores[b] || 0) - (pairScores[a] || 0))
     .slice(0, MAX_BOARD_FETCHES);
 
-  console.log(`   Fetching top ${sortedPairs.length} pairs (capped at ${MAX_BOARD_FETCHES})\n`);
+  const endIdx = TAKE_COUNT > 0 ? Math.min(SKIP_COUNT + TAKE_COUNT, allSorted.length) : allSorted.length;
+  const myPairs = allSorted.slice(SKIP_COUNT, endIdx);
 
-  // Clear old item_offers before inserting new data
-  const { error: deleteError } = await supabase
-    .from('item_offers')
-    .delete()
-    .neq('world_name', '___never_matches___');  // delete all rows
-  if (deleteError) console.log(`   ⚠️ Could not clear old item_offers: ${deleteError.message}`);
+  console.log(`Total pairs: ${neededPairs.size} → top ${allSorted.length}`);
+  console.log(`This batch: #${SKIP_COUNT + 1} to #${SKIP_COUNT + myPairs.length} (${myPairs.length} pairs)\n`);
 
-  // Fetch market_board and store
-  let boardFetched = 0, boardFailed = 0;
-  const BATCH_SIZE = 50;  // upsert in batches
+  // Only clear old data on full fresh run
+  if (SKIP_COUNT === 0 && !TAKE_COUNT) {
+    const { error: delErr } = await supabase
+      .from('item_offers')
+      .delete()
+      .neq('world_name', '___never___');
+    if (delErr) console.log(`⚠️ Clear error: ${delErr.message}`);
+  }
 
+  // Fetch and store
+  let fetched = 0, failed = 0;
   let batch = [];
 
-  for (let i = 0; i < sortedPairs.length; i++) {
-    const [worldName, itemId] = sortedPairs[i].split(':');
-    const pctDone = ((i + 1) / sortedPairs.length * 100).toFixed(0);
+  for (let i = 0; i < myPairs.length; i++) {
+    const [worldName, itemId] = myPairs[i].split(':');
+    const globalIdx = SKIP_COUNT + i + 1;
 
-    process.stdout.write(`[${i + 1}/${sortedPairs.length}] ${worldName} #${itemId} (${pctDone}%)... `);
+    process.stdout.write(`[${globalIdx}/${allSorted.length}] ${worldName} #${itemId}... `);
 
     try {
       const url = `${MARKET_API}/market_board?server=${encodeURIComponent(worldName)}&item_id=${itemId}`;
       const data = await throttledFetch(url);
 
-      const sellers = (data.sellers || []).map(s => ({
-        price: s.price, amount: s.amount || 1
-      }));
-      const buyers = (data.buyers || []).map(b => ({
-        price: b.price, amount: b.amount || 1
-      }));
-
       batch.push({
         world_name: worldName,
         item_id: parseInt(itemId),
-        sellers,
-        buyers,
+        sellers: (data.sellers || []).map(s => ({ price: s.price, amount: s.amount || 1 })),
+        buyers:  (data.buyers  || []).map(b => ({ price: b.price, amount: b.amount || 1 })),
         scanned_at: new Date().toISOString(),
       });
+      fetched++;
+      const s = batch[batch.length - 1].sellers.length;
+      const b = batch[batch.length - 1].buyers.length;
+      console.log(`✅ ${s}S/${b}B`);
 
-      boardFetched++;
-      console.log(`✅ ${sellers.length}S/${buyers.length}B`);
-
-      // Flush batch
-      if (batch.length >= BATCH_SIZE) {
+      if (batch.length >= 50) {
         const { error } = await supabase
           .from('item_offers')
           .upsert(batch, { onConflict: 'world_name,item_id' });
-        if (error) console.log(`  ⚠️ Batch upsert error: ${error.message}`);
+        if (error) console.log(`  ⚠️ Batch error: ${error.message}`);
         batch = [];
       }
     } catch (e) {
-      boardFailed++;
+      failed++;
       console.log(`❌ ${e.message}`);
     }
   }
@@ -343,17 +324,13 @@ async function main() {
     const { error } = await supabase
       .from('item_offers')
       .upsert(batch, { onConflict: 'world_name,item_id' });
-    if (error) console.log(`  ⚠️ Final batch upsert error: ${error.message}`);
+    if (error) console.log(`  ⚠️ Final batch error: ${error.message}`);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // SUMMARY
-  // ═══════════════════════════════════════════════════════════════════════
-  const totalTime = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+  // Summary
+  const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
   console.log(`\n${'═'.repeat(50)}`);
-  console.log(`Phase 1: ${scanned}/${allWorlds.length} worlds scanned`);
-  console.log(`Phase 2: ${boardFetched}/${sortedPairs.length} market_board fetched (${boardFailed} failed)`);
-  console.log(`⏱️  Total time: ${totalTime} minutes`);
+  console.log(`✅ Fetched: ${fetched} | ❌ Failed: ${failed} | ⏱️ ${elapsed} min`);
 }
 
 main().catch(e => {
