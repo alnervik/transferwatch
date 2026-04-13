@@ -1,59 +1,162 @@
 name: Scan Phase 2 Only
 
 on:
-  workflow_dispatch:  # Bara manuell trigger
+  workflow_dispatch:
 
 jobs:
-  phase2-batch1:
+  # ─── WAVE 1: Batches 1–5 (parallel) ───
+  batch1:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install dependencies
+        with: { node-version: '20' }
+      - run: npm install
         working-directory: scanner
-        run: npm install
-      - name: Run Phase 2 — Batch 1 (#1–85)
+      - run: node scanner.js --phase2 --skip=0 --take=85
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: node scanner.js --phase2 --skip=0 --take=85
 
-  phase2-batch2:
+  batch2:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install dependencies
+        with: { node-version: '20' }
+      - run: npm install
         working-directory: scanner
-        run: npm install
-      - name: Run Phase 2 — Batch 2 (#86–170)
+      - run: node scanner.js --phase2 --skip=85 --take=85
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: node scanner.js --phase2 --skip=85 --take=85
 
-  phase2-batch3:
+  batch3:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install dependencies
+        with: { node-version: '20' }
+      - run: npm install
         working-directory: scanner
-        run: npm install
-      - name: Run Phase 2 — Batch 3 (#171–255)
+      - run: node scanner.js --phase2 --skip=170 --take=85
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: node scanner.js --phase2 --skip=170 --take=85
+
+  batch4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --phase2 --skip=255 --take=85
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+  batch5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --phase2 --skip=340 --take=85
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+  # ─── WAVE 2: Batches 6–10 (parallel, after wave 1) ───
+  batch6:
+    needs: [batch1, batch2, batch3, batch4, batch5]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --phase2 --skip=425 --take=85
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+  batch7:
+    needs: [batch1, batch2, batch3, batch4, batch5]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --phase2 --skip=510 --take=85
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+  batch8:
+    needs: [batch1, batch2, batch3, batch4, batch5]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --phase2 --skip=595 --take=85
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+  batch9:
+    needs: [batch1, batch2, batch3, batch4, batch5]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --phase2 --skip=680 --take=85
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+  batch10:
+    needs: [batch1, batch2, batch3, batch4, batch5]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --phase2 --skip=765 --take=85
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

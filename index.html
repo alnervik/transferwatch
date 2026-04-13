@@ -124,7 +124,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .filter-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
 .filter-row label { font-size: 0.75rem; color: var(--text-dim); }
 .filter-row input { padding: 0.3rem 0.5rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 0.82rem; outline: none; width: 140px; }
-.filter-row input[type="number"] { width: 100px; font-family: 'JetBrains Mono', monospace; }
+.filter-row input[type="number"] { width: 120px; font-family: 'JetBrains Mono', monospace; }
 
 @media (max-width: 700px) {
   .world-header { grid-template-columns: 1.5rem 1fr repeat(2, auto); }
@@ -175,6 +175,8 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     <input type="text" id="filterName" placeholder="Item-namn…">
     <label>Min nettoprofit:</label>
     <input type="number" id="filterMinProfit" value="0" placeholder="0">
+    <label>Max köppris:</label>
+    <input type="number" id="filterMaxBuyPrice" value="" placeholder="ex. 60000000">
   </div>
 
   <div id="resultsArea">
@@ -371,6 +373,8 @@ function calculate() {
   const goldCap = tcAmount * tcBuy;
   transferCostGold = TRANSFER_COST_TC * tcBuy;
 
+  const maxBuyPrice = parseInt($('filterMaxBuyPrice').value) || 0;
+
   worldGroups = [];
   for (const [tName, tw] of Object.entries(worldData)) {
     if (tName === startName) continue;
@@ -381,6 +385,9 @@ function calculate() {
       if (!tItem.buy_offers || tItem.buy_offers <= 0 || tItem.buy_offer <= 0) continue;
       const sItem = startPrices[tItem.id];
       if (!sItem || tItem.buy_offer <= sItem.sell_offer) continue;
+
+      // Max buy price filter
+      if (maxBuyPrice > 0 && sItem.sell_offer > maxBuyPrice) continue;
 
       const margin = tItem.buy_offer - sItem.sell_offer;
       const marginPct = (margin / sItem.sell_offer) * 100;
@@ -654,6 +661,7 @@ function updateMatchTotal(cb) {
 // Events
 $('worldSelect').addEventListener('change', calculate);
 $('tcInput').addEventListener('input', calculate);
+$('filterMaxBuyPrice').addEventListener('input', calculate);
 $('filterName').addEventListener('input', renderResults);
 $('filterMinProfit').addEventListener('input', renderResults);
 

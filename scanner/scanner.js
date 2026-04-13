@@ -15,7 +15,7 @@ const MARKET_API = 'https://api.tibiamarket.top:8001';
 const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const PAGE_LIMIT = 5000;
 const MAX_RETRIES = 5;
-const MAX_BOARD_FETCHES = 255;  // total across all batches (3 × 85)
+const MAX_BOARD_FETCHES = 850;  // 10 batches × 85
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
