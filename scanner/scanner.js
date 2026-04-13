@@ -56,7 +56,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // Smart rate limiter: burst 4 requests, pause, long pause every ~85 requests
 const BURST_SIZE = 2;          // requests per burst
 const BURST_DELAY = 3000;      // 3s between requests in a burst
-const BURST_PAUSE = 15000;     // 15s pause between bursts
+const BURST_PAUSE = 30000;     // 15s pause between bursts
 const LONG_PAUSE_EVERY = 85;   // long pause after this many requests
 const LONG_PAUSE_MS = 180000;  // 3 min long pause to fully reset bucket
 
