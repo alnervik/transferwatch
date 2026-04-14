@@ -16,6 +16,7 @@ const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const PAGE_LIMIT = 5000;
 const MAX_RETRIES = 5;
 const MAX_BOARD_FETCHES = 850;  // 10 batches × 85
+const MIN_MARGIN_PCT = 20;  // min % margin för att räknas som scan-kandidat
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
@@ -260,6 +261,8 @@ async function main() {
         if (tItem.buy_offer <= sItem.sell_offer) continue;
 
         const margin = tItem.buy_offer - sItem.sell_offer;
+        const marginPct = (margin / sItem.sell_offer) * 100;
+        if (marginPct < MIN_MARGIN_PCT) continue;
         const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer));
         const estProfit = margin * qty;
         if (estProfit <= 500000) continue;
