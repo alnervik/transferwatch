@@ -190,6 +190,7 @@ const SUPABASE_ANON = 'sb_publishable_viUDRVjIXhrfGYvde-gsRQ_anyvWNlB';
 const MARKET_API    = 'https://api.tibiamarket.top:8001';
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
+const MIN_TRADE_PROFIT = 400_000;  // dölj enskilda trades med bruttovinst under detta
 
 const PVP_RANK = { 'Optional PvP': 0, 'Open PvP': 1, 'Retro Open PvP': 2, 'Retro Hardcore PvP': 3 };
 const PVP_SHORT = { 'Optional PvP': 'Opt', 'Open PvP': 'Open', 'Retro Open PvP': 'R-Open', 'Retro Hardcore PvP': 'R-HC' };
@@ -412,6 +413,7 @@ function calculate() {
         verified = false;
       }
       if (grossProfit <= 0 || qty <= 0) continue;
+      if (grossProfit < MIN_TRADE_PROFIT) continue;
 
       const meta = itemMeta[tItem.id];
       trades.push({
