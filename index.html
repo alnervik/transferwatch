@@ -68,6 +68,10 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .badge-pvp { background: rgba(139,92,246,0.12); color: #a78bfa; font-size: 0.65rem; }
 .badge-verified { background: rgba(34,197,94,0.1); color: #4ade80; font-size: 0.62rem; }
 .badge-estimate { background: rgba(245,158,11,0.1); color: #fbbf24; font-size: 0.62rem; }
+.verify-btn { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); border-radius: 5px; padding: 0.3rem 0.7rem; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; transition: background 0.15s; margin-left: 0.5rem; }
+.verify-btn:hover { background: rgba(139,92,246,0.28); }
+.verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.verify-progress { font-size: 0.72rem; color: #a78bfa; font-family: 'JetBrains Mono', monospace; white-space: nowrap; margin-left: 0.5rem; }
 .transfer-cost-note { font-size: 0.72rem; color: var(--text-muted); padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
 .transfer-cost-note span { color: var(--gold); }
 
@@ -192,6 +196,12 @@ const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
 const MIN_TRADE_PROFIT = 400_000;  // dölj enskilda trades med bruttovinst under detta
 
+// GitHub-trigger för "Verifiera alla"-funktionen
+const GITHUB_REPO          = 'alnervik/transferwatch';
+const GITHUB_WORKFLOW_FILE = 'scan-targeted.yml';
+const GITHUB_REF           = 'main';
+const VERIFY_POLL_MS       = 30_000;
+
 const PVP_RANK = { 'Optional PvP': 0, 'Open PvP': 1, 'Retro Open PvP': 2, 'Retro Hardcore PvP': 3 };
 const PVP_SHORT = { 'Optional PvP': 'Opt', 'Open PvP': 'Open', 'Retro Open PvP': 'R-Open', 'Retro Hardcore PvP': 'R-HC' };
 const GREEN_BE = new Set([
@@ -210,6 +220,7 @@ let worldGroups = [];
 let transferCostGold = 0;
 let currentStartName = '';
 const boardCache = {};    // for live-fetch fallback
+const verifyJobs = {};    // worldName → { pairs, neededKeys, startedAt, total, doneCount, intervalId }
 
 const $ = id => document.getElementById(id);
 function formatGold(n) {
@@ -482,9 +493,10 @@ function renderResults() {
     h += '<span class="arrow">▶</span>';
     h += '<span class="world-name-col">' + g.name + ' <span class="badge badge-be-' + g.be + '">' + beE + '</span> <span class="badge badge-pvp">' + pvp + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Trades</span><span class="stat-value">' + visT.length + '</span></span>';
-    h += '<span class="stat hide-mobile"><span class="stat-label">Verifierade</span><span class="stat-value">' + g.verifiedCount + '/' + g.tradeCount + '</span></span>';
+    h += '<span class="stat hide-mobile"><span class="stat-label">Verifierade</span><span class="stat-value" id="verified-stat-' + cssId(g.name) + '">' + g.verifiedCount + '/' + g.tradeCount + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Data</span><span class="stat-value">' + timeAgo(g.scanned_at) + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Netto profit</span><span class="stat-value profit-value">' + formatGold(g.netProfit) + ' gp</span></span>';
+    h += renderVerifyControl(g);
     h += '</div>';
 
     h += '<div class="world-items">';
@@ -526,6 +538,151 @@ function renderResults() {
 }
 
 function toggleGroup(el) { el.closest('.world-group').classList.toggle('expanded'); }
+
+// ─── VERIFIERA ALLA (GitHub Actions trigger) ───────────────────────────
+function cssId(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+function renderVerifyControl(g) {
+  const job = verifyJobs[g.name];
+  if (job) {
+    return '<span class="verify-progress" id="verify-prog-' + cssId(g.name) + '">⏳ ' + job.doneCount + '/' + job.total + '</span>';
+  }
+  const unverified = g.tradeCount - g.verifiedCount;
+  if (unverified <= 0) return '';
+  return '<button class="verify-btn" onclick="event.stopPropagation(); triggerVerify(\'' + g.name.replace(/'/g, "\\'") + '\')">⚡ Verifiera alla (' + unverified + ' kvar)</button>';
+}
+
+async function getGitHubPAT() {
+  let pat = localStorage.getItem('github_pat');
+  if (pat) return pat;
+  pat = prompt(
+    'Ange GitHub Personal Access Token för att trigga scanner-workflow.\n\n' +
+    'Tokenet sparas lokalt i din browser (localStorage).\n' +
+    'Behöver scope "workflow" (classic) eller fine-grained med Actions: read & write på ' + GITHUB_REPO + '.'
+  );
+  if (!pat) return null;
+  pat = pat.trim();
+  try {
+    const res = await fetch('https://api.github.com/user', {
+      headers: { 'Authorization': 'Bearer ' + pat, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' (ogiltig token eller saknar scope)');
+  } catch (e) {
+    alert('Kunde inte validera token: ' + e.message);
+    return null;
+  }
+  localStorage.setItem('github_pat', pat);
+  return pat;
+}
+
+async function triggerVerify(worldName) {
+  if (verifyJobs[worldName]) return;  // redan igång
+  const g = worldGroups.find(x => x.name === worldName);
+  if (!g) return;
+
+  const pairs = [];
+  const neededKeys = new Set();
+  for (const t of g.trades) {
+    if (t.verified) continue;
+    pairs.push({ start: currentStartName, target: worldName, item_id: t.item_id });
+    neededKeys.add(currentStartName + ':' + t.item_id);
+    neededKeys.add(worldName + ':' + t.item_id);
+  }
+  if (!pairs.length) return;
+
+  const pat = await getGitHubPAT();
+  if (!pat) return;
+
+  const startedAt = new Date();
+  try {
+    const res = await fetch(
+      'https://api.github.com/repos/' + GITHUB_REPO + '/actions/workflows/' + GITHUB_WORKFLOW_FILE + '/dispatches',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + pat,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ref: GITHUB_REF, inputs: { targets: JSON.stringify(pairs) } })
+      }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('github_pat');
+      }
+      alert('GitHub dispatch misslyckades (' + res.status + '):\n' + text);
+      return;
+    }
+  } catch (e) {
+    alert('Nätverksfel vid dispatch: ' + e.message);
+    return;
+  }
+
+  verifyJobs[worldName] = {
+    pairs,
+    neededKeys: [...neededKeys],
+    startedAt,
+    total: pairs.length,
+    doneCount: 0,
+    intervalId: setInterval(() => pollVerify(worldName), VERIFY_POLL_MS),
+  };
+  renderResults();
+  // första poll efter 20s (ge workflow tid att starta)
+  setTimeout(() => pollVerify(worldName), 20_000);
+}
+
+async function pollVerify(worldName) {
+  const job = verifyJobs[worldName];
+  if (!job) return;
+
+  // Gruppera needed keys per world (färre queries)
+  const byWorld = {};
+  for (const k of job.neededKeys) {
+    const idx = k.indexOf(':');
+    const w = k.slice(0, idx);
+    const id = k.slice(idx + 1);
+    (byWorld[w] = byWorld[w] || []).push(parseInt(id));
+  }
+
+  const sbHeaders = { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON };
+  const sinceIso = job.startedAt.toISOString();
+
+  for (const [w, ids] of Object.entries(byWorld)) {
+    const url = SUPABASE_URL + '/rest/v1/item_offers'
+      + '?world_name=eq.' + encodeURIComponent(w)
+      + '&item_id=in.(' + ids.join(',') + ')'
+      + '&scanned_at=gte.' + encodeURIComponent(sinceIso)
+      + '&select=world_name,item_id,sellers,buyers,scanned_at';
+    try {
+      const res = await fetch(url, { headers: sbHeaders });
+      if (!res.ok) continue;
+      const rows = await res.json();
+      for (const r of rows) {
+        const key = r.world_name + ':' + r.item_id;
+        offersData[key] = { sellers: r.sellers, buyers: r.buyers };
+        boardCache[key] = r;
+      }
+    } catch (_) { /* försök igen nästa tick */ }
+  }
+
+  // Räkna klara triplets (både start- och target-sida inne)
+  let done = 0;
+  for (const t of job.pairs) {
+    if (offersData[t.start + ':' + t.item_id] && offersData[t.target + ':' + t.item_id]) done++;
+  }
+  job.doneCount = done;
+
+  const progEl = document.getElementById('verify-prog-' + cssId(worldName));
+  if (progEl) progEl.textContent = '⏳ ' + done + '/' + job.total;
+
+  if (done >= job.total) {
+    clearInterval(job.intervalId);
+    delete verifyJobs[worldName];
+    calculate();  // räknar om med nya verified flaggor
+  }
+}
 
 // ─── TOGGLE ITEM → SHOW/FETCH OFFERS ───────────────────────────────────
 async function toggleOffers(rowEl) {
