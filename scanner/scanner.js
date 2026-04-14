@@ -7,6 +7,7 @@
 //   node scanner.js --phase1                  # Only phase 1
 //   node scanner.js --phase2                  # Only phase 2 (reads phase 1 from Supabase)
 //   node scanner.js --phase2 --skip=85 --take=85   # Phase 2, skip 85, fetch next 85
+//   node scanner.js --targeted --batch=1/2    # Targeted: kör TARGETS_JSON, batch 1 av 2
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -129,11 +130,114 @@ function getFlag(name) {
 
 const PHASE1_ONLY = process.argv.includes('--phase1');
 const PHASE2_ONLY = process.argv.includes('--phase2');
+const TARGETED_MODE = process.argv.includes('--targeted');
 const SKIP_COUNT = parseInt(getFlag('skip') || '0');
 const TAKE_COUNT = parseInt(getFlag('take') || '0');  // 0 = take all remaining
+const BATCH_FLAG = getFlag('batch');  // "1/2" eller "2/2" (endast targeted mode)
+
+// ─── TARGETED MODE ─────────────────────────────────────────────────────────
+// Tar en JSON-lista i env TARGETS_JSON: [{start, target, item_id}, ...]
+// Dedupar till unika (world, item_id) och splittar modulo batch/total.
+async function runTargeted() {
+  const startTime = Date.now();
+  console.log('🎯 TransferWatch Scanner — Targeted mode');
+
+  const raw = process.env.TARGETS_JSON;
+  if (!raw) {
+    console.error('Saknar TARGETS_JSON env var');
+    process.exit(1);
+  }
+
+  let triplets;
+  try {
+    triplets = JSON.parse(raw);
+    if (!Array.isArray(triplets)) throw new Error('inte en array');
+  } catch (e) {
+    console.error('Ogiltig TARGETS_JSON:', e.message);
+    process.exit(1);
+  }
+
+  // Dedupa till unika world:item_id-par
+  const uniqueSet = new Set();
+  for (const t of triplets) {
+    if (!t || !t.start || !t.target || !t.item_id) continue;
+    uniqueSet.add(`${t.start}:${t.item_id}`);
+    uniqueSet.add(`${t.target}:${t.item_id}`);
+  }
+  const allPairs = [...uniqueSet].sort();  // deterministisk ordning över runners
+
+  // Splitta modulo batch
+  let batchIdx = 0, batchTotal = 1;
+  if (BATCH_FLAG) {
+    const m = BATCH_FLAG.match(/^(\d+)\/(\d+)$/);
+    if (!m) {
+      console.error('Ogiltig --batch=N/M:', BATCH_FLAG);
+      process.exit(1);
+    }
+    batchIdx = parseInt(m[1]) - 1;  // 1-based → 0-based
+    batchTotal = parseInt(m[2]);
+  }
+  const myPairs = allPairs.filter((_, i) => i % batchTotal === batchIdx);
+
+  console.log(`   Triplets input: ${triplets.length}`);
+  console.log(`   Unika par totalt: ${allPairs.length}`);
+  console.log(`   Batch: ${batchIdx + 1}/${batchTotal} → ${myPairs.length} par\n`);
+
+  let fetched = 0, failed = 0;
+  let batch = [];
+
+  for (let i = 0; i < myPairs.length; i++) {
+    const [worldName, itemIdStr] = myPairs[i].split(':');
+    process.stdout.write(`[${i + 1}/${myPairs.length}] ${worldName} #${itemIdStr}... `);
+
+    try {
+      const url = `${MARKET_API}/market_board?server=${encodeURIComponent(worldName)}&item_id=${itemIdStr}`;
+      const data = await throttledFetch(url);
+
+      batch.push({
+        world_name: worldName,
+        item_id: parseInt(itemIdStr),
+        sellers: (data.sellers || []).map(s => ({ price: s.price, amount: s.amount || 1 })),
+        buyers:  (data.buyers  || []).map(b => ({ price: b.price, amount: b.amount || 1 })),
+        scanned_at: new Date().toISOString(),
+      });
+      fetched++;
+      const s = batch[batch.length - 1].sellers.length;
+      const b = batch[batch.length - 1].buyers.length;
+      console.log(`✅ ${s}S/${b}B`);
+
+      if (batch.length >= 20) {
+        const { error } = await supabase
+          .from('item_offers')
+          .upsert(batch, { onConflict: 'world_name,item_id' });
+        if (error) console.log(`  ⚠️ Batch error: ${error.message}`);
+        batch = [];
+      }
+    } catch (e) {
+      failed++;
+      console.log(`❌ ${e.message}`);
+    }
+  }
+
+  if (batch.length > 0) {
+    const { error } = await supabase
+      .from('item_offers')
+      .upsert(batch, { onConflict: 'world_name,item_id' });
+    if (error) console.log(`  ⚠️ Final batch error: ${error.message}`);
+  }
+
+  const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+  console.log(`\n${'═'.repeat(50)}`);
+  console.log(`✅ Fetched: ${fetched} | ❌ Failed: ${failed} | ⏱️ ${elapsed} min`);
+}
 
 // ─── MAIN ──────────────────────────────────────────────────────────────────
 async function main() {
+  if (TARGETED_MODE) {
+    await runTargeted();
+    return;
+  }
+
   const startTime = Date.now();
   console.log('🔍 TransferWatch Scanner');
   if (PHASE1_ONLY) console.log('   Mode: Phase 1 only');
