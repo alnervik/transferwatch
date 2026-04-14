@@ -17,6 +17,8 @@ const PAGE_LIMIT = 5000;
 const MAX_RETRIES = 5;
 const MAX_BOARD_FETCHES = 850;  // 10 batches × 85
 const MIN_MARGIN_PCT = 20;  // min % margin för att räknas som scan-kandidat
+const MIN_EST_PROFIT = 400_000;  // min total bruttovinst (margin × qty) per par
+const WORLD_FRESH_THRESHOLD_MS = 0;  // 0 = skippa skan om tibiamarkets last_update <= vår scanned_at
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
@@ -155,10 +157,50 @@ async function main() {
       .filter(w => w.transfer_type === 'regular');
     console.log(`📡 ${allWorlds.length} transferable worlds\n`);
 
-    let scanned = 0, failed = 0;
+    // Hämta last_update per world från tibiamarket (för att kunna skippa färska worlds)
+    const lastUpdateByWorld = {};
+    try {
+      const worldMeta = await fetch(`${MARKET_API}/worlds`).then(r => r.json());
+      if (Array.isArray(worldMeta)) {
+        for (const w of worldMeta) {
+          if (w && w.name && w.last_update) {
+            lastUpdateByWorld[w.name] = new Date(w.last_update).getTime();
+          }
+        }
+        console.log(`📡 ${Object.keys(lastUpdateByWorld).length} worlds med last_update\n`);
+      } else {
+        console.log('⚠️  tibiamarket /worlds returnerade oväntat format — skip-logik inaktiv\n');
+      }
+    } catch (e) {
+      console.log(`⚠️  Kunde ej hämta tibiamarket /worlds (${e.message}) — skip-logik inaktiv\n`);
+    }
+
+    // Hämta befintlig scanned_at per world
+    const { data: existingRows } = await supabase
+      .from('world_market_data')
+      .select('world_name, scanned_at, items');
+    const existingByWorld = {};
+    for (const r of existingRows || []) existingByWorld[r.world_name] = r;
+
+    let scanned = 0, failed = 0, skipped = 0;
 
     for (const world of allWorlds) {
-      const idx = scanned + failed + 1;
+      const idx = scanned + failed + skipped + 1;
+
+      // Skip om tibiamarkets data inte uppdaterats sedan vår senaste scan
+      const prev = existingByWorld[world.name];
+      const lastUpdate = lastUpdateByWorld[world.name];
+      if (prev && lastUpdate) {
+        const prevMs = new Date(prev.scanned_at).getTime();
+        if (lastUpdate - WORLD_FRESH_THRESHOLD_MS <= prevMs) {
+          worldMarket[world.name] = prev.items;
+          worldPvp[world.name] = world.pvp_type;
+          skipped++;
+          console.log(`[${idx}/${allWorlds.length}] ${world.name}... ⏭️  fresh (last_update ${new Date(lastUpdate).toISOString()})`);
+          continue;
+        }
+      }
+
       process.stdout.write(`[${idx}/${allWorlds.length}] ${world.name}... `);
       try {
         const rawItems = await fetchWorldMarket(world.name);
@@ -185,7 +227,7 @@ async function main() {
       }
     }
 
-    console.log(`\nPhase 1 done: ${scanned}/${allWorlds.length} worlds\n`);
+    console.log(`\nPhase 1 done: ${scanned} scanned, ${skipped} skipped (fresh), ${failed} failed / ${allWorlds.length} worlds\n`);
 
     if (PHASE1_ONLY) {
       const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
@@ -265,7 +307,7 @@ async function main() {
         if (marginPct < MIN_MARGIN_PCT) continue;
         const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer));
         const estProfit = margin * qty;
-        if (estProfit <= 500000) continue;
+        if (estProfit < MIN_EST_PROFIT) continue;
 
         const startKey = `${startName}:${itemIdStr}`;
         neededPairs.add(startKey);
