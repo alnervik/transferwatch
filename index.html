@@ -247,7 +247,7 @@ function timeAgo(dateStr) {
 }
 
 // ─── MATCH OFFERS → REALISTIC PROFIT ──────────────────────────────────────
-function matchOffers(sellers, buyers) {
+function matchOffers(sellers, buyers, budget = Infinity) {
   // Expand into individual units
   const sellUnits = [];
   (sellers || []).forEach(s => { for (let i = 0; i < (s.amount || 1); i++) sellUnits.push(s.price); });
@@ -257,16 +257,17 @@ function matchOffers(sellers, buyers) {
   (buyers || []).forEach(b => { for (let i = 0; i < (b.amount || 1); i++) buyUnits.push(b.price); });
   buyUnits.sort((a, b) => b - a); // highest first
 
-  let profit = 0;
-  let matchCount = 0;
+  let profit = 0, matchCount = 0, totalCost = 0;
   const n = Math.min(sellUnits.length, buyUnits.length);
   for (let i = 0; i < n; i++) {
     const margin = buyUnits[i] - sellUnits[i];
     if (margin <= 0) break;
+    if (totalCost + sellUnits[i] > budget) break; // can't afford next unit
     profit += margin;
     matchCount++;
+    totalCost += sellUnits[i];
   }
-  return { profit, matchCount, sellCount: sellUnits.length, buyCount: buyUnits.length };
+  return { profit, matchCount, totalCost, sellCount: sellUnits.length, buyCount: buyUnits.length };
 }
 
 // ─── THROTTLED LIVE FETCH QUEUE ──────────────────────────────────────────
@@ -440,18 +441,49 @@ function calculate() {
       });
     }
     if (!trades.length) continue;
-    trades.sort((a, b) => b.gross_profit - a.gross_profit);
 
-    const totalGross = trades.reduce((s, t) => s + t.gross_profit, 0);
+    // Budget allocation: treat goldCap as a shared pool across all trades.
+    // Sort by margin % descending (best ROI first = greedy-optimal), then
+    // allocate the remaining budget to each trade in turn.
+    trades.sort((a, b) => b.margin_pct - a.margin_pct);
+    let remaining = goldCap;
+    for (const trade of trades) {
+      if (remaining <= 0) {
+        trade.gross_profit = 0;
+        trade.qty = 0;
+        continue;
+      }
+      if (trade.verified) {
+        const sOffers = offersData[startName + ':' + trade.item_id];
+        const tOffers = offersData[tName + ':' + trade.item_id];
+        const m = matchOffers(sOffers.sellers, tOffers.buyers, remaining);
+        trade.gross_profit = m.profit;
+        trade.qty = m.matchCount;
+        remaining -= m.totalCost;
+      } else {
+        const affordable = Math.floor(remaining / trade.buy_price);
+        const actual_qty = Math.min(trade.qty, affordable);
+        trade.gross_profit = actual_qty * trade.margin;
+        trade.qty = actual_qty;
+        remaining -= actual_qty * trade.buy_price;
+      }
+    }
+
+    // Remove trades that became too small after budget constraint
+    const viableTrades = trades.filter(t => t.qty > 0 && t.gross_profit >= MIN_TRADE_PROFIT);
+    if (!viableTrades.length) continue;
+    viableTrades.sort((a, b) => b.gross_profit - a.gross_profit);
+
+    const totalGross = viableTrades.reduce((s, t) => s + t.gross_profit, 0);
     const netProfit = totalGross - transferCostGold;
     if (netProfit <= 0) continue;
 
-    const verifiedCount = trades.filter(t => t.verified).length;
+    const verifiedCount = viableTrades.filter(t => t.verified).length;
 
     worldGroups.push({
       name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
-      trades, totalGross, netProfit,
-      verifiedCount, tradeCount: trades.length,
+      trades: viableTrades, totalGross, netProfit,
+      verifiedCount, tradeCount: viableTrades.length,
       scanned_at: tw.scanned_at,
     });
   }
