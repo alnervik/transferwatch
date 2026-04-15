@@ -264,7 +264,7 @@ async function main() {
     // Hämta last_update per world från tibiamarket (för att kunna skippa färska worlds)
     const lastUpdateByWorld = {};
     try {
-      const worldMeta = await fetch(`${MARKET_API}/worlds`).then(r => r.json());
+      const worldMeta = await fetch(`${MARKET_API}/world_data`).then(r => r.json());
       if (Array.isArray(worldMeta)) {
         for (const w of worldMeta) {
           if (w && w.name && w.last_update) {
