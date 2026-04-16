@@ -41,7 +41,7 @@ const GREEN_BE = new Set([
   'Eclipta','Escura','Etebra','Gladibra','Honbra','Hostera','Idyllia','Ignitera','Issobra',
   'Jadebra','Kalanta','Kalimera','Karmeya','Luzibra','Monstera','Mystera','Nevia','Noctalia',
   'Ombra','Ourobra','Penumbra','Quidera','Rasteibra','Retalia','Sombra','Sonira','Stralis',
-  'Tempestera','Terribra','Tornabra','Unebra','Ustebra','Venebra','Victoris','Xyla','Xymera'
+  'Tempestera','Terribra','Tornabra','Unebra','Ustebra','Venebra','Victoris','Xyla','Xymera',
   'Xybra','Yovera','Yubra'
 ]);
 
