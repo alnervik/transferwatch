@@ -195,6 +195,7 @@ const MARKET_API    = 'https://api.tibiamarket.top:8001';
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
 const MIN_TRADE_PROFIT = 400_000;  // dölj enskilda trades med bruttovinst under detta
+const PINNED_ITEM_IDS = new Set([22721, 22516]); // Gold Token, Silver Token – visas alltid
 
 // GitHub-trigger för "Verifiera alla"-funktionen
 const GITHUB_REPO          = 'alnervik/transferwatch';
@@ -425,7 +426,7 @@ function calculate() {
         verified = false;
       }
       if (grossProfit <= 0 || qty <= 0) continue;
-      if (grossProfit < MIN_TRADE_PROFIT) continue;
+      if (grossProfit < MIN_TRADE_PROFIT && !PINNED_ITEM_IDS.has(tItem.id)) continue;
 
       const meta = itemMeta[tItem.id];
       trades.push({
@@ -470,7 +471,7 @@ function calculate() {
     }
 
     // Remove trades that became too small after budget constraint
-    const viableTrades = trades.filter(t => t.qty > 0 && t.gross_profit >= MIN_TRADE_PROFIT);
+    const viableTrades = trades.filter(t => t.qty > 0 && (t.gross_profit >= MIN_TRADE_PROFIT || PINNED_ITEM_IDS.has(t.item_id)));
     if (!viableTrades.length) continue;
     viableTrades.sort((a, b) => b.gross_profit - a.gross_profit);
 

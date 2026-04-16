@@ -24,6 +24,9 @@ const WORLD_FRESH_THRESHOLD_MS = 0;  // 0 = skippa skan om tibiamarkets last_upd
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
 
+// Items always included in scan regardless of margin/profit thresholds
+const PINNED_ITEM_IDS = new Set([22721, 22516]); // Gold Token, Silver Token
+
 // Rate limiter: 1 request → 12s pause → repeat (safe, no 429s)
 const REQUEST_PAUSE = 12000;
 
@@ -408,10 +411,11 @@ async function main() {
 
         const margin = tItem.buy_offer - sItem.sell_offer;
         const marginPct = (margin / sItem.sell_offer) * 100;
-        if (marginPct < MIN_MARGIN_PCT) continue;
+        const pinned = PINNED_ITEM_IDS.has(Number(itemIdStr));
+        if (!pinned && marginPct < MIN_MARGIN_PCT) continue;
         const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer));
         const estProfit = margin * qty;
-        if (estProfit < MIN_EST_PROFIT) continue;
+        if (!pinned && estProfit < MIN_EST_PROFIT) continue;
 
         const startKey = `${startName}:${itemIdStr}`;
         neededPairs.add(startKey);
