@@ -477,7 +477,13 @@ function calculate() {
     viableTrades.sort((a, b) => b.gross_profit - a.gross_profit);
 
     const totalGross = viableTrades.reduce((s, t) => s + t.gross_profit, 0);
-    const netProfit = totalGross - transferCostGold;
+
+    // TC spread: cost of selling TC on start world and rebuying on target world
+    const targetTCItem = tw.items.find(it => it.id === TC_ITEM_ID);
+    const targetTCSellPrice = (targetTCItem && targetTCItem.sell_offer > 0) ? targetTCItem.sell_offer : tcBuy;
+    const tcSpreadCost = tcAmount * (targetTCSellPrice - tcBuy);
+
+    const netProfit = totalGross - transferCostGold - tcSpreadCost;
     if (netProfit <= 0) continue;
 
     const verifiedCount = viableTrades.filter(t => t.verified).length;
@@ -485,6 +491,7 @@ function calculate() {
     worldGroups.push({
       name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
       trades: viableTrades, totalGross, netProfit,
+      tcSpreadCost,
       verifiedCount, tradeCount: viableTrades.length,
       scanned_at: tw.scanned_at,
     });
@@ -534,7 +541,14 @@ function renderResults() {
     h += '</div>';
 
     h += '<div class="world-items">';
-    h += '<div class="transfer-cost-note">Transfer: <span>' + formatGold(transferCostGold) + ' gp</span> (750 TC) dras en gång</div>';
+    const totalTCCost = transferCostGold + g.tcSpreadCost;
+    let costNote = 'Transfer: <span>' + formatGold(transferCostGold) + ' gp</span> (750 TC)';
+    if (g.tcSpreadCost !== 0) {
+      const sign = g.tcSpreadCost > 0 ? '+' : '';
+      costNote += ' · TC-spread: <span>' + sign + formatGold(g.tcSpreadCost) + ' gp</span>';
+      costNote += ' · Totalt: <span>' + formatGold(totalTCCost) + ' gp</span>';
+    }
+    h += '<div class="transfer-cost-note">' + costNote + '</div>';
     h += '<table><thead><tr>';
     h += '<th></th><th>Item</th>';
     h += '<th>Köp (start)</th><th>Sälj (target)</th>';
