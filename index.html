@@ -87,6 +87,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .world-items tbody tr.item-row { border-bottom: 1px solid rgba(30,35,48,0.5); cursor: pointer; transition: background 0.15s; }
 .world-items tbody tr.item-row:hover { background: rgba(59,130,246,0.06); }
 .world-items tbody tr.item-row.expanded-item { background: rgba(59,130,246,0.04); }
+.world-items tbody tr.item-row.filtered-out { opacity: 0.35; }
 .world-items td { padding: 0.5rem 0.85rem; white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
 .world-items td.item-name-cell { font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 500; max-width: 250px; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .world-items td.profit-cell { color: var(--green); font-weight: 600; }
@@ -592,7 +593,8 @@ function renderResults() {
     h += '<th>Buy offers</th><th>Sell offers (S)</th>';
     h += '</tr></thead><tbody>';
 
-    for (const t of visT) {
+    const visSet = new Set(visT.map(t => t.item_id));
+    for (const t of g.trades) {
       const rowId = g.name + ':' + t.item_id;
       const profitCls = t.verified ? 'profit-cell' : 'estimate-cell';
       const tag = t.verified
@@ -611,7 +613,8 @@ function renderResults() {
         }
       }
 
-      h += '<tr class="item-row" data-row-id="' + rowId + '" data-world="' + g.name + '" data-start="' + currentStartName + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" data-sell-price="' + t.sell_price + '" onclick="toggleOffers(this)">';
+      const dimmed = isFiltered && !visSet.has(t.item_id) ? ' filtered-out' : '';
+      h += '<tr class="item-row' + dimmed + '" data-row-id="' + rowId + '" data-world="' + g.name + '" data-start="' + currentStartName + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" data-sell-price="' + t.sell_price + '" onclick="toggleOffers(this)">';
       h += '<td style="font-size:0.65rem;color:var(--text-muted);width:1.5rem;">▶</td>';
       h += '<td class="item-name-cell">' + t.item_name + ' ' + tag + speedBadge + '</td>';
       h += '<td>' + t.buy_price.toLocaleString('sv-SE') + '</td>';
