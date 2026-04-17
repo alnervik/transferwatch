@@ -32,7 +32,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=0 --take=150
+      - run: node scanner.js --phase2 --skip=0 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -48,7 +48,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=150 --take=150
+      - run: node scanner.js --phase2 --skip=95 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -64,7 +64,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=300 --take=150
+      - run: node scanner.js --phase2 --skip=190 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -80,7 +80,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=450 --take=150
+      - run: node scanner.js --phase2 --skip=285 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -96,7 +96,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=600 --take=150
+      - run: node scanner.js --phase2 --skip=380 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -113,7 +113,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=750 --take=150
+      - run: node scanner.js --phase2 --skip=475 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -129,7 +129,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=900 --take=150
+      - run: node scanner.js --phase2 --skip=570 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -145,7 +145,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=1050 --take=150
+      - run: node scanner.js --phase2 --skip=665 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -161,7 +161,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=1200 --take=150
+      - run: node scanner.js --phase2 --skip=760 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -177,7 +177,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=1350 --take=150
+      - run: node scanner.js --phase2 --skip=855 --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
