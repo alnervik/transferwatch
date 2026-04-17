@@ -335,7 +335,7 @@ async function loadData() {
 
   // World market data
   try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/world_market_data?select=world_name,pvp_type,items,scanned_at', { headers: sbHeaders });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/world_market_data?select=world_name,pvp_type,items,scanned_at&limit=500', { headers: sbHeaders });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
     rows.forEach(r => { worldData[r.world_name] = { pvp_type: r.pvp_type, items: r.items, scanned_at: r.scanned_at }; });
@@ -363,7 +363,7 @@ async function loadData() {
 
   // Item offers (phase 2 data)
   try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/item_offers?select=world_name,item_id,sellers,buyers', { headers: sbHeaders });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/item_offers?select=world_name,item_id,sellers,buyers&limit=10000', { headers: sbHeaders });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
     rows.forEach(r => {
