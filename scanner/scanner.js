@@ -17,8 +17,8 @@ const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const PAGE_LIMIT = 5000;
 const MAX_RETRIES = 5;
 const MAX_BOARD_FETCHES = 850;  // 10 batches × 85
-const MIN_MARGIN_PCT = 20;  // min % margin för att räknas som scan-kandidat
-const MIN_EST_PROFIT = 800_000;  // min top-of-book estimate per par. Höjd för att kompensera för att verklig profit (matchOffers i UI) typiskt är 30-70% av estimate — målet är att Phase 2-slots går till par som faktiskt når ~400k verklig bruttovinst.
+const MIN_MARGIN_PCT = 15;  // min % margin för att räknas som scan-kandidat
+const MIN_EST_PROFIT = 400_000;  // min top-of-book estimate per par. Höjd för att kompensera för att verklig profit (matchOffers i UI) typiskt är 30-70% av estimate — målet är att Phase 2-slots går till par som faktiskt når ~400k verklig bruttovinst.
 const WORLD_FRESH_THRESHOLD_MS = 0;  // 0 = skippa skan om tibiamarkets last_update <= vår scanned_at
 
 const TC_ITEM_ID = 22118;
