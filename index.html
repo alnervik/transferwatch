@@ -561,15 +561,17 @@ function renderResults() {
     const pvp = PVP_SHORT[g.pvp_type] || g.pvp_type;
     let visT = nameF ? g.trades.filter(t => t.item_name.toLowerCase().includes(nameF)) : g.trades;
     if (maxDays < Infinity) visT = visT.filter(t => t.days_to_sell !== null && t.days_to_sell <= maxDays);
+    const isFiltered = visT.length < g.tradeCount;
+    const visGrossProfit = isFiltered ? visT.reduce((s, t) => s + t.gross_profit, 0) : null;
 
     h += '<div class="world-group" data-world="' + g.name + '">';
     h += '<div class="world-header" onclick="toggleGroup(this)">';
     h += '<span class="arrow">▶</span>';
     h += '<span class="world-name-col">' + g.name + ' <span class="badge badge-be-' + g.be + '">' + beE + '</span> <span class="badge badge-pvp">' + pvp + '</span></span>';
-    h += '<span class="stat"><span class="stat-label">Trades</span><span class="stat-value">' + visT.length + '</span></span>';
+    h += '<span class="stat"><span class="stat-label">Trades</span><span class="stat-value">' + (isFiltered ? visT.length + ' / ' + g.tradeCount : visT.length) + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Verifierade</span><span class="stat-value" id="verified-stat-' + cssId(g.name) + '">' + g.verifiedCount + '/' + g.tradeCount + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Data</span><span class="stat-value">' + timeAgo(g.scanned_at) + '</span></span>';
-    h += '<span class="stat"><span class="stat-label">Netto profit</span><span class="stat-value profit-value">' + formatGold(g.netProfit) + ' gp</span></span>';
+    h += '<span class="stat"><span class="stat-label">Netto profit' + (isFiltered ? ' (alla ' + g.tradeCount + ')' : '') + '</span><span class="stat-value profit-value">' + formatGold(g.netProfit) + ' gp</span>' + (isFiltered ? '<span class="stat-sub">synliga: ' + formatGold(visGrossProfit) + ' gp brutto</span>' : '') + '</span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">TC-vinst</span><span class="stat-value profit-value">≈ ' + Math.round(g.netProfit / g.targetTCSellPrice).toLocaleString('sv-SE') + ' TC</span></span>';
     h += renderVerifyControl(g);
     h += '</div>';
