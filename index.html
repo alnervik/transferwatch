@@ -53,7 +53,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .world-group { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-card); overflow: hidden; transition: border-color 0.2s; }
 .world-group:hover { border-color: #2a3040; }
 .world-group.expanded { border-color: var(--accent); }
-.world-header { display: grid; grid-template-columns: 2rem 1fr repeat(4, auto); gap: 1rem; align-items: center; padding: 0.85rem 1rem; cursor: pointer; user-select: none; transition: background 0.15s; }
+.world-header { display: grid; grid-template-columns: 2rem 1fr repeat(5, auto); gap: 1rem; align-items: center; padding: 0.85rem 1rem; cursor: pointer; user-select: none; transition: background 0.15s; }
 .world-header:hover { background: var(--bg-card-hover); }
 .world-header .arrow { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.2s; text-align: center; }
 .world-group.expanded .arrow { transform: rotate(90deg); color: var(--accent); }
@@ -61,6 +61,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .world-header .stat { text-align: right; white-space: nowrap; }
 .world-header .stat .stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .world-header .stat .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; }
+.world-header .stat .stat-sub { font-size: 0.7rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; display: block; margin-top: 0.1rem; }
 .world-header .profit-value { color: var(--green); }
 .badge { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 4px; font-size: 0.68rem; font-weight: 600; margin-left: 0.4rem; vertical-align: middle; }
 .badge-be-green { background: rgba(34,197,94,0.12); color: #4ade80; }
@@ -171,6 +172,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     <div class="summary-card"><div class="label">Transfer-kostnad</div><div class="value gold-text" id="sumTransferCost">–</div></div>
     <div class="summary-card"><div class="label">Bästa målvärld</div><div class="value green-text" id="sumBestWorld">–</div></div>
     <div class="summary-card"><div class="label">Bästa nettoprofit</div><div class="value green-text" id="sumBestProfit">–</div></div>
+    <div class="summary-card"><div class="label">TC-vinst (bästa)</div><div class="value green-text" id="sumBestProfitTC">–</div></div>
     <div class="summary-card"><div class="label">Lönsamma världar</div><div class="value" id="sumWorldCount">–</div></div>
   </div>
 
@@ -220,6 +222,7 @@ let itemMeta  = {};       // itemId → metadata
 let offersData = {};      // "world:itemId" → { sellers: [...], buyers: [...] }
 let worldGroups = [];
 let transferCostGold = 0;
+let tcBuy = 0;
 let currentStartName = '';
 const boardCache = {};    // for live-fetch fallback
 const verifyJobs = {};    // worldName → { pairs, neededKeys, startedAt, total, doneCount, intervalId }
@@ -384,7 +387,7 @@ function calculate() {
     $('resultsArea').innerHTML = '<div class="state-msg"><div class="icon">⚠️</div><p>Ingen TC buy_offer på ' + startName + '.</p></div>';
     return;
   }
-  const tcBuy = tcItem.buy_offer;
+  tcBuy = tcItem.buy_offer;
   const goldCap = tcAmount * tcBuy;
   transferCostGold = TRANSFER_COST_TC * tcBuy;
 
@@ -491,7 +494,7 @@ function calculate() {
     worldGroups.push({
       name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
       trades: viableTrades, totalGross, netProfit,
-      tcSpreadCost,
+      tcSpreadCost, targetTCSellPrice,
       verifiedCount, tradeCount: viableTrades.length,
       scanned_at: tw.scanned_at,
     });
@@ -503,6 +506,7 @@ function calculate() {
   $('sumTransferCost').textContent = formatGold(transferCostGold) + ' gp';
   $('sumBestWorld').textContent = worldGroups.length ? worldGroups[0].name : '–';
   $('sumBestProfit').textContent = worldGroups.length ? formatGold(worldGroups[0].netProfit) + ' gp' : '–';
+  $('sumBestProfitTC').textContent = (worldGroups.length && worldGroups[0].targetTCSellPrice > 0) ? '≈ ' + Math.round(worldGroups[0].netProfit / worldGroups[0].targetTCSellPrice).toLocaleString('sv-SE') + ' TC' : '–';
   $('sumWorldCount').textContent = worldGroups.length;
   $('filterRow').style.display = 'flex';
   renderResults();
@@ -537,6 +541,7 @@ function renderResults() {
     h += '<span class="stat hide-mobile"><span class="stat-label">Verifierade</span><span class="stat-value" id="verified-stat-' + cssId(g.name) + '">' + g.verifiedCount + '/' + g.tradeCount + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Data</span><span class="stat-value">' + timeAgo(g.scanned_at) + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Netto profit</span><span class="stat-value profit-value">' + formatGold(g.netProfit) + ' gp</span></span>';
+    h += '<span class="stat hide-mobile"><span class="stat-label">TC-vinst</span><span class="stat-value profit-value">≈ ' + Math.round(g.netProfit / g.targetTCSellPrice).toLocaleString('sv-SE') + ' TC</span></span>';
     h += renderVerifyControl(g);
     h += '</div>';
 
