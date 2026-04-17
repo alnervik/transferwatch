@@ -16,9 +16,12 @@ const MARKET_API = 'https://api.tibiamarket.top:8001';
 const TIBIADATA_API = 'https://api.tibiadata.com/v4';
 const PAGE_LIMIT = 5000;
 const MAX_RETRIES = 5;
-const MAX_BOARD_FETCHES = 850;  // 10 batches × 85
+const MAX_BOARD_FETCHES = 1500;  // 10 batches × 150
 const MIN_MARGIN_PCT = 15;  // min % margin för att räknas som scan-kandidat
 const MIN_EST_PROFIT = 400_000;  // min top-of-book estimate per par. Höjd för att kompensera för att verklig profit (matchOffers i UI) typiskt är 30-70% av estimate — målet är att Phase 2-slots går till par som faktiskt når ~400k verklig bruttovinst.
+const DAY_SOLD_FAST_THRESHOLD = 10;  // säljs ≥10/dag på målservern → "snabbsäljare"
+const MIN_MARGIN_PCT_FAST = 8;       // lägre marginaltröskel för snabbsäljare
+const MIN_EST_PROFIT_FAST = 150_000; // lägre vinsttröskel för snabbsäljare
 const WORLD_FRESH_THRESHOLD_MS = 0;  // 0 = skippa skan om tibiamarkets last_update <= vår scanned_at
 
 const TC_ITEM_ID = 22118;
@@ -413,10 +416,20 @@ async function main() {
         const margin = tItem.buy_offer - sItem.sell_offer;
         const marginPct = (margin / sItem.sell_offer) * 100;
         const pinned = PINNED_ITEM_IDS.has(Number(itemIdStr));
-        if (!pinned && marginPct < MIN_MARGIN_PCT) continue;
+        if (!pinned) {
+          const isFast = (tItem.day_sold || 0) >= DAY_SOLD_FAST_THRESHOLD;
+          if (isFast) {
+            if (marginPct < MIN_MARGIN_PCT_FAST) continue;
+          } else {
+            if (marginPct < MIN_MARGIN_PCT) continue;
+          }
+        }
         const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer));
         const estProfit = margin * qty;
-        if (!pinned && estProfit < MIN_EST_PROFIT) continue;
+        if (!pinned) {
+          const isFast = (tItem.day_sold || 0) >= DAY_SOLD_FAST_THRESHOLD;
+          if (isFast ? estProfit < MIN_EST_PROFIT_FAST : estProfit < MIN_EST_PROFIT) continue;
+        }
 
         const startKey = `${startName}:${itemIdStr}`;
         neededPairs.add(startKey);
