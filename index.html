@@ -494,7 +494,7 @@ function calculate() {
     worldGroups.push({
       name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
       trades: viableTrades, totalGross, netProfit,
-      tcSpreadCost,
+      tcSpreadCost, targetTCSellPrice,
       verifiedCount, tradeCount: viableTrades.length,
       scanned_at: tw.scanned_at,
     });
@@ -506,7 +506,7 @@ function calculate() {
   $('sumTransferCost').textContent = formatGold(transferCostGold) + ' gp';
   $('sumBestWorld').textContent = worldGroups.length ? worldGroups[0].name : '–';
   $('sumBestProfit').textContent = worldGroups.length ? formatGold(worldGroups[0].netProfit) + ' gp' : '–';
-  $('sumBestProfitTC').textContent = (worldGroups.length && tcBuy > 0) ? '≈ ' + Math.round(worldGroups[0].netProfit / tcBuy).toLocaleString('sv-SE') + ' TC' : '–';
+  $('sumBestProfitTC').textContent = (worldGroups.length && worldGroups[0].targetTCSellPrice > 0) ? '≈ ' + Math.round(worldGroups[0].netProfit / worldGroups[0].targetTCSellPrice).toLocaleString('sv-SE') + ' TC' : '–';
   $('sumWorldCount').textContent = worldGroups.length;
   $('filterRow').style.display = 'flex';
   renderResults();
@@ -541,7 +541,7 @@ function renderResults() {
     h += '<span class="stat hide-mobile"><span class="stat-label">Verifierade</span><span class="stat-value" id="verified-stat-' + cssId(g.name) + '">' + g.verifiedCount + '/' + g.tradeCount + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Data</span><span class="stat-value">' + timeAgo(g.scanned_at) + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Netto profit</span><span class="stat-value profit-value">' + formatGold(g.netProfit) + ' gp</span></span>';
-    h += '<span class="stat hide-mobile"><span class="stat-label">TC-vinst</span><span class="stat-value profit-value">≈ ' + Math.round(g.netProfit / tcBuy).toLocaleString('sv-SE') + ' TC</span></span>';
+    h += '<span class="stat hide-mobile"><span class="stat-label">TC-vinst</span><span class="stat-value profit-value">≈ ' + Math.round(g.netProfit / g.targetTCSellPrice).toLocaleString('sv-SE') + ' TC</span></span>';
     h += renderVerifyControl(g);
     h += '</div>';
 
