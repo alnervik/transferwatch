@@ -69,6 +69,10 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .badge-pvp { background: rgba(139,92,246,0.12); color: #a78bfa; font-size: 0.65rem; }
 .badge-verified { background: rgba(34,197,94,0.1); color: #4ade80; font-size: 0.62rem; }
 .badge-estimate { background: rgba(245,158,11,0.1); color: #fbbf24; font-size: 0.62rem; }
+.badge-speed { font-size: 0.6rem; }
+.badge-speed.fast   { background: rgba(74,222,128,0.1); color: #4ade80; }
+.badge-speed.medium { background: rgba(250,204,21,0.1); color: #facc15; }
+.badge-speed.slow   { background: rgba(255,255,255,0.05); color: #555; }
 .verify-btn { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); border-radius: 5px; padding: 0.3rem 0.7rem; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; transition: background 0.15s; margin-left: 0.5rem; }
 .verify-btn:hover { background: rgba(139,92,246,0.28); }
 .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -183,6 +187,14 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     <input type="number" id="filterMinProfit" value="0" placeholder="0">
     <label>Max köppris:</label>
     <input type="number" id="filterMaxBuyPrice" value="" placeholder="ex. 60000000">
+    <label>Sortera:</label>
+    <select id="sortBy">
+      <option value="profit">Profit</option>
+      <option value="speed">Säljhastighet</option>
+      <option value="margin_pct">Marginal %</option>
+    </select>
+    <label>Max säljtid (dagar):</label>
+    <input type="number" id="filterMaxDays" value="" placeholder="t.ex. 3" min="0" step="0.5">
   </div>
 
   <div id="resultsArea">
@@ -443,6 +455,8 @@ function calculate() {
         verified,
         t_buy_offers: tItem.buy_offers,
         s_sell_offers: sItem.sell_offers || 0,
+        day_sold_target: tItem.day_sold || 0,
+        days_to_sell: null,
       });
     }
     if (!trades.length) continue;
@@ -477,7 +491,20 @@ function calculate() {
     // Remove trades that became too small after budget constraint
     const viableTrades = trades.filter(t => t.qty > 0 && (t.gross_profit >= MIN_TRADE_PROFIT || PINNED_ITEM_IDS.has(t.item_id)));
     if (!viableTrades.length) continue;
-    viableTrades.sort((a, b) => b.gross_profit - a.gross_profit);
+
+    // Compute sell-speed estimate based on final qty after budget allocation
+    viableTrades.forEach(t => {
+      t.days_to_sell = t.day_sold_target > 0 ? t.qty / t.day_sold_target : null;
+    });
+
+    const sortByVal = ($('sortBy') && $('sortBy').value) || 'profit';
+    if (sortByVal === 'speed') {
+      viableTrades.sort((a, b) => (a.days_to_sell ?? 999) - (b.days_to_sell ?? 999));
+    } else if (sortByVal === 'margin_pct') {
+      viableTrades.sort((a, b) => b.margin_pct - a.margin_pct);
+    } else {
+      viableTrades.sort((a, b) => b.gross_profit - a.gross_profit);
+    }
 
     const totalGross = viableTrades.reduce((s, t) => s + t.gross_profit, 0);
 
@@ -517,6 +544,7 @@ function renderResults() {
   const area = $('resultsArea');
   const nameF = ($('filterName').value || '').toLowerCase();
   const minP = parseInt($('filterMinProfit').value) || 0;
+  const maxDays = parseFloat(($('filterMaxDays') && $('filterMaxDays').value) || '') || Infinity;
 
   let filtered = worldGroups.filter(g => g.netProfit >= minP);
   if (nameF) filtered = filtered.filter(g => g.trades.some(t => t.item_name.toLowerCase().includes(nameF)));
@@ -532,6 +560,7 @@ function renderResults() {
     const beE = g.be === 'green' ? '🟢' : '🟡';
     const pvp = PVP_SHORT[g.pvp_type] || g.pvp_type;
     let visT = nameF ? g.trades.filter(t => t.item_name.toLowerCase().includes(nameF)) : g.trades;
+    if (maxDays < Infinity) visT = visT.filter(t => t.days_to_sell !== null && t.days_to_sell <= maxDays);
 
     h += '<div class="world-group" data-world="' + g.name + '">';
     h += '<div class="world-header" onclick="toggleGroup(this)">';
@@ -568,9 +597,21 @@ function renderResults() {
         ? '<span class="badge badge-verified">✓</span>'
         : '<span class="badge badge-estimate">~est</span>';
 
+      let speedBadge = '';
+      if (t.days_to_sell !== null) {
+        const dSold = t.day_sold_target;
+        if (t.days_to_sell < 1) {
+          speedBadge = '<span class="badge badge-speed fast" title="Estimerat <1 dag att s\u00e4lja (' + dSold + ' s\u00e5lda/dag)">\u26a1</span>';
+        } else if (t.days_to_sell <= 3) {
+          speedBadge = '<span class="badge badge-speed medium" title="Estimerat ' + t.days_to_sell.toFixed(1) + ' dagar att s\u00e4lja (' + dSold + ' s\u00e5lda/dag)">~' + Math.ceil(t.days_to_sell) + 'd</span>';
+        } else {
+          speedBadge = '<span class="badge badge-speed slow" title="Estimerat ' + Math.round(t.days_to_sell) + '+ dagar att s\u00e4lja (' + dSold + ' s\u00e5lda/dag)">' + Math.round(t.days_to_sell) + 'd</span>';
+        }
+      }
+
       h += '<tr class="item-row" data-row-id="' + rowId + '" data-world="' + g.name + '" data-start="' + currentStartName + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" data-sell-price="' + t.sell_price + '" onclick="toggleOffers(this)">';
       h += '<td style="font-size:0.65rem;color:var(--text-muted);width:1.5rem;">▶</td>';
-      h += '<td class="item-name-cell">' + t.item_name + ' ' + tag + '</td>';
+      h += '<td class="item-name-cell">' + t.item_name + ' ' + tag + speedBadge + '</td>';
       h += '<td>' + t.buy_price.toLocaleString('sv-SE') + '</td>';
       h += '<td>' + t.sell_price.toLocaleString('sv-SE') + '</td>';
       h += '<td>' + formatGold(t.margin) + ' (' + t.margin_pct.toFixed(0) + '%)</td>';
@@ -874,8 +915,10 @@ function updateMatchTotal(cb) {
 $('worldSelect').addEventListener('change', calculate);
 $('tcInput').addEventListener('input', calculate);
 $('filterMaxBuyPrice').addEventListener('input', calculate);
+$('sortBy').addEventListener('change', calculate);
 $('filterName').addEventListener('input', renderResults);
 $('filterMinProfit').addEventListener('input', renderResults);
+$('filterMaxDays').addEventListener('input', renderResults);
 
 loadData();
 </script>
