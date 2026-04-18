@@ -605,11 +605,32 @@ function computeGlobalLeaderboard() {
       const targetItems = verifiedByWorld[targetName];
       if (!targetItems) continue;
 
-      let totalGross = 0;
+      // Collect candidates with uncapped profit for ROI-based sorting
+      const candidates = [];
       for (const itemId of startItems) {
         if (!targetItems.has(itemId)) continue;
-        const m = matchOffers(offersData[startName + ':' + itemId].sellers, offersData[targetName + ':' + itemId].buyers, goldCap);
-        totalGross += m.profit;
+        const startSellers = offersData[startName + ':' + itemId].sellers;
+        const targetBuyers = offersData[targetName + ':' + itemId].buyers;
+        const mFull = matchOffers(startSellers, targetBuyers);
+        if (mFull.profit <= 0 || mFull.totalCost <= 0) continue;
+        candidates.push({ startSellers, targetBuyers, roi: mFull.profit / mFull.totalCost, mFull });
+      }
+      if (!candidates.length) continue;
+
+      // Allocate shared budget greedily (best ROI first), matching calculate()
+      candidates.sort((a, b) => b.roi - a.roi);
+      let remaining = goldCap;
+      let totalGross = 0;
+      for (const c of candidates) {
+        if (remaining <= 0) break;
+        if (remaining >= c.mFull.totalCost) {
+          totalGross += c.mFull.profit;
+          remaining -= c.mFull.totalCost;
+        } else {
+          const m = matchOffers(c.startSellers, c.targetBuyers, remaining);
+          totalGross += m.profit;
+          remaining -= m.totalCost;
+        }
       }
       if (totalGross <= 0) continue;
 
