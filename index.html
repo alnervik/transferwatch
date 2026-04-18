@@ -399,6 +399,7 @@ async function loadData() {
     });
     $('statusOffers').textContent = rows.length + ' offers';
     $('dotOffers').className = 'dot dot-ok';
+    renderLeaderboard();
   } catch (e) {
     $('statusOffers').textContent = 'ej tillgänglig';
     $('dotOffers').className = 'dot dot-wait';
@@ -574,31 +575,74 @@ function calculate() {
 // ─── LEADERBOARD ────────────────────────────────────────────────────────
 const LEADERBOARD_EXCLUDE = new Set(['Aethera']);
 
+function computeGlobalLeaderboard() {
+  // Index verified offers by world
+  const verifiedByWorld = {};
+  for (const key of Object.keys(offersData)) {
+    const colon = key.indexOf(':');
+    const world = key.slice(0, colon);
+    const itemId = parseInt(key.slice(colon + 1));
+    (verifiedByWorld[world] = verifiedByWorld[world] || new Set()).add(itemId);
+  }
+
+  const tcAmount = parseInt(($('tcInput') && $('tcInput').value)) || 250;
+  const results = [];
+
+  for (const [startName, sw] of Object.entries(worldData)) {
+    if (LEADERBOARD_EXCLUDE.has(startName)) continue;
+    const startItems = verifiedByWorld[startName];
+    if (!startItems) continue;
+    const tcItem = sw.items.find(it => it.id === TC_ITEM_ID);
+    if (!tcItem || tcItem.buy_offer <= 0) continue;
+    const startTCBuy = tcItem.buy_offer;
+    const goldCap = tcAmount * startTCBuy;
+    const transferCost = TRANSFER_COST_TC * startTCBuy;
+
+    for (const [targetName, tw] of Object.entries(worldData)) {
+      if (targetName === startName) continue;
+      if (LEADERBOARD_EXCLUDE.has(targetName)) continue;
+      if (!canTransfer(startName, sw.pvp_type, targetName, tw.pvp_type)) continue;
+      const targetItems = verifiedByWorld[targetName];
+      if (!targetItems) continue;
+
+      let totalGross = 0;
+      for (const itemId of startItems) {
+        if (!targetItems.has(itemId)) continue;
+        const m = matchOffers(offersData[startName + ':' + itemId].sellers, offersData[targetName + ':' + itemId].buyers, goldCap);
+        totalGross += m.profit;
+      }
+      if (totalGross <= 0) continue;
+
+      const targetTCItem = tw.items.find(it => it.id === TC_ITEM_ID);
+      const targetTCSell = (targetTCItem && targetTCItem.sell_offer > 0) ? targetTCItem.sell_offer : startTCBuy;
+      const netProfit = totalGross - transferCost - tcAmount * (targetTCSell - startTCBuy);
+      if (netProfit <= 0) continue;
+
+      results.push({ startName, targetName, tcProfit: Math.round(netProfit / targetTCSell) });
+    }
+  }
+
+  results.sort((a, b) => b.tcProfit - a.tcProfit);
+  return results.slice(0, 5);
+}
+
 function renderLeaderboard() {
   const lbEl = $('leaderboard');
   const entriesEl = $('leaderboardEntries');
+  const top5 = computeGlobalLeaderboard();
 
-  if (!currentStartName || LEADERBOARD_EXCLUDE.has(currentStartName) || !worldGroups.length) {
-    lbEl.style.display = 'none';
-    return;
-  }
-
-  const top5 = worldGroups.filter(g => !LEADERBOARD_EXCLUDE.has(g.name)).slice(0, 5);
   if (!top5.length) { lbEl.style.display = 'none'; return; }
 
   lbEl.style.display = '';
-  entriesEl.innerHTML = top5.map((g, i) => {
-    const tc = g.targetTCSellPrice > 0 ? Math.round(g.netProfit / g.targetTCSellPrice).toLocaleString('sv-SE') : '–';
-    const vTag = g.verifiedCount === g.tradeCount ? '<span class="lb-verified">✓</span>' : '';
-    return '<span class="leaderboard-entry">'
-      + '<span class="lb-rank">' + (i + 1) + '.</span>'
-      + '<span class="lb-route">' + currentStartName + '</span>'
-      + '<span class="lb-arrow">→</span>'
-      + '<span class="lb-route">' + g.name + '</span>'
-      + '<span class="lb-profit">~' + tc + ' TC</span>'
-      + vTag
-      + '</span>';
-  }).join('');
+  entriesEl.innerHTML = top5.map((r, i) =>
+    '<span class="leaderboard-entry">'
+    + '<span class="lb-rank">' + (i + 1) + '.</span>'
+    + '<span class="lb-route">' + r.startName + '</span>'
+    + '<span class="lb-arrow">→</span>'
+    + '<span class="lb-route">' + r.targetName + '</span>'
+    + '<span class="lb-profit">~' + r.tcProfit.toLocaleString('sv-SE') + ' TC</span>'
+    + '</span>'
+  ).join('');
 }
 
 // ─── RENDER ─────────────────────────────────────────────────────────────
@@ -835,11 +879,14 @@ async function pollVerify(worldName) {
       const res = await fetch(url, { headers: sbHeaders });
       if (!res.ok) continue;
       const rows = await res.json();
+      let gotNew = false;
       for (const r of rows) {
         const key = r.world_name + ':' + r.item_id;
         offersData[key] = { sellers: r.sellers, buyers: r.buyers };
         boardCache[key] = r;
+        gotNew = true;
       }
+      if (gotNew) renderLeaderboard();
     } catch (_) { /* försök igen nästa tick */ }
   }
 
