@@ -18,7 +18,7 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --targeted --batch=1/2
+      - run: node scanner.js --targeted --batch=1/4
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -34,7 +34,39 @@ jobs:
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --targeted --batch=2/2
+      - run: node scanner.js --targeted --batch=2/4
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          TARGETS_JSON: ${{ inputs.targets }}
+
+  batch3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --targeted --batch=3/4
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          TARGETS_JSON: ${{ inputs.targets }}
+
+  batch4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+        working-directory: scanner
+      - run: node scanner.js --targeted --batch=4/4
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
