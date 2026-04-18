@@ -7,7 +7,7 @@
 //   node scanner.js --phase1                  # Only phase 1
 //   node scanner.js --phase2                  # Only phase 2 (reads phase 1 from Supabase)
 //   node scanner.js --phase2 --skip=85 --take=85   # Phase 2, skip 85, fetch next 85
-//   node scanner.js --targeted --batch=1/2    # Targeted: kör TARGETS_JSON, batch 1 av 2
+//   node scanner.js --targeted --batch=1/4    # Targeted: kör TARGETS_JSON, batch 1 av 4
 
 import { createClient } from '@supabase/supabase-js';
 
