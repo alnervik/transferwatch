@@ -754,10 +754,7 @@ function renderVerifyControl(g) {
     return '<span class="verify-progress" id="verify-prog-' + cssId(g.name) + '">⏳ ' + job.doneCount + '/' + job.total + '</span>';
   }
   let ctrl = '';
-  const unverified = g.tradeCount - g.verifiedCount;
-  if (unverified > 0) {
-    ctrl += '<button class="verify-btn" onclick="event.stopPropagation(); triggerVerify(\'' + g.name.replace(/'/g, "\\'") + '\')">⚡ Verifiera alla (' + unverified + ' kvar)</button>';
-  }
+  ctrl += '<button class="verify-btn" onclick="event.stopPropagation(); triggerVerify(\'' + g.name.replace(/'/g, "\\'") + '\')">⚡ Verifiera alla (' + g.tradeCount + ')</button>';
   const isDeep = deepSearchWorlds.has(g.name);
   ctrl += '<button class="deep-search-btn' + (isDeep ? ' active' : '') + '" onclick="event.stopPropagation(); toggleDeepSearch(\'' + g.name.replace(/'/g, "\\'") + '\')">' + (isDeep ? '🔍 150k+ aktiv' : '🔍 Visa 150k+') + '</button>';
   return ctrl;
@@ -803,7 +800,6 @@ async function triggerVerify(worldName) {
   const pairs = [];
   const neededKeys = new Set();
   for (const t of g.trades) {
-    if (t.verified) continue;
     pairs.push({ start: currentStartName, target: worldName, item_id: t.item_id });
     neededKeys.add(currentStartName + ':' + t.item_id);
     neededKeys.add(worldName + ':' + t.item_id);
@@ -843,6 +839,7 @@ async function triggerVerify(worldName) {
   verifyJobs[worldName] = {
     pairs,
     neededKeys: [...neededKeys],
+    freshKeys: new Set(),
     startedAt,
     total: pairs.length,
     doneCount: 0,
@@ -884,16 +881,17 @@ async function pollVerify(worldName) {
         const key = r.world_name + ':' + r.item_id;
         offersData[key] = { sellers: r.sellers, buyers: r.buyers };
         boardCache[key] = r;
+        job.freshKeys.add(key);
         gotNew = true;
       }
       if (gotNew) renderLeaderboard();
     } catch (_) { /* försök igen nästa tick */ }
   }
 
-  // Räkna klara triplets (både start- och target-sida inne)
+  // Räkna klara triplets — båda sidor måste ha fräsch data från det här jobbet
   let done = 0;
   for (const t of job.pairs) {
-    if (offersData[t.start + ':' + t.item_id] && offersData[t.target + ':' + t.item_id]) done++;
+    if (job.freshKeys.has(t.start + ':' + t.item_id) && job.freshKeys.has(t.target + ':' + t.item_id)) done++;
   }
   job.doneCount = done;
 
