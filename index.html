@@ -288,7 +288,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
       </div>
       <div class="field">
         <label>TC säljpris på din server (gp/TC)</label>
-        <input type="number" id="manualTCPrice" placeholder="ex. 12500" min="1">
+        <input type="text" id="manualTCPrice" placeholder="ex. 12500 eller 12.5k">
       </div>
     </div>
 
@@ -302,7 +302,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
       </div>
       <div class="field">
         <label>Buy offer på din server (gp)</label>
-        <input type="number" id="manualPrice" placeholder="0" min="1"
+        <input type="text" id="manualPrice" placeholder="ex. 420k eller 1,5kk"
           onkeydown="if(event.key==='Enter'){$('manualQty').focus();}">
       </div>
       <div class="field">
@@ -392,6 +392,18 @@ function timeAgo(dateStr) {
   const hrs = Math.round(mins / 60);
   if (hrs < 24) return hrs + 'h sedan';
   return Math.round(hrs / 24) + 'd sedan';
+}
+function parseGoldAmount(str) {
+  if (typeof str === 'number') return str;
+  str = String(str).trim().replace(/[\s_]/g, '').toLowerCase();
+  let m;
+  if ((m = str.match(/^(\d+)[,.](\d{1,2})kk$/))) return Math.round(parseFloat(m[1] + '.' + m[2]) * 1e6);
+  if ((m = str.match(/^(\d+)kk$/)))              return parseInt(m[1]) * 1e6;
+  if ((m = str.match(/^(\d+)[,.](\d{1,2})m$/)))  return Math.round(parseFloat(m[1] + '.' + m[2]) * 1e6);
+  if ((m = str.match(/^(\d+)m$/)))               return parseInt(m[1]) * 1e6;
+  if ((m = str.match(/^(\d+)[,.](\d{1,2})k$/)))  return Math.round(parseFloat(m[1] + '.' + m[2]) * 1e3);
+  if ((m = str.match(/^(\d+)k$/)))               return parseInt(m[1]) * 1e3;
+  return parseInt(str);
 }
 
 // ─── MATCH OFFERS → REALISTIC PROFIT ──────────────────────────────────────
@@ -1222,15 +1234,12 @@ document.addEventListener('click', e => {
 
 function addManualItem() {
   if (!selectedManualItemId) { alert('Välj ett item från listan.'); return; }
-  const price = parseInt($('manualPrice').value);
+  const price = parseGoldAmount($('manualPrice').value);
   const qty   = parseInt($('manualQty').value) || 1;
-  if (!price || price <= 0) { alert('Ange ett giltigt köppris.'); return; }
+  if (!price || price <= 0 || isNaN(price)) { alert('Ange ett giltigt köppris (ex. 420k eller 1,5kk).'); return; }
 
   const name = $('manualSearch').value;
-  const existing = manualItems.findIndex(i => i.id === selectedManualItemId);
-  const entry = { id: selectedManualItemId, name, price, qty };
-  if (existing >= 0) manualItems[existing] = entry;
-  else manualItems.push(entry);
+  manualItems.push({ id: selectedManualItemId, name, price, qty });
 
   saveManualItems();
   renderManualItemList();
@@ -1288,7 +1297,7 @@ function canTransferToManual(fromName, fromPvp, toPvp, toBE) {
 function calculateManual() {
   const pvpType = $('manualPvp').value;
   const beType  = $('manualBE').value;
-  const tcPrice = parseInt($('manualTCPrice').value) || 0;
+  const tcPrice = parseGoldAmount($('manualTCPrice').value) || 0;
   const area    = $('manualResultsArea');
 
   if (!tcPrice) {
