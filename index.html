@@ -301,7 +301,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
         <div id="manualDropdown" class="item-dropdown"></div>
       </div>
       <div class="field">
-        <label>Buy offer på din server (gp)</label>
+        <label>Köppris (gp)</label>
         <input type="number" id="manualPrice" placeholder="0" min="1"
           onkeydown="if(event.key==='Enter'){$('manualQty').focus();}">
       </div>
@@ -1276,12 +1276,11 @@ function renderManualItemList() {
     + '</div>';
 }
 
-// Transfer FROM a worldData world TO the user's manual (destination) server
-function canTransferToManual(fromName, fromPvp, toPvp, toBE) {
+function canTransferManual(fromPvp, fromBE, toName, toPvp) {
   const fr = PVP_RANK[fromPvp], tr = PVP_RANK[toPvp];
   if (fr === undefined || tr === undefined) return false;
   if (tr > fr) return false;
-  if (getBE(fromName) === 'yellow' && toBE === 'green') return false;
+  if (fromBE === 'yellow' && getBE(toName) === 'green') return false;
   return true;
 }
 
@@ -1304,37 +1303,30 @@ function calculateManual() {
     return;
   }
 
-  // Transfer cost in gold on destination server (750 TC × TC price on user's server)
   const transferCostGold = TRANSFER_COST_TC * tcPrice;
   const groups = [];
 
-  // Each worldData world is a potential SOURCE to buy from
-  for (const [sName, sw] of Object.entries(worldData)) {
-    if (!canTransferToManual(sName, sw.pvp_type, pvpType, beType)) continue;
+  for (const [tName, tw] of Object.entries(worldData)) {
+    if (!canTransferManual(pvpType, beType, tName, tw.pvp_type)) continue;
 
     const trades = [];
     for (const item of manualItems) {
-      // item.price = buy offer on user's destination server (what user receives when selling)
-      // sItem.sell_offer = sell offer on source world (what user pays to buy)
-      const sItem = sw.items.find(it => it.id === item.id);
-      if (!sItem || !sItem.sell_offer || sItem.sell_offer <= 0) continue;
-      if (sItem.sell_offer >= item.price) continue;
+      const tItem = tw.items.find(it => it.id === item.id);
+      if (!tItem || !tItem.buy_offer || tItem.buy_offer <= item.price) continue;
 
-      const margin    = item.price - sItem.sell_offer;
-      const marginPct = (margin / sItem.sell_offer) * 100;
-
-      // Use source world's sellers matched against manual buy offer
-      const sOffers = offersData[sName + ':' + item.id];
+      const margin    = tItem.buy_offer - item.price;
+      const marginPct = (margin / item.price) * 100;
+      const tOffers   = offersData[tName + ':' + item.id];
 
       let grossProfit, qty, verified;
-      if (sOffers && sOffers.sellers && sOffers.sellers.length) {
-        const fakeBuyers = [{ price: item.price, amount: item.qty }];
-        const m = matchOffers(sOffers.sellers, fakeBuyers);
+      if (tOffers && tOffers.buyers && tOffers.buyers.length) {
+        const fakeSellers = [{ price: item.price, amount: item.qty }];
+        const m = matchOffers(fakeSellers, tOffers.buyers);
         grossProfit = m.profit;
         qty         = m.matchCount;
         verified    = true;
       } else {
-        qty         = Math.min(item.qty, sItem.sell_offers || 1);
+        qty         = Math.min(item.qty, tItem.buy_offers || 1);
         grossProfit = qty * margin;
         verified    = false;
       }
@@ -1346,16 +1338,16 @@ function calculateManual() {
       trades.push({
         item_id: item.id,
         item_name: meta ? (meta.wiki_name || meta.name) : '#' + item.id,
-        buy_price:  sItem.sell_offer,  // what user pays on source
-        buy_qty:    item.qty,
-        sell_price: item.price,        // buy offer on destination = what user receives
+        buy_price: item.price,
+        buy_qty:   item.qty,
+        sell_price: tItem.buy_offer,
         margin, margin_pct: marginPct,
         qty, gross_profit: grossProfit,
         verified,
         lowProfit: grossProfit < MIN_TRADE_PROFIT,
-        s_sell_offers: sItem.sell_offers || 0,
-        t_buy_offers:  item.qty,
-        day_sold_target: sItem.day_sold || 0,
+        t_buy_offers:   tItem.buy_offers || 0,
+        s_sell_offers:  item.qty,
+        day_sold_target: tItem.day_sold || 0,
         days_to_sell: null,
       });
     }
@@ -1366,18 +1358,21 @@ function calculateManual() {
     });
     trades.sort((a, b) => b.gross_profit - a.gross_profit);
 
-    const totalGross = trades.reduce((s, t) => s + t.gross_profit, 0);
-    const netProfit  = totalGross - transferCostGold;
+    const totalGross    = trades.reduce((s, t) => s + t.gross_profit, 0);
+    const targetTCItem  = tw.items.find(it => it.id === TC_ITEM_ID);
+    const targetTCSell  = (targetTCItem && targetTCItem.sell_offer > 0) ? targetTCItem.sell_offer : tcPrice;
+    const tcSpreadCost  = TRANSFER_COST_TC * Math.max(0, targetTCSell - tcPrice);
+    const netProfit     = totalGross - transferCostGold - tcSpreadCost;
     if (netProfit <= 0) continue;
 
     groups.push({
-      name: sName, pvp_type: sw.pvp_type, be: getBE(sName),
+      name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
       trades, totalGross, netProfit,
+      tcSpreadCost, targetTCSellPrice: targetTCSell,
       transferCostGold,
-      targetTCSellPrice: tcPrice,
       verifiedCount: trades.filter(t => t.verified).length,
       tradeCount: trades.length,
-      scanned_at: sw.scanned_at,
+      scanned_at: tw.scanned_at,
     });
   }
 
@@ -1419,9 +1414,9 @@ function renderManualResults(groups) {
     h += '<div class="transfer-cost-note">' + costNote + '</div>';
     h += '<table><thead><tr>';
     h += '<th></th><th>Item</th>';
-    h += '<th>Köp (' + g.name + ')</th><th>Sälj (din server)</th>';
+    h += '<th>Köp (manuell)</th><th>Sälj (' + g.name + ')</th>';
     h += '<th>Marginal</th><th>Antal</th><th>Bruttoprofit</th>';
-    h += '<th>Sell offers (källa)</th><th>Din qty</th>';
+    h += '<th>Buy offers</th><th>Tillgång</th>';
     h += '</tr></thead><tbody>';
 
     for (const t of g.trades) {
@@ -1480,29 +1475,29 @@ async function toggleManualOffers(rowEl) {
   rowEl.classList.add('expanded-item');
   rowEl.querySelector('td').textContent = '▼';
 
-  const contentEl  = offersRow.querySelector('.offers-content');
-  const sourceWorld = rowEl.dataset.world;
+  const contentEl   = offersRow.querySelector('.offers-content');
+  const targetWorld = rowEl.dataset.world;
   const itemId      = parseInt(rowEl.dataset.item);
-  const sellPrice   = parseInt(rowEl.dataset.buyPrice);  // manual buy offer = what user receives
+  const buyPrice    = parseInt(rowEl.dataset.buyPrice);
   const buyQty      = parseInt(rowEl.dataset.buyQty);
-  const sKey        = sourceWorld + ':' + itemId;
+  const tKey        = targetWorld + ':' + itemId;
 
-  let sellers = null;
-  if (offersData[sKey]) {
-    sellers = offersData[sKey].sellers;
+  let buyers = null;
+  if (offersData[tKey]) {
+    buyers = offersData[tKey].buyers;
   } else {
-    contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar sell offers från ' + sourceWorld + '… (köad)</span>';
+    contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar buy offers från ' + targetWorld + '… (köad)</span>';
     try {
-      const data = await queueFetch(MARKET_API + '/market_board?server=' + encodeURIComponent(sourceWorld) + '&item_id=' + itemId);
-      sellers = (data.sellers || []).sort((a, b) => a.price - b.price);
-      offersData[sKey] = { sellers, buyers: data.buyers || [] };
+      const data = await queueFetch(MARKET_API + '/market_board?server=' + encodeURIComponent(targetWorld) + '&item_id=' + itemId);
+      buyers = (data.buyers || []).sort((a, b) => b.price - a.price);
+      offersData[tKey] = { sellers: data.sellers || [], buyers };
     } catch (e) {
       contentEl.innerHTML = '<span class="error-text">Fel: ' + e.message + '</span>';
       return;
     }
   }
 
-  renderManualBoardDetail(contentEl, sellers || [], [{ price: sellPrice, amount: buyQty }], sourceWorld);
+  renderManualBoardDetail(contentEl, [{ price: buyPrice, amount: buyQty }], buyers || [], targetWorld);
 }
 
 function renderManualBoardDetail(el, sellers, buyers, targetWorld) {
@@ -1519,7 +1514,7 @@ function renderManualBoardDetail(el, sellers, buyers, targetWorld) {
   }
 
   const panelId = 'mp_' + Math.random().toString(36).substr(2, 8);
-  let h = '<div class="offers-label" style="margin-bottom:0.5rem;">🔀 Matchade trades (' + targetWorld + ' → din server)</div>';
+  let h = '<div class="offers-label" style="margin-bottom:0.5rem;">🔀 Matchade trades (manuell → ' + targetWorld + ')</div>';
 
   if (matches.length) {
     h += '<div class="matches-list" id="' + panelId + '">';
@@ -1544,11 +1539,10 @@ function renderManualBoardDetail(el, sellers, buyers, targetWorld) {
   }
 
   h += '<div class="board-panels" style="margin-top:1rem;">';
-  h += '<div class="board-panel"><div class="offers-label">📦 Säljare ' + targetWorld + '</div>';
-  h += sellers.length ? renderRawOffers(sellers) : '<div style="color:var(--text-muted);font-size:0.78rem;">Inga säljare tillgängliga.</div>';
-  h += '</div>';
-  h += '<div class="board-panel"><div class="offers-label">💰 Din buy offer (destination)</div>' + renderRawOffers(buyers) + '</div>';
-  h += '</div>';
+  h += '<div class="board-panel"><div class="offers-label">📋 Manuella säljare</div>' + renderRawOffers(sellers) + '</div>';
+  h += '<div class="board-panel"><div class="offers-label">💰 Köpare ' + targetWorld + '</div>';
+  h += buyers.length ? renderRawOffers(buyers) : '<div style="color:var(--text-muted);font-size:0.78rem;">Inga köpare tillgängliga.</div>';
+  h += '</div></div>';
   el.innerHTML = h;
 }
 
