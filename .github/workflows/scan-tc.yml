@@ -1,8 +1,6 @@
 name: Scan TC Order Books
 
 on:
-  schedule:
-    - cron: '0 */4 * * *'   # var 4:e timme
   workflow_dispatch:
 
 jobs:
