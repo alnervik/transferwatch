@@ -268,6 +268,14 @@ let deepSearchWorlds = new Set(); // världar där 150k+ djupsökning är aktiv
 const boardCache = {};    // for live-fetch fallback
 const verifyJobs = {};    // worldName → { pairs, neededKeys, startedAt, total, doneCount, intervalId }
 
+let _lbCache = null;      // cached leaderboard result
+let _lbCacheTc = -1;      // tcAmount when cache was built
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
 const $ = id => document.getElementById(id);
 function formatGold(n) {
   if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(2) + 'B';
@@ -400,6 +408,7 @@ async function loadData() {
       // Pre-populate boardCache for click-to-expand
       boardCache[r.world_name + ':' + r.item_id] = r;
     });
+    _lbCache = null;
     $('statusOffers').textContent = rows.length + ' offers';
     $('dotOffers').className = 'dot dot-ok';
     renderLeaderboard();
@@ -653,7 +662,13 @@ function computeGlobalLeaderboard() {
 function renderLeaderboard() {
   const lbEl = $('leaderboard');
   const entriesEl = $('leaderboardEntries');
-  const top5 = computeGlobalLeaderboard();
+  const tcAmount = parseInt(($('tcInput') && $('tcInput').value)) || 250;
+
+  if (_lbCache === null || _lbCacheTc !== tcAmount) {
+    _lbCache = computeGlobalLeaderboard();
+    _lbCacheTc = tcAmount;
+  }
+  const top5 = _lbCache;
 
   if (!top5.length) { lbEl.style.display = 'none'; return; }
 
@@ -938,6 +953,7 @@ async function pollVerify(worldName) {
         boardCache[key] = r;
         job.freshKeys.add(key);
         gotNew = true;
+        _lbCache = null;
       }
       if (gotNew) renderLeaderboard();
     } catch (_) { /* försök igen nästa tick */ }
@@ -1095,7 +1111,7 @@ function updateMatchTotal(cb) {
 
 // Events
 $('worldSelect').addEventListener('change', calculate);
-$('tcInput').addEventListener('input', calculate);
+$('tcInput').addEventListener('input', debounce(calculate, 400));
 $('filterMaxBuyPrice').addEventListener('input', calculate);
 $('sortBy').addEventListener('change', calculate);
 $('filterName').addEventListener('input', renderResults);
