@@ -301,27 +301,40 @@ function timeAgo(dateStr) {
 }
 
 // ─── MATCH OFFERS → REALISTIC PROFIT ──────────────────────────────────────
+// Assumes sellers are pre-sorted ascending by price and buyers descending.
+// Offers are sorted once at load time (see loadData/pollVerify) so this walks
+// both arrays in O(n+m) without the per-unit expansion the naive version did.
 function matchOffers(sellers, buyers, budget = Infinity) {
-  // Expand into individual units
-  const sellUnits = [];
-  (sellers || []).forEach(s => { for (let i = 0; i < (s.amount || 1); i++) sellUnits.push(s.price); });
-  sellUnits.sort((a, b) => a - b); // cheapest first
-
-  const buyUnits = [];
-  (buyers || []).forEach(b => { for (let i = 0; i < (b.amount || 1); i++) buyUnits.push(b.price); });
-  buyUnits.sort((a, b) => b - a); // highest first
-
+  const S = sellers || [];
+  const B = buyers || [];
   let profit = 0, matchCount = 0, totalCost = 0;
-  const n = Math.min(sellUnits.length, buyUnits.length);
-  for (let i = 0; i < n; i++) {
-    const margin = buyUnits[i] - sellUnits[i];
+  let si = 0, bi = 0;
+  let sRem = S.length ? (S[0].amount || 1) : 0;
+  let bRem = B.length ? (B[0].amount || 1) : 0;
+
+  while (si < S.length && bi < B.length) {
+    const sp = S[si].price;
+    const margin = B[bi].price - sp;
     if (margin <= 0) break;
-    if (totalCost + sellUnits[i] > budget) break; // can't afford next unit
-    profit += margin;
-    matchCount++;
-    totalCost += sellUnits[i];
+    let take = sRem < bRem ? sRem : bRem;
+    const cost = take * sp;
+    if (totalCost + cost > budget) {
+      take = Math.floor((budget - totalCost) / sp);
+      if (take <= 0) break;
+      profit += take * margin;
+      matchCount += take;
+      totalCost += take * sp;
+      break;
+    }
+    profit += take * margin;
+    matchCount += take;
+    totalCost += cost;
+    sRem -= take;
+    bRem -= take;
+    if (sRem === 0) { si++; if (si < S.length) sRem = S[si].amount || 1; }
+    if (bRem === 0) { bi++; if (bi < B.length) bRem = B[bi].amount || 1; }
   }
-  return { profit, matchCount, totalCost, sellCount: sellUnits.length, buyCount: buyUnits.length };
+  return { profit, matchCount, totalCost };
 }
 
 // ─── THROTTLED LIVE FETCH QUEUE ──────────────────────────────────────────
@@ -404,14 +417,18 @@ async function loadData() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
     rows.forEach(r => {
-      offersData[r.world_name + ':' + r.item_id] = { sellers: r.sellers, buyers: r.buyers };
+      const sellers = (r.sellers || []).slice().sort((a, b) => a.price - b.price);
+      const buyers  = (r.buyers  || []).slice().sort((a, b) => b.price - a.price);
+      offersData[r.world_name + ':' + r.item_id] = { sellers, buyers };
       // Pre-populate boardCache for click-to-expand
-      boardCache[r.world_name + ':' + r.item_id] = r;
+      boardCache[r.world_name + ':' + r.item_id] = { ...r, sellers, buyers };
     });
     _lbCache = null;
     $('statusOffers').textContent = rows.length + ' offers';
     $('dotOffers').className = 'dot dot-ok';
-    renderLeaderboard();
+    // Defer leaderboard so the page becomes interactive before the heavy
+    // all-worlds matchOffers sweep runs.
+    (window.requestIdleCallback || (fn => setTimeout(fn, 0)))(renderLeaderboard);
   } catch (e) {
     $('statusOffers').textContent = 'ej tillgänglig';
     $('dotOffers').className = 'dot dot-wait';
@@ -949,8 +966,10 @@ async function pollVerify(worldName) {
       let gotNew = false;
       for (const r of rows) {
         const key = r.world_name + ':' + r.item_id;
-        offersData[key] = { sellers: r.sellers, buyers: r.buyers };
-        boardCache[key] = r;
+        const sellers = (r.sellers || []).slice().sort((a, b) => a.price - b.price);
+        const buyers  = (r.buyers  || []).slice().sort((a, b) => b.price - a.price);
+        offersData[key] = { sellers, buyers };
+        boardCache[key] = { ...r, sellers, buyers };
         job.freshKeys.add(key);
         gotNew = true;
         _lbCache = null;
@@ -1009,10 +1028,8 @@ async function toggleOffers(rowEl) {
   const sKey = startWorld + ':' + itemId;
   const tKey = targetWorld + ':' + itemId;
   if (offersData[sKey] && offersData[tKey]) {
-    const result = {
-      sellers: (offersData[sKey].sellers || []).sort((a, b) => a.price - b.price),
-      buyers:  (offersData[tKey].buyers  || []).sort((a, b) => b.price - a.price),
-    };
+    // offersData is pre-sorted at load time (sellers asc, buyers desc).
+    const result = { sellers: offersData[sKey].sellers, buyers: offersData[tKey].buyers };
     boardCache[cacheKey] = result;
     renderBoardDetail(contentEl, result, startWorld, targetWorld);
     return;
