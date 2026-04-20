@@ -84,6 +84,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .low-profit-row > td { opacity: 0.6; }
 .transfer-cost-note { font-size: 0.72rem; color: var(--text-muted); padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
 .transfer-cost-note span { color: var(--gold); }
+.tc-depth-note { font-size: 0.72rem; color: var(--text-muted); padding: 0.35rem 0.85rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
+.tc-depth-note strong { color: var(--gold); }
+.tc-depth-warn { color: #f87171; font-size: 0.68rem; }
 
 .world-items { display: none; border-top: 1px solid var(--border); background: var(--bg-expanded); overflow-x: auto; }
 .world-group.expanded .world-items { display: block; }
@@ -666,6 +669,21 @@ function renderLeaderboard() {
   ).join('');
 }
 
+// ─── TC DEPTH ───────────────────────────────────────────────────────────
+function calcTcSell(buyers, tcAmount) {
+  if (!buyers || !buyers.length || tcAmount <= 0) return null;
+  const sorted = [...buyers].sort((a, b) => b.price - a.price);
+  let remaining = tcAmount, totalGold = 0, filled = 0;
+  for (const b of sorted) {
+    if (remaining <= 0) break;
+    const take = Math.min(b.amount, remaining);
+    totalGold += take * b.price;
+    filled += take;
+    remaining -= take;
+  }
+  return { filled, totalGold, avgPrice: filled > 0 ? Math.round(totalGold / filled) : 0, allFilled: remaining <= 0 };
+}
+
 // ─── RENDER ─────────────────────────────────────────────────────────────
 function renderResults() {
   const area = $('resultsArea');
@@ -712,6 +730,22 @@ function renderResults() {
       costNote += ' · Totalt: <span>' + formatGold(totalTCCost) + ' gp</span>';
     }
     h += '<div class="transfer-cost-note">' + costNote + '</div>';
+
+    const tcAmount = parseInt(($('tcInput') && $('tcInput').value)) || 0;
+    const tcOffers = offersData[currentStartName + ':' + TC_ITEM_ID];
+    if (tcOffers && tcAmount > 0) {
+      const tcSell = calcTcSell(tcOffers.buyers, tcAmount);
+      if (tcSell && tcSell.avgPrice > 0) {
+        let depthNote = 'TC-djup ' + currentStartName + ': Dina <strong>' + tcAmount.toLocaleString('sv-SE') + ' TC</strong>'
+          + ' säljs för ≈ <strong>' + tcSell.avgPrice.toLocaleString('sv-SE') + ' gp</strong> snitt'
+          + ' (≈ ' + formatGold(tcSell.totalGold) + ' gp totalt)';
+        if (!tcSell.allFilled) {
+          depthNote += ' <span class="tc-depth-warn">⚠ bara ' + tcSell.filled.toLocaleString('sv-SE') + ' TC kan säljas</span>';
+        }
+        h += '<div class="tc-depth-note">' + depthNote + '</div>';
+      }
+    }
+
     h += '<table><thead><tr>';
     h += '<th></th><th>Item</th>';
     h += '<th>Köp (start)</th><th>Sälj (target)</th>';

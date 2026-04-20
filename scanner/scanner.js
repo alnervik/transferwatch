@@ -8,6 +8,7 @@
 //   node scanner.js --phase2                  # Only phase 2 (reads phase 1 from Supabase)
 //   node scanner.js --phase2 --skip=85 --take=85   # Phase 2, skip 85, fetch next 85
 //   node scanner.js --targeted --batch=1/4    # Targeted: kör TARGETS_JSON, batch 1 av 4
+//   node scanner.js --tc-scan                 # TC-scan: market_board för TC på alla världar
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -23,6 +24,7 @@ const DAY_SOLD_FAST_THRESHOLD = 10;  // säljs ≥10/dag på målservern → "sn
 const MIN_MARGIN_PCT_FAST = 8;       // lägre marginaltröskel för snabbsäljare
 const MIN_EST_PROFIT_FAST = 150_000; // lägre vinsttröskel för snabbsäljare
 const WORLD_FRESH_THRESHOLD_MS = 0;  // 0 = skippa skan om tibiamarkets last_update <= vår scanned_at
+const TC_FRESH_MS = 4 * 60 * 60 * 1000;  // skippa TC-scan om data < 4h gammal
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
@@ -138,6 +140,7 @@ function getFlag(name) {
 const PHASE1_ONLY = process.argv.includes('--phase1');
 const PHASE2_ONLY = process.argv.includes('--phase2');
 const TARGETED_MODE = process.argv.includes('--targeted');
+const TC_SCAN_MODE = process.argv.includes('--tc-scan');
 const SKIP_COUNT = parseInt(getFlag('skip') || '0');
 const TAKE_COUNT = parseInt(getFlag('take') || '0');  // 0 = take all remaining
 const BATCH_FLAG = getFlag('batch');  // "1/2" eller "2/2" (endast targeted mode)
@@ -238,10 +241,94 @@ async function runTargeted() {
   console.log(`✅ Fetched: ${fetched} | ❌ Failed: ${failed} | ⏱️ ${elapsed} min`);
 }
 
+// ─── TC BOARD SCAN ─────────────────────────────────────────────────────────
+// Hämtar market_board för TC (22118) på alla transferbara världar.
+// Skippar världar vars TC-data är färskare än TC_FRESH_MS.
+async function runTcBoardScan() {
+  const startTime = Date.now();
+  console.log('🪙 TransferWatch Scanner — TC Board Scan');
+  console.log(`   Fresh threshold: ${TC_FRESH_MS / 3600000}h\n`);
+
+  const worldResponse = await fetch(`${TIBIADATA_API}/worlds`).then(r => r.json());
+  const allWorlds = (worldResponse.worlds.regular_worlds || [])
+    .filter(w => w.transfer_type === 'regular');
+  console.log(`📡 ${allWorlds.length} transferable worlds\n`);
+
+  // Hämta befintliga TC-rader från item_offers för freshness-check
+  const { data: existingRows, error: fetchErr } = await supabase
+    .from('item_offers')
+    .select('world_name, scanned_at')
+    .eq('item_id', TC_ITEM_ID);
+  if (fetchErr) console.log(`⚠️ Kunde ej hämta befintlig TC-data: ${fetchErr.message}`);
+
+  const tcScannedAt = {};
+  for (const r of existingRows || []) tcScannedAt[r.world_name] = new Date(r.scanned_at).getTime();
+
+  const now = Date.now();
+  let fetched = 0, failed = 0, skipped = 0;
+  let batch = [];
+
+  for (let i = 0; i < allWorlds.length; i++) {
+    const world = allWorlds[i];
+    const idx = i + 1;
+    const lastScan = tcScannedAt[world.name];
+
+    if (lastScan && (now - lastScan) < TC_FRESH_MS) {
+      skipped++;
+      console.log(`[${idx}/${allWorlds.length}] ${world.name}... ⏭️  TC fresh`);
+      continue;
+    }
+
+    process.stdout.write(`[${idx}/${allWorlds.length}] ${world.name}... `);
+    try {
+      const url = `${MARKET_API}/market_board?server=${encodeURIComponent(world.name)}&item_id=${TC_ITEM_ID}`;
+      const data = await throttledFetch(url);
+
+      batch.push({
+        world_name: world.name,
+        item_id: TC_ITEM_ID,
+        sellers: (data.sellers || []).map(s => ({ price: s.price, amount: s.amount || 1 })),
+        buyers:  (data.buyers  || []).map(b => ({ price: b.price, amount: b.amount || 1 })),
+        scanned_at: new Date().toISOString(),
+      });
+      fetched++;
+      const s = batch[batch.length - 1].sellers.length;
+      const b = batch[batch.length - 1].buyers.length;
+      console.log(`✅ ${s}S/${b}B`);
+
+      if (batch.length >= 20) {
+        const { error } = await supabase
+          .from('item_offers')
+          .upsert(batch, { onConflict: 'world_name,item_id' });
+        if (error) console.log(`  ⚠️ Batch error: ${error.message}`);
+        batch = [];
+      }
+    } catch (e) {
+      failed++;
+      console.log(`❌ ${e.message}`);
+    }
+  }
+
+  if (batch.length > 0) {
+    const { error } = await supabase
+      .from('item_offers')
+      .upsert(batch, { onConflict: 'world_name,item_id' });
+    if (error) console.log(`  ⚠️ Final batch error: ${error.message}`);
+  }
+
+  const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+  console.log(`\n${'═'.repeat(50)}`);
+  console.log(`✅ Fetched: ${fetched} | ⏭️  Skipped: ${skipped} | ❌ Failed: ${failed} | ⏱️ ${elapsed} min`);
+}
+
 // ─── MAIN ──────────────────────────────────────────────────────────────────
 async function main() {
   if (TARGETED_MODE) {
     await runTargeted();
+    return;
+  }
+  if (TC_SCAN_MODE) {
+    await runTcBoardScan();
     return;
   }
 
