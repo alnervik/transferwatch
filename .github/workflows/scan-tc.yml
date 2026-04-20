@@ -1,0 +1,25 @@
+name: Scan TC Order Books
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'   # var 4:e timme
+  workflow_dispatch:
+
+jobs:
+  tc-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+        working-directory: scanner
+      - name: Scan TC order books
+        run: node scanner.js --tc-scan
+        working-directory: scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
