@@ -161,6 +161,36 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
   .offer-entry { grid-template-columns: 2rem 6rem 5rem 5rem 6rem; font-size: 0.72rem; }
   .match-header, .match-entry { grid-template-columns: 1.8rem 1.5rem 1fr 1fr 6rem; font-size: 0.72rem; }
 }
+
+.item-lookup { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 1.5rem; overflow: hidden; }
+.item-lookup-head { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; }
+.item-lookup-title { font-size: 0.78rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.item-lookup-search { flex: 1; min-width: 220px; padding: 0.45rem 0.7rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: inherit; font-size: 0.9rem; outline: none; }
+.item-lookup-search:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+.be-toggle { display: inline-flex; gap: 0.25rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.18rem; }
+.be-toggle button { background: transparent; border: none; color: var(--text-dim); font-family: inherit; font-size: 0.78rem; padding: 0.3rem 0.65rem; border-radius: 5px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.be-toggle button:hover { color: var(--text); }
+.be-toggle button.active { background: var(--accent); color: #fff; }
+.item-lookup-meta { font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.item-lookup-sort label { font-size: 0.7rem; color: var(--text-dim); margin-right: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.item-lookup-sort select { padding: 0.35rem 0.5rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: inherit; font-size: 0.78rem; outline: none; }
+.item-lookup-results { overflow-x: auto; }
+.item-lookup-results table { width: 100%; border-collapse: collapse; }
+.item-lookup-results thead th { padding: 0.55rem 0.85rem; text-align: left; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: var(--bg); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.item-lookup-results td { padding: 0.5rem 0.85rem; white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; border-bottom: 1px solid rgba(30,35,48,0.5); }
+.item-lookup-results td.world-cell { font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 0.85rem; }
+.item-lookup-results tr.lookup-row { cursor: pointer; transition: background 0.15s; }
+.item-lookup-results tr.lookup-row:hover { background: rgba(59,130,246,0.06); }
+.item-lookup-results tr.lookup-row.expanded { background: rgba(59,130,246,0.04); }
+.item-lookup-results tr.lookup-row.no-data { opacity: 0.5; }
+.item-lookup-results .lookup-arrow { font-size: 0.65rem; color: var(--text-muted); width: 1.2rem; display: inline-block; }
+.item-lookup-results .sell-cell { color: #f87171; }
+.item-lookup-results .buy-cell { color: var(--green); }
+.lookup-detail-row { display: none; }
+.lookup-detail-row.visible { display: table-row; }
+.lookup-detail-row td { padding: 0; }
+.lookup-detail { padding: 0.5rem 0.85rem 0.75rem 2.2rem; }
+.item-lookup-empty { padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
 </style>
 </head>
 <body>
@@ -222,6 +252,32 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </select>
     <label>Max säljtid (dagar):</label>
     <input type="number" id="filterMaxDays" value="" placeholder="t.ex. 3" min="0" step="0.5">
+  </div>
+
+  <div class="item-lookup" id="itemLookup">
+    <div class="item-lookup-head">
+      <span class="item-lookup-title">🔎 Item-prisuppslag</span>
+      <input type="text" id="itemLookupSearch" class="item-lookup-search" list="itemLookupList" placeholder="Sök item-namn (t.ex. Gold Token, Crystal Coin)…" autocomplete="off" disabled>
+      <datalist id="itemLookupList"></datalist>
+      <div class="be-toggle" id="lookupBeToggle">
+        <button type="button" data-be="all" class="active">Alla</button>
+        <button type="button" data-be="green">🟢 Gröna</button>
+        <button type="button" data-be="yellow">🟡 Gula</button>
+      </div>
+      <div class="item-lookup-sort">
+        <label>Sortera</label>
+        <select id="lookupSort">
+          <option value="buy_desc">Sälj-pris (högst)</option>
+          <option value="sell_asc">Köp-pris (lägst)</option>
+          <option value="day_sold">Säljvolym/dag</option>
+          <option value="world">Världsnamn</option>
+        </select>
+      </div>
+      <span class="item-lookup-meta" id="itemLookupMeta"></span>
+    </div>
+    <div class="item-lookup-results" id="itemLookupResults">
+      <div class="item-lookup-empty">Skriv ett item-namn för att se köp- och säljpriser per värld.</div>
+    </div>
   </div>
 
   <div id="resultsArea">
@@ -1126,6 +1182,187 @@ function updateMatchTotal(cb) {
   totalEl.innerHTML = 'Realistisk profit: <strong class="' + (total>=0?'green-text':'') + '">' + formatGold(total) + ' gp</strong> <span style="color:var(--text-muted);">(' + checked + ' valda)</span>';
 }
 
+// ─── ITEM LOOKUP (single item across all worlds) ───────────────────────
+const lookupState = {
+  beFilter: 'all',
+  sort: 'buy_desc',
+  itemId: null,
+  nameToId: {},   // displayName (lowercased) → itemId
+  displayNames: [], // sorted display names for datalist
+};
+
+function buildItemLookupIndex() {
+  const counts = {};
+  for (const id of Object.keys(itemMeta)) {
+    const m = itemMeta[id];
+    const base = (m.wiki_name || m.name || '').trim();
+    if (!base) continue;
+    counts[base.toLowerCase()] = (counts[base.toLowerCase()] || 0) + 1;
+  }
+  const map = {};
+  const display = [];
+  for (const id of Object.keys(itemMeta)) {
+    const m = itemMeta[id];
+    const base = (m.wiki_name || m.name || '').trim();
+    if (!base) continue;
+    const key = base.toLowerCase();
+    const dispName = counts[key] > 1 ? base + ' (#' + m.id + ')' : base;
+    map[dispName.toLowerCase()] = parseInt(id);
+    display.push(dispName);
+  }
+  display.sort((a, b) => a.localeCompare(b));
+  lookupState.nameToId = map;
+  lookupState.displayNames = display;
+
+  const dl = $('itemLookupList');
+  dl.innerHTML = display.map(n => '<option value="' + n.replace(/"/g, '&quot;') + '"></option>').join('');
+  $('itemLookupSearch').disabled = false;
+}
+
+function resolveItemFromInput(value) {
+  const v = (value || '').trim().toLowerCase();
+  if (!v) return null;
+  if (lookupState.nameToId[v] !== undefined) return lookupState.nameToId[v];
+  // fuzzy: first display name that starts with input
+  const hit = lookupState.displayNames.find(n => n.toLowerCase() === v)
+           || lookupState.displayNames.find(n => n.toLowerCase().startsWith(v));
+  return hit ? lookupState.nameToId[hit.toLowerCase()] : null;
+}
+
+function renderItemLookup() {
+  const container = $('itemLookupResults');
+  const meta = $('itemLookupMeta');
+  const id = lookupState.itemId;
+  if (!id) {
+    container.innerHTML = '<div class="item-lookup-empty">Skriv ett item-namn för att se köp- och säljpriser per värld.</div>';
+    meta.textContent = '';
+    return;
+  }
+  const itemInfo = itemMeta[id];
+  const itemName = itemInfo ? (itemInfo.wiki_name || itemInfo.name) : '#' + id;
+
+  const rows = [];
+  for (const [worldName, w] of Object.entries(worldData)) {
+    const be = getBE(worldName);
+    if (lookupState.beFilter !== 'all' && be !== lookupState.beFilter) continue;
+    const item = (w.items || []).find(it => it.id === id);
+    const sellOffer = item && item.sell_offer > 0 ? item.sell_offer : null;
+    const buyOffer = item && item.buy_offer > 0 ? item.buy_offer : null;
+    const sellOffers = item ? (item.sell_offers || 0) : 0;
+    const buyOffers = item ? (item.buy_offers || 0) : 0;
+    const daySold = item ? (item.day_sold || 0) : 0;
+    const hasBoard = !!offersData[worldName + ':' + id];
+    rows.push({
+      world: worldName, be, pvp: w.pvp_type,
+      sellOffer, buyOffer, sellOffers, buyOffers, daySold, hasBoard,
+      hasData: sellOffer !== null || buyOffer !== null,
+    });
+  }
+
+  const sort = lookupState.sort;
+  rows.sort((a, b) => {
+    if (a.hasData !== b.hasData) return a.hasData ? -1 : 1;
+    if (sort === 'sell_asc') return (a.sellOffer ?? Infinity) - (b.sellOffer ?? Infinity);
+    if (sort === 'day_sold') return b.daySold - a.daySold;
+    if (sort === 'world') return a.world.localeCompare(b.world);
+    return (b.buyOffer ?? -Infinity) - (a.buyOffer ?? -Infinity);
+  });
+
+  const withData = rows.filter(r => r.hasData).length;
+  const withBoard = rows.filter(r => r.hasBoard).length;
+  meta.textContent = itemName + ' · #' + id + ' · ' + withData + '/' + rows.length + ' världar har data · ' + withBoard + ' med orderbok';
+
+  if (!rows.length) {
+    container.innerHTML = '<div class="item-lookup-empty">Inga världar matchar BE-filtret.</div>';
+    return;
+  }
+
+  let h = '<table><thead><tr>';
+  h += '<th></th><th>Värld</th><th>BE</th><th>PvP</th>';
+  h += '<th>Köp-pris (sell offer)</th><th>Sälj-pris (buy offer)</th>';
+  h += '<th>Spread</th><th># sellers</th><th># buyers</th><th>Sold/d</th>';
+  h += '</tr></thead><tbody>';
+  for (const r of rows) {
+    const beE = r.be === 'green' ? '🟢' : '🟡';
+    const pvp = PVP_SHORT[r.pvp] || r.pvp || '?';
+    const spread = (r.sellOffer && r.buyOffer) ? r.buyOffer - r.sellOffer : null;
+    const spreadCell = spread === null ? '–'
+      : (spread > 0 ? '+' : '') + spread.toLocaleString('sv-SE');
+    const rowCls = 'lookup-row' + (r.hasData ? '' : ' no-data');
+    const boardBadge = r.hasBoard ? ' <span class="badge badge-verified" title="Orderbok finns">✓</span>' : '';
+    h += '<tr class="' + rowCls + '" data-world="' + r.world + '" onclick="toggleLookupDetail(this)">';
+    h += '<td><span class="lookup-arrow">▶</span></td>';
+    h += '<td class="world-cell">' + r.world + boardBadge + '</td>';
+    h += '<td><span class="badge badge-be-' + r.be + '">' + beE + '</span></td>';
+    h += '<td><span class="badge badge-pvp">' + pvp + '</span></td>';
+    h += '<td class="sell-cell">' + (r.sellOffer !== null ? r.sellOffer.toLocaleString('sv-SE') : '–') + '</td>';
+    h += '<td class="buy-cell">' + (r.buyOffer !== null ? r.buyOffer.toLocaleString('sv-SE') : '–') + '</td>';
+    h += '<td>' + spreadCell + '</td>';
+    h += '<td>' + r.sellOffers + '</td>';
+    h += '<td>' + r.buyOffers + '</td>';
+    h += '<td>' + (r.daySold || '–') + '</td>';
+    h += '</tr>';
+    h += '<tr class="lookup-detail-row" data-detail-world="' + r.world + '"><td colspan="10"><div class="lookup-detail"><div class="lookup-detail-content">Klicka för att visa orderbok…</div></div></td></tr>';
+  }
+  h += '</tbody></table>';
+  container.innerHTML = h;
+}
+
+async function toggleLookupDetail(rowEl) {
+  const world = rowEl.dataset.world;
+  const detailRow = rowEl.parentElement.querySelector('tr.lookup-detail-row[data-detail-world="' + world.replace(/"/g, '\\"') + '"]');
+  if (!detailRow) return;
+  const arrow = rowEl.querySelector('.lookup-arrow');
+  if (detailRow.classList.contains('visible')) {
+    detailRow.classList.remove('visible');
+    rowEl.classList.remove('expanded');
+    if (arrow) arrow.textContent = '▶';
+    return;
+  }
+  detailRow.classList.add('visible');
+  rowEl.classList.add('expanded');
+  if (arrow) arrow.textContent = '▼';
+
+  const id = lookupState.itemId;
+  if (!id) return;
+  const contentEl = detailRow.querySelector('.lookup-detail-content');
+  const key = world + ':' + id;
+
+  if (offersData[key]) {
+    renderLookupBoard(contentEl, world, offersData[key]);
+    return;
+  }
+  contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar orderbok från ' + world + '… (köad)</span>';
+  try {
+    const data = await queueFetch(MARKET_API + '/market_board?server=' + encodeURIComponent(world) + '&item_id=' + id);
+    const sellers = (data.sellers || []).slice().sort((a, b) => a.price - b.price);
+    const buyers  = (data.buyers  || []).slice().sort((a, b) => b.price - a.price);
+    offersData[key] = { sellers, buyers };
+    renderLookupBoard(contentEl, world, { sellers, buyers });
+  } catch (e) {
+    contentEl.innerHTML = '<span class="error-text">Fel: ' + e.message + '</span>';
+  }
+}
+
+function renderLookupBoard(el, world, data) {
+  const sellers = data.sellers || [];
+  const buyers = data.buyers || [];
+  let h = '<div class="board-panels">';
+  h += '<div class="board-panel"><div class="offers-label">📦 Säljare på ' + world + ' (köp av dessa)</div>';
+  h += sellers.length ? renderRawOffers(sellers) : '<div style="color:var(--text-muted);font-size:0.78rem;">Inga.</div>';
+  h += '</div><div class="board-panel"><div class="offers-label">💰 Köpare på ' + world + ' (sälj till dessa)</div>';
+  h += buyers.length ? renderRawOffers(buyers) : '<div style="color:var(--text-muted);font-size:0.78rem;">Inga.</div>';
+  h += '</div></div>';
+  el.innerHTML = h;
+}
+
+function setLookupItemFromInput() {
+  const val = $('itemLookupSearch').value;
+  const id = resolveItemFromInput(val);
+  lookupState.itemId = id;
+  renderItemLookup();
+}
+
 // Events
 $('worldSelect').addEventListener('change', calculate);
 $('tcInput').addEventListener('input', debounce(calculate, 400));
@@ -1135,7 +1372,24 @@ $('filterName').addEventListener('input', renderResults);
 $('filterMinProfit').addEventListener('input', renderResults);
 $('filterMaxDays').addEventListener('input', renderResults);
 
-loadData();
+$('itemLookupSearch').addEventListener('change', setLookupItemFromInput);
+$('itemLookupSearch').addEventListener('input', debounce(setLookupItemFromInput, 250));
+$('lookupBeToggle').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-be]');
+  if (!btn) return;
+  lookupState.beFilter = btn.dataset.be;
+  $('lookupBeToggle').querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+  renderItemLookup();
+});
+$('lookupSort').addEventListener('change', e => {
+  lookupState.sort = e.target.value;
+  renderItemLookup();
+});
+
+(async () => {
+  await loadData();
+  buildItemLookupIndex();
+})();
 </script>
 </body>
 </html>
