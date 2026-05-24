@@ -154,6 +154,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .filter-row label { font-size: 0.75rem; color: var(--text-dim); }
 .filter-row input { padding: 0.3rem 0.5rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 0.82rem; outline: none; width: 140px; }
 .filter-row input[type="number"] { width: 120px; font-family: 'JetBrains Mono', monospace; }
+.filter-row .toggle-label { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; user-select: none; font-size: 0.75rem; color: var(--text-dim); }
+.filter-row .toggle-label input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--green); cursor: pointer; }
+.filter-row .toggle-label.active { color: var(--green); }
 
 @media (max-width: 700px) {
   .world-header { grid-template-columns: 1.5rem 1fr repeat(2, auto); }
@@ -252,6 +255,9 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </select>
     <label>Max säljtid (dagar):</label>
     <input type="number" id="filterMaxDays" value="" placeholder="t.ex. 3" min="0" step="0.5">
+    <label class="toggle-label" id="ignoreCostLabel" title="Räknar ut profit utan att dra av 750 TC transfer-kostnad">
+      <input type="checkbox" id="ignoreTransferCost"> Ignorera transferkostnad
+    </label>
   </div>
 
   <div class="item-lookup" id="itemLookup">
@@ -630,7 +636,8 @@ function calculate() {
     const targetTCSellPrice = (targetTCItem && targetTCItem.sell_offer > 0) ? targetTCItem.sell_offer : tcBuy;
     const tcSpreadCost = tcAmount * (targetTCSellPrice - tcBuy);
 
-    const netProfit = totalGross - transferCostGold - tcSpreadCost;
+    const ignoreCost = $('ignoreTransferCost') && $('ignoreTransferCost').checked;
+    const netProfit = totalGross - (ignoreCost ? 0 : transferCostGold) - (ignoreCost ? 0 : tcSpreadCost);
     if (netProfit <= 0) continue;
 
     const verifiedCount = viableTrades.filter(t => t.verified).length;
@@ -810,9 +817,12 @@ function renderResults() {
     h += '</div>';
 
     h += '<div class="world-items">';
+    const ignoreCostRender = $('ignoreTransferCost') && $('ignoreTransferCost').checked;
     const totalTCCost = transferCostGold + g.tcSpreadCost;
     let costNote = 'Transfer: <span>' + formatGold(transferCostGold) + ' gp</span> (750 TC)';
-    if (g.tcSpreadCost !== 0) {
+    if (ignoreCostRender) {
+      costNote += ' · <span style="color:var(--green)">(ignoreras)</span>';
+    } else if (g.tcSpreadCost !== 0) {
       const sign = g.tcSpreadCost > 0 ? '+' : '';
       costNote += ' · TC-spread: <span>' + sign + formatGold(g.tcSpreadCost) + ' gp</span>';
       costNote += ' · Totalt: <span>' + formatGold(totalTCCost) + ' gp</span>';
@@ -1371,6 +1381,10 @@ $('sortBy').addEventListener('change', calculate);
 $('filterName').addEventListener('input', renderResults);
 $('filterMinProfit').addEventListener('input', renderResults);
 $('filterMaxDays').addEventListener('input', renderResults);
+$('ignoreTransferCost').addEventListener('change', function() {
+  $('ignoreCostLabel').classList.toggle('active', this.checked);
+  calculate();
+});
 
 $('itemLookupSearch').addEventListener('change', setLookupItemFromInput);
 $('itemLookupSearch').addEventListener('input', debounce(setLookupItemFromInput, 250));
