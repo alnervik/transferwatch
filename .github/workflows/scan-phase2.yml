@@ -4,158 +4,23 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ─── WAVE 1: Batches 1–5 (parallel) ───
-  batch1:
+  # Fas 2: 15 batchar × 95 = 1425 par (matchar MAX_BOARD_FETCHES i scanner.js).
+  # max-parallel: 5 håller max 5 runners mot tibiamarket-API:t samtidigt.
+  phase2:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        skip: [0, 95, 190, 285, 380, 475, 570, 665, 760, 855, 950, 1045, 1140, 1235, 1330]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase2 --skip=0 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  batch2:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=95 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  batch3:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=190 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  batch4:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=285 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  batch5:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=380 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  # ─── WAVE 2: Batches 6–10 (parallel, after wave 1) ───
-  batch6:
-    needs: [batch1, batch2, batch3, batch4, batch5]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=475 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  batch7:
-    needs: [batch1, batch2, batch3, batch4, batch5]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=570 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  batch8:
-    needs: [batch1, batch2, batch3, batch4, batch5]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=665 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  batch9:
-    needs: [batch1, batch2, batch3, batch4, batch5]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=760 --take=95
-        working-directory: scanner
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-  batch10:
-    needs: [batch1, batch2, batch3, batch4, batch5]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install
-        working-directory: scanner
-      - run: node scanner.js --phase2 --skip=855 --take=95
+      - run: node scanner.js --phase2 --skip=${{ matrix.skip }} --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
