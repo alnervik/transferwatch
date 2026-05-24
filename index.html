@@ -297,8 +297,8 @@ const SUPABASE_ANON = 'sb_publishable_viUDRVjIXhrfGYvde-gsRQ_anyvWNlB';
 const MARKET_API    = 'https://api.tibiamarket.top:8001';
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
-const MIN_TRADE_PROFIT = 400_000;      // dölj enskilda trades med bruttovinst under detta
-const MIN_TRADE_PROFIT_DEEP = 150_000; // threshold för djupsökning per världspar
+const MIN_TRADE_PROFIT = 100_000;      // platt per-trade-golv — surfar små trades oavsett budget
+const MIN_TRADE_PROFIT_DEEP = 50_000;  // djupsökning per världspar: ännu lägre golv
 const PINNED_ITEM_IDS = new Set([22721, 22516]); // Gold Token, Silver Token – visas alltid
 
 // GitHub-trigger för "Verifiera alla"-funktionen
@@ -326,7 +326,7 @@ let worldGroups = [];
 let transferCostGold = 0;
 let tcBuy = 0;
 let currentStartName = '';
-let deepSearchWorlds = new Set(); // världar där 150k+ djupsökning är aktiv
+let deepSearchWorlds = new Set(); // världar där 50k+ djupsökning är aktiv
 const boardCache = {};    // for live-fetch fallback
 const verifyJobs = {};    // worldName → { pairs, neededKeys, startedAt, total, doneCount, intervalId }
 
@@ -519,7 +519,10 @@ function calculate() {
     return;
   }
   tcBuy = tcItem.buy_offer;
-  const goldCap = tcAmount * tcBuy;
+  // 750 TC reserveras för transfern på startvärlden — bara resten kan likvideras
+  // till guld och handlas. Förhindrar att vi visar trades som budgeten inte räcker till.
+  const spendableTC = Math.max(0, tcAmount - TRANSFER_COST_TC);
+  const goldCap = spendableTC * tcBuy;
   transferCostGold = TRANSFER_COST_TC * tcBuy;
 
   const maxBuyPrice = parseInt($('filterMaxBuyPrice').value) || 0;
@@ -687,7 +690,7 @@ function computeGlobalLeaderboard() {
     const tcItem = sw.items.find(it => it.id === TC_ITEM_ID);
     if (!tcItem || tcItem.buy_offer <= 0) continue;
     const startTCBuy = tcItem.buy_offer;
-    const goldCap = tcAmount * startTCBuy;
+    const goldCap = Math.max(0, tcAmount - TRANSFER_COST_TC) * startTCBuy;
     const transferCost = TRANSFER_COST_TC * startTCBuy;
 
     for (const [targetName, tw] of Object.entries(worldData)) {
@@ -873,7 +876,7 @@ function renderResults() {
 
       const dimmed = isFiltered && !visSet.has(t.item_id) ? ' filtered-out' : '';
       const lowProfitClass = t.lowProfit ? ' low-profit-row' : '';
-      const deepBadge = t.lowProfit ? '<span class="badge badge-deep" title="Djupsökt trade (150k+)">🔍</span>' : '';
+      const deepBadge = t.lowProfit ? '<span class="badge badge-deep" title="Djupsökt trade (50k+)">🔍</span>' : '';
       h += '<tr class="item-row' + dimmed + lowProfitClass + '" data-row-id="' + rowId + '" data-world="' + g.name + '" data-start="' + currentStartName + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" data-sell-price="' + t.sell_price + '" onclick="toggleOffers(this)">';
       h += '<td style="font-size:0.65rem;color:var(--text-muted);width:1.5rem;">▶</td>';
       h += '<td class="item-name-cell">' + t.item_name + ' ' + tag + speedBadge + deepBadge + '</td>';
@@ -909,7 +912,7 @@ function renderVerifyControl(g) {
   let ctrl = '';
   ctrl += '<button class="verify-btn" onclick="event.stopPropagation(); triggerVerify(\'' + g.name.replace(/'/g, "\\'") + '\')">⚡ Verifiera alla (' + g.tradeCount + ')</button>';
   const isDeep = deepSearchWorlds.has(g.name);
-  ctrl += '<button class="deep-search-btn' + (isDeep ? ' active' : '') + '" onclick="event.stopPropagation(); toggleDeepSearch(\'' + g.name.replace(/'/g, "\\'") + '\')">' + (isDeep ? '🔍 150k+ aktiv' : '🔍 Visa 150k+') + '</button>';
+  ctrl += '<button class="deep-search-btn' + (isDeep ? ' active' : '') + '" onclick="event.stopPropagation(); toggleDeepSearch(\'' + g.name.replace(/'/g, "\\'") + '\')">' + (isDeep ? '🔍 50k+ aktiv' : '🔍 Visa 50k+') + '</button>';
   return ctrl;
 }
 

@@ -46,15 +46,18 @@ SUPABASE_SERVICE_KEY=eyJhbGci...
 - Yellow Battleye servers cannot transfer to Green Battleye servers. `GREEN_BE` in scanner.js contains the full list.
 
 ### Profit Thresholds
+Scanner Phase 2 candidate selection (`scanner.js`):
 | Condition | Margin | Est. Profit |
 |---|---|---|
-| Default | ≥15% | ≥400k gold |
-| Fast-selling (≥10/day on target) | ≥8% | ≥150k gold |
+| Default | ≥10% | ≥150k gold |
+| Fast-selling (≥10/day on target) | ≥6% | ≥100k gold |
 | Pinned items (Gold Token 22721, Silver Token 22516) | always included | — |
 
+Frontend (`index.html`) hides individual trades below a flat 100k gross profit floor (50k in per-world deep-search mode). The budget reserves the 750 TC transfer cost before computing spendable gold.
+
 ### CI / GitHub Actions (`.github/workflows/`)
-- `scan.yml` — Runs daily at 01:54 UTC. Phase 1 runs first, then Phase 2 splits into 10 parallel jobs using `--skip`/`--take` pagination.
-- `scan-phase2.yml` — Manual Phase 2 re-run across 10 parallel batches.
+- `scan.yml` — Runs daily at 01:54 UTC. Phase 1 runs first, then Phase 2 runs a 15-batch matrix (`--skip`/`--take` pagination, 95 each = 1425 pairs) with `max-parallel: 5` to cap concurrent load on the market API.
+- `scan-phase2.yml` — Manual Phase 2 re-run; same 15-batch matrix (max 5 parallel).
 - `scan-targeted.yml` — Manual targeted verification; splits `TARGETS_JSON` across 2 batch runners. Triggered by the frontend "Verify" button via the GitHub API.
 
 ### Key Files
