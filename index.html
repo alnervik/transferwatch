@@ -291,9 +291,20 @@ const SUPABASE_ANON = 'sb_publishable_viUDRVjIXhrfGYvde-gsRQ_anyvWNlB';
 const MARKET_API    = 'https://api.tibiamarket.top:8001';
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
-const MIN_TRADE_PROFIT = 400_000;      // dölj enskilda trades med bruttovinst under detta
+const MIN_TRADE_PROFIT_FLOOR = 100_000; // per-trade-golv vid liten budget (≤500 TC)
+const MIN_TRADE_PROFIT = 400_000;      // per-trade-tak vid stor budget (≥5000 TC)
 const MIN_TRADE_PROFIT_DEEP = 150_000; // threshold för djupsökning per världspar
+const TC_SCALE_LOW = 500, TC_SCALE_HIGH = 5000; // TC-intervall för profit-trösklens skalning
 const PINNED_ITEM_IDS = new Set([22721, 22516]); // Gold Token, Silver Token – visas alltid
+
+// Per-trade-tröskeln skalar linjärt med budgeten: små TC-budgetar surfar fram
+// mindre trades (100k), stora budgetar kräver större vinst per trade (400k).
+function dynamicMinProfit(tcAmount) {
+  if (tcAmount <= TC_SCALE_LOW) return MIN_TRADE_PROFIT_FLOOR;
+  if (tcAmount >= TC_SCALE_HIGH) return MIN_TRADE_PROFIT;
+  const t = (tcAmount - TC_SCALE_LOW) / (TC_SCALE_HIGH - TC_SCALE_LOW);
+  return Math.round(MIN_TRADE_PROFIT_FLOOR + t * (MIN_TRADE_PROFIT - MIN_TRADE_PROFIT_FLOOR));
+}
 
 // GitHub-trigger för "Verifiera alla"-funktionen
 const GITHUB_REPO          = 'alnervik/transferwatch';
@@ -513,8 +524,14 @@ function calculate() {
     return;
   }
   tcBuy = tcItem.buy_offer;
-  const goldCap = tcAmount * tcBuy;
+  // 750 TC reserveras för transfern på startvärlden — bara resten kan likvideras
+  // till guld och handlas. Förhindrar att vi visar trades som budgeten inte räcker till.
+  const spendableTC = Math.max(0, tcAmount - TRANSFER_COST_TC);
+  const goldCap = spendableTC * tcBuy;
   transferCostGold = TRANSFER_COST_TC * tcBuy;
+
+  const baseMinProfit = dynamicMinProfit(tcAmount);
+  const deepMinProfit = Math.min(MIN_TRADE_PROFIT_DEEP, baseMinProfit);
 
   const maxBuyPrice = parseInt($('filterMaxBuyPrice').value) || 0;
 
@@ -524,7 +541,7 @@ function calculate() {
     if (!canTransfer(startName, sw.pvp_type, tName, tw.pvp_type)) continue;
 
     const isDeepSearch = deepSearchWorlds.has(tName);
-    const minTradeProfit = isDeepSearch ? MIN_TRADE_PROFIT_DEEP : MIN_TRADE_PROFIT;
+    const minTradeProfit = isDeepSearch ? deepMinProfit : baseMinProfit;
 
     const trades = [];
     for (const tItem of tw.items) {
@@ -569,7 +586,7 @@ function calculate() {
         margin, margin_pct: marginPct,
         qty, gross_profit: grossProfit,
         verified,
-        lowProfit: grossProfit < MIN_TRADE_PROFIT,
+        lowProfit: grossProfit < baseMinProfit,
         t_buy_offers: tItem.buy_offers,
         s_sell_offers: sItem.sell_offers || 0,
         day_sold_target: tItem.day_sold || 0,
@@ -680,7 +697,7 @@ function computeGlobalLeaderboard() {
     const tcItem = sw.items.find(it => it.id === TC_ITEM_ID);
     if (!tcItem || tcItem.buy_offer <= 0) continue;
     const startTCBuy = tcItem.buy_offer;
-    const goldCap = tcAmount * startTCBuy;
+    const goldCap = Math.max(0, tcAmount - TRANSFER_COST_TC) * startTCBuy;
     const transferCost = TRANSFER_COST_TC * startTCBuy;
 
     for (const [targetName, tw] of Object.entries(worldData)) {
