@@ -291,20 +291,9 @@ const SUPABASE_ANON = 'sb_publishable_viUDRVjIXhrfGYvde-gsRQ_anyvWNlB';
 const MARKET_API    = 'https://api.tibiamarket.top:8001';
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
-const MIN_TRADE_PROFIT_FLOOR = 100_000; // per-trade-golv vid liten budget (≤500 TC)
-const MIN_TRADE_PROFIT = 400_000;      // per-trade-tak vid stor budget (≥5000 TC)
-const MIN_TRADE_PROFIT_DEEP = 150_000; // threshold för djupsökning per världspar
-const TC_SCALE_LOW = 500, TC_SCALE_HIGH = 5000; // TC-intervall för profit-trösklens skalning
+const MIN_TRADE_PROFIT = 100_000;      // platt per-trade-golv — surfar små trades oavsett budget
+const MIN_TRADE_PROFIT_DEEP = 50_000;  // djupsökning per världspar: ännu lägre golv
 const PINNED_ITEM_IDS = new Set([22721, 22516]); // Gold Token, Silver Token – visas alltid
-
-// Per-trade-tröskeln skalar linjärt med budgeten: små TC-budgetar surfar fram
-// mindre trades (100k), stora budgetar kräver större vinst per trade (400k).
-function dynamicMinProfit(tcAmount) {
-  if (tcAmount <= TC_SCALE_LOW) return MIN_TRADE_PROFIT_FLOOR;
-  if (tcAmount >= TC_SCALE_HIGH) return MIN_TRADE_PROFIT;
-  const t = (tcAmount - TC_SCALE_LOW) / (TC_SCALE_HIGH - TC_SCALE_LOW);
-  return Math.round(MIN_TRADE_PROFIT_FLOOR + t * (MIN_TRADE_PROFIT - MIN_TRADE_PROFIT_FLOOR));
-}
 
 // GitHub-trigger för "Verifiera alla"-funktionen
 const GITHUB_REPO          = 'alnervik/transferwatch';
@@ -331,7 +320,7 @@ let worldGroups = [];
 let transferCostGold = 0;
 let tcBuy = 0;
 let currentStartName = '';
-let deepSearchWorlds = new Set(); // världar där 150k+ djupsökning är aktiv
+let deepSearchWorlds = new Set(); // världar där 50k+ djupsökning är aktiv
 const boardCache = {};    // for live-fetch fallback
 const verifyJobs = {};    // worldName → { pairs, neededKeys, startedAt, total, doneCount, intervalId }
 
@@ -530,9 +519,6 @@ function calculate() {
   const goldCap = spendableTC * tcBuy;
   transferCostGold = TRANSFER_COST_TC * tcBuy;
 
-  const baseMinProfit = dynamicMinProfit(tcAmount);
-  const deepMinProfit = Math.min(MIN_TRADE_PROFIT_DEEP, baseMinProfit);
-
   const maxBuyPrice = parseInt($('filterMaxBuyPrice').value) || 0;
 
   worldGroups = [];
@@ -541,7 +527,7 @@ function calculate() {
     if (!canTransfer(startName, sw.pvp_type, tName, tw.pvp_type)) continue;
 
     const isDeepSearch = deepSearchWorlds.has(tName);
-    const minTradeProfit = isDeepSearch ? deepMinProfit : baseMinProfit;
+    const minTradeProfit = isDeepSearch ? MIN_TRADE_PROFIT_DEEP : MIN_TRADE_PROFIT;
 
     const trades = [];
     for (const tItem of tw.items) {
@@ -586,7 +572,7 @@ function calculate() {
         margin, margin_pct: marginPct,
         qty, gross_profit: grossProfit,
         verified,
-        lowProfit: grossProfit < baseMinProfit,
+        lowProfit: grossProfit < MIN_TRADE_PROFIT,
         t_buy_offers: tItem.buy_offers,
         s_sell_offers: sItem.sell_offers || 0,
         day_sold_target: tItem.day_sold || 0,
@@ -880,7 +866,7 @@ function renderResults() {
 
       const dimmed = isFiltered && !visSet.has(t.item_id) ? ' filtered-out' : '';
       const lowProfitClass = t.lowProfit ? ' low-profit-row' : '';
-      const deepBadge = t.lowProfit ? '<span class="badge badge-deep" title="Djupsökt trade (150k+)">🔍</span>' : '';
+      const deepBadge = t.lowProfit ? '<span class="badge badge-deep" title="Djupsökt trade (50k+)">🔍</span>' : '';
       h += '<tr class="item-row' + dimmed + lowProfitClass + '" data-row-id="' + rowId + '" data-world="' + g.name + '" data-start="' + currentStartName + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" data-sell-price="' + t.sell_price + '" onclick="toggleOffers(this)">';
       h += '<td style="font-size:0.65rem;color:var(--text-muted);width:1.5rem;">▶</td>';
       h += '<td class="item-name-cell">' + t.item_name + ' ' + tag + speedBadge + deepBadge + '</td>';
@@ -916,7 +902,7 @@ function renderVerifyControl(g) {
   let ctrl = '';
   ctrl += '<button class="verify-btn" onclick="event.stopPropagation(); triggerVerify(\'' + g.name.replace(/'/g, "\\'") + '\')">⚡ Verifiera alla (' + g.tradeCount + ')</button>';
   const isDeep = deepSearchWorlds.has(g.name);
-  ctrl += '<button class="deep-search-btn' + (isDeep ? ' active' : '') + '" onclick="event.stopPropagation(); toggleDeepSearch(\'' + g.name.replace(/'/g, "\\'") + '\')">' + (isDeep ? '🔍 150k+ aktiv' : '🔍 Visa 150k+') + '</button>';
+  ctrl += '<button class="deep-search-btn' + (isDeep ? ' active' : '') + '" onclick="event.stopPropagation(); toggleDeepSearch(\'' + g.name.replace(/'/g, "\\'") + '\')">' + (isDeep ? '🔍 50k+ aktiv' : '🔍 Visa 50k+') + '</button>';
   return ctrl;
 }
 
