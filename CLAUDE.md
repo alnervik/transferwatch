@@ -53,7 +53,7 @@ Scanner Phase 2 candidate selection (`scanner.js`):
 | Fast-selling (≥10/day on target) | ≥6% | ≥100k gold |
 | Pinned items (Gold Token 22721, Silver Token 22516) | always included | — |
 
-Frontend (`index.html`) hides individual trades below a flat 100k gross profit floor (50k in per-world deep-search mode). The budget reserves the 750 TC transfer cost before computing spendable gold.
+Frontend (`index.html`) scores trades with **resilient profit** (`matchResilient`): the profit that survives if the single cheapest seller offer disappears. Trades backed by a genuine order book keep their value; single-offer "stale lowball" mirages collapse to ~0 and get filtered. This is used in both the per-world view and the "Top 5 routes" leaderboard so they agree, and lets the flat floor stay low (25k gross, 15k in per-world deep-search mode; leaderboard per-item floor 15k) while still surfacing only genuine trades. The budget reserves the 750 TC transfer cost before computing spendable gold.
 
 ### CI / GitHub Actions (`.github/workflows/`)
 - `scan.yml` — Runs daily at 01:54 UTC. Phase 1 runs first, then Phase 2 runs a 15-batch matrix (`--skip`/`--take` pagination, 95 each = 1425 pairs) with `max-parallel: 5` to cap concurrent load on the market API.
