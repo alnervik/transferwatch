@@ -297,8 +297,9 @@ const SUPABASE_ANON = 'sb_publishable_viUDRVjIXhrfGYvde-gsRQ_anyvWNlB';
 const MARKET_API    = 'https://api.tibiamarket.top:8001';
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
-const MIN_TRADE_PROFIT = 100_000;      // platt per-trade-golv — surfar små trades oavsett budget
-const MIN_TRADE_PROFIT_DEEP = 50_000;  // djupsökning per världspar: ännu lägre golv
+const MIN_TRADE_PROFIT = 25_000;       // platt per-trade-golv — lågt, robusthet (resilient match) gallrar bort mirages
+const MIN_TRADE_PROFIT_DEEP = 15_000;  // djupsökning per världspar: ännu lägre golv
+const LEADERBOARD_MIN_TRADE_PROFIT = 15_000; // per-item-golv i leaderboarden (resilient profit)
 const PINNED_ITEM_IDS = new Set([22721, 22516]); // Gold Token, Silver Token – visas alltid
 
 // GitHub-trigger för "Verifiera alla"-funktionen
@@ -397,6 +398,17 @@ function matchOffers(sellers, buyers, budget = Infinity) {
     if (bRem === 0) { bi++; if (bi < B.length) bRem = B[bi].amount || 1; }
   }
   return { profit, matchCount, totalCost };
+}
+
+// ─── RESILIENT MATCH ──────────────────────────────────────────────────────
+// Profit that survives if the single cheapest seller offer disappears — the
+// most "stale"/lowball offer, the first to get bought out and the usual reason
+// a route looks great in the cached snapshot but nets nothing on re-verify.
+// Trades backed by a genuine surrounding order book barely lose anything here;
+// single-offer mirages collapse to ~0 and get filtered out. This lets us
+// safely surface smaller trades as long as real depth stands behind them.
+function matchResilient(sellers, buyers, budget = Infinity) {
+  return matchOffers((sellers || []).slice(1), buyers, budget);
 }
 
 // ─── THROTTLED LIVE FETCH QUEUE ──────────────────────────────────────────
@@ -554,8 +566,9 @@ function calculate() {
 
       let grossProfit, qty, verified;
       if (hasOffers) {
-        // REALISTIC: match actual sell offers vs buy offers
-        const match = matchOffers(startOffers.sellers, targetOffers.buyers);
+        // REALISTIC: resilient match (drops the cheapest seller offer) so the
+        // shown profit is what survives a re-verify, not a stale-lowball mirage.
+        const match = matchResilient(startOffers.sellers, targetOffers.buyers);
         grossProfit = match.profit;
         qty = match.matchCount;
         verified = true;
@@ -601,7 +614,7 @@ function calculate() {
       if (trade.verified) {
         const sOffers = offersData[startName + ':' + trade.item_id];
         const tOffers = offersData[tName + ':' + trade.item_id];
-        const m = matchOffers(sOffers.sellers, tOffers.buyers, remaining);
+        const m = matchResilient(sOffers.sellers, tOffers.buyers, remaining);
         trade.gross_profit = m.profit;
         trade.qty = m.matchCount;
         remaining -= m.totalCost;
@@ -700,14 +713,17 @@ function computeGlobalLeaderboard() {
       const targetItems = verifiedByWorld[targetName];
       if (!targetItems) continue;
 
-      // Collect candidates with uncapped profit for ROI-based sorting
+      // Collect candidates using resilient profit (survives the cheapest
+      // seller offer vanishing) so single-offer mirages don't inflate the
+      // headline. Small-but-genuine trades still count as long as real depth
+      // stands behind them.
       const candidates = [];
       for (const itemId of startItems) {
         if (!targetItems.has(itemId)) continue;
         const startSellers = offersData[startName + ':' + itemId].sellers;
         const targetBuyers = offersData[targetName + ':' + itemId].buyers;
-        const mFull = matchOffers(startSellers, targetBuyers);
-        if (mFull.profit <= 0 || mFull.totalCost <= 0) continue;
+        const mFull = matchResilient(startSellers, targetBuyers);
+        if (mFull.profit < LEADERBOARD_MIN_TRADE_PROFIT || mFull.totalCost <= 0) continue;
         candidates.push({ startSellers, targetBuyers, roi: mFull.profit / mFull.totalCost, mFull });
       }
       if (!candidates.length) continue;
@@ -722,7 +738,7 @@ function computeGlobalLeaderboard() {
           totalGross += c.mFull.profit;
           remaining -= c.mFull.totalCost;
         } else {
-          const m = matchOffers(c.startSellers, c.targetBuyers, remaining);
+          const m = matchResilient(c.startSellers, c.targetBuyers, remaining);
           totalGross += m.profit;
           remaining -= m.totalCost;
         }
