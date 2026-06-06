@@ -6,16 +6,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Fas 1: 2 batchar × 95 världar (~140 transferbara totalt). Varje skannad värld
+  # ≈ 1 API-request och API:t stryper runt ~100 req/körning, så vi batchar i 95
+  # precis som fas 2. max-parallel: 2 håller nere samtidig last mot tibiamarket.
   phase1:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        skip: [0, 95]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm install
         working-directory: scanner
-      - run: node scanner.js --phase1
+      - run: node scanner.js --phase1 --skip=${{ matrix.skip }} --take=95
         working-directory: scanner
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
