@@ -786,18 +786,27 @@ function calculate() {
         trade.qty = 0;
         continue;
       }
-      if (trade.verified && trade.strategy === 'take-take') {
+      // Branch on which real order books we actually have, NOT on the strategy
+      // name. A patient take-take is verified off the START book alone (the buy
+      // side), so its TARGET book is often absent — dereferencing tOffers.buyers
+      // there threw and aborted the whole patient calculate(), which is why
+      // patient mode rendered nothing (no summary/sumGold) and left the prior
+      // instant view on screen. Instant verified take-take always has both books
+      // (hasOffers), so it still takes the full-match path unchanged.
+      const sOffers = offersData[startName + ':' + trade.item_id];
+      const tOffers = offersData[tName + ':' + trade.item_id];
+      const haveStart  = !!(sOffers && sOffers.sellers && sOffers.sellers.length);
+      const haveTarget = !!(tOffers && tOffers.buyers  && tOffers.buyers.length);
+      if (trade.verified && trade.strategy === 'take-take' && haveStart && haveTarget) {
         // Both sides real: match the start sell ladder against the target buy ladder.
-        const sOffers = offersData[startName + ':' + trade.item_id];
-        const tOffers = offersData[tName + ':' + trade.item_id];
         const m = matchResilient(sOffers.sellers, tOffers.buyers, remaining);
         trade.gross_profit = m.profit;
         trade.qty = m.matchCount;
         remaining -= m.totalCost;
-      } else if (trade.verified) {
-        // Verified make-sell (take-make): real buy cost off the start ladder,
-        // estimated make-sell price for the revenue side.
-        const sOffers = offersData[startName + ':' + trade.item_id];
+      } else if (trade.verified && haveStart) {
+        // Buy side verified off the real start ladder; the sell stays the
+        // estimate (a patient make-sell, or a take-take whose target book
+        // wasn't fetched).
         const lad = buyLadderCost(sOffers.sellers, trade.qty, remaining);
         trade.qty = lad.units;
         trade.gross_profit = lad.units * trade.sell_price - lad.totalCost;
