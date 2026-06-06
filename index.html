@@ -422,6 +422,30 @@ function matchResilient(sellers, buyers, budget = Infinity) {
   return matchOffers((sellers || []).slice(1), buyers, budget);
 }
 
+// ─── BUY-LADDER COST (verify the buy side of a patient trade) ─────────────
+// Climbs the real start-world seller ladder to buy up to `wantQty` units within
+// `budget`, returning the realistic total cost, units actually obtainable, and
+// average price. Resilient like matchResilient: drops the single cheapest offer
+// (the usual stale-lowball that would make our buy cost look too good), so a buy
+// backed only by one offer verifies to 0 units rather than a mirage.
+function buyLadderCost(sellers, wantQty, budget = Infinity) {
+  const S = (sellers || []).slice(1);  // resilient: ignore cheapest stale offer
+  let units = 0, totalCost = 0;
+  for (const o of S) {
+    if (units >= wantQty || totalCost >= budget) break;
+    const price = o.price;
+    if (!(price > 0)) continue;
+    let take = Math.min(o.amount || 1, wantQty - units);
+    if (totalCost + take * price > budget) {
+      take = Math.floor((budget - totalCost) / price);
+      if (take <= 0) break;
+    }
+    units += take;
+    totalCost += take * price;
+  }
+  return { units, totalCost, avgPrice: units > 0 ? totalCost / units : 0 };
+}
+
 // ─── PATIENT / OFFER-BASED STRATEGIES ─────────────────────────────────────
 // Inline port of scanner/strategies.js. Take = accept an existing offer;
 // make = place your own offer and wait for it to fill. ask = sell_offer,
@@ -668,8 +692,28 @@ function calculate() {
         strategy = best.type; action = best.action; etaDays = best.etaDays;
         const affordable = Math.floor(goldCap / buy_price);
         qty = Math.min(affordable, best.qtyCap);
-        grossProfit = qty * margin;
         verified = false;
+
+        // VERIFY THE BUY SIDE. The buy is always a "take", so when the real
+        // start order book is present we climb the actual seller ladder instead
+        // of assuming the single lowest ask applies to every unit — a realistic
+        // average buy cost and a real depth cap. The make-sell stays an estimate
+        // (it fills in the future; the book can't prove it), so sell_price/etaDays
+        // are untouched. Flips the trade to verified (✓).
+        const startOffers = offersData[startName + ':' + tItem.id];
+        if (best.action.buy === 'take' && startOffers && startOffers.sellers && startOffers.sellers.length) {
+          const lad = buyLadderCost(startOffers.sellers, qty, goldCap);
+          if (lad.units > 0) {
+            qty = lad.units;
+            buy_price = Math.round(lad.avgPrice);
+            if (maxBuyPrice > 0 && buy_price > maxBuyPrice) continue;
+            margin = sell_price - buy_price;
+            if (margin <= 0) continue;
+            marginPct = buy_price > 0 ? (margin / buy_price) * 100 : 0;
+            verified = true;
+          }
+        }
+        grossProfit = qty * margin;
       } else {
         // INSTANT: take-take only, verified against the order book when present.
         if (!tItem.buy_offers || tItem.buy_offers <= 0 || tItem.buy_offer <= 0) continue;
@@ -731,13 +775,22 @@ function calculate() {
         trade.qty = 0;
         continue;
       }
-      if (trade.verified) {
+      if (trade.verified && trade.strategy === 'take-take') {
+        // Both sides real: match the start sell ladder against the target buy ladder.
         const sOffers = offersData[startName + ':' + trade.item_id];
         const tOffers = offersData[tName + ':' + trade.item_id];
         const m = matchResilient(sOffers.sellers, tOffers.buyers, remaining);
         trade.gross_profit = m.profit;
         trade.qty = m.matchCount;
         remaining -= m.totalCost;
+      } else if (trade.verified) {
+        // Verified make-sell (take-make): real buy cost off the start ladder,
+        // estimated make-sell price for the revenue side.
+        const sOffers = offersData[startName + ':' + trade.item_id];
+        const lad = buyLadderCost(sOffers.sellers, trade.qty, remaining);
+        trade.qty = lad.units;
+        trade.gross_profit = lad.units * trade.sell_price - lad.totalCost;
+        remaining -= lad.totalCost;
       } else {
         const affordable = Math.floor(remaining / trade.buy_price);
         const actual_qty = Math.min(trade.qty, affordable);
@@ -1000,8 +1053,11 @@ function renderResults() {
     for (const t of g.trades) {
       const rowId = g.name + ':' + t.item_id;
       const profitCls = t.verified ? 'profit-cell' : 'estimate-cell';
+      const verifiedTitle = t.strategy === 'take-take'
+        ? 'Köp och sälj verifierade mot orderboken'
+        : 'Köppris verifierat mot orderboken (snitt över säljstegen); sälj är estimat (make-offer)';
       const tag = t.verified
-        ? '<span class="badge badge-verified">✓</span>'
+        ? '<span class="badge badge-verified" title="' + verifiedTitle + '">✓</span>'
         : '<span class="badge badge-estimate">~est</span>';
 
       let speedBadge = '';
