@@ -130,6 +130,12 @@ function trimItems(items) {
       sell_offers: it.sell_offers || 0,
       day_sold:    it.day_sold    || 0,
       day_bought:  it.day_bought  || 0,
+      // Transaction averages + monthly volume power the patient-trade model
+      // (sell-price realism re-pricing + stable ETA). See strategies.js.
+      month_average_sell: it.month_average_sell || 0,
+      month_average_buy:  it.month_average_buy  || 0,
+      month_sold:         it.month_sold         || 0,
+      month_bought:       it.month_bought       || 0,
     }));
 }
 

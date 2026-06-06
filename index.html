@@ -428,6 +428,13 @@ function matchResilient(sellers, buyers, budget = Infinity) {
 // bid = buy_offer. See strategies.js for the full rationale.
 const STRAT_HORIZON_DAYS = 7;
 const STRAT_COMP_WEIGHT = 1;
+const STRAT_SELL_PREMIUM = 1.10;      // patient premium over month_average_sell
+const STRAT_MAX_SELL_OVER_BID = 1.7;  // fallback guard when no average (see strategies.js)
+// Buy side is always "take" — make-buy (lowball buy offers) caused false positives.
+const ACTIVE_STRATEGIES = [
+  ['take-take', 'take', 'take'],
+  ['take-make', 'take', 'make'],
+];
 const STRATEGY_LABELS = {
   'take-take': 'Take-Take', 'make-take': 'Make-Take',
   'take-make': 'Take-Make', 'make-make': 'Make-Make',
@@ -435,16 +442,31 @@ const STRATEGY_LABELS = {
 function _makeFlow(dailyFlow, competingOffers) {
   return (dailyFlow || 0) / (1 + STRAT_COMP_WEIGHT * (competingOffers || 0));
 }
-function _evalStrategy(type, buySide, sellSide, sItem, tItem) {
-  const buyPrice  = buySide  === 'make' ? sItem.buy_offer  : sItem.sell_offer;
-  const sellPrice = sellSide === 'make' ? tItem.sell_offer : tItem.buy_offer;
+function _perDay(monthVal, dayVal) {
+  return monthVal > 0 ? monthVal / 30 : (dayVal || 0);
+}
+function _evalStrategy(type, buySide, sellSide, sItem, tItem, opts) {
+  const buyPrice = buySide === 'make' ? sItem.buy_offer : sItem.sell_offer;
+  let sellPrice  = sellSide === 'make' ? tItem.sell_offer : tItem.buy_offer;
   if (!(buyPrice > 0) || !(sellPrice > 0)) return null;
+
+  if (sellSide === 'make') {
+    const premium = (opts && opts.sellPremium != null) ? opts.sellPremium : STRAT_SELL_PREMIUM;
+    const avgSell = tItem.month_average_sell || tItem.day_average_sell || 0;
+    if (avgSell > 0) {
+      sellPrice = Math.min(sellPrice, Math.round(avgSell * premium));
+    } else {
+      const maxOverBid = (opts && opts.maxSellOverBid != null) ? opts.maxSellOverBid : STRAT_MAX_SELL_OVER_BID;
+      if (maxOverBid > 0 && tItem.buy_offer > 0 && sellPrice > tItem.buy_offer * maxOverBid) return null;
+    }
+  }
+
   const margin = sellPrice - buyPrice;
   if (margin <= 0) return null;
   const marginPct = (margin / buyPrice) * 100;
 
-  const buyFlow  = _makeFlow(sItem.day_sold,   sItem.sell_offers);
-  const sellFlow = _makeFlow(tItem.day_bought, tItem.buy_offers);
+  const buyFlow  = _makeFlow(_perDay(sItem.month_sold,   sItem.day_sold),   sItem.buy_offers);
+  const sellFlow = _makeFlow(_perDay(tItem.month_bought, tItem.day_bought), tItem.sell_offers);
   let buyAvail, sellAvail;
   if (buySide === 'make') { buyAvail = buyFlow * STRAT_HORIZON_DAYS; }
   else { if (!(sItem.sell_offers > 0)) return null; buyAvail = sItem.sell_offers; }
@@ -459,19 +481,16 @@ function _evalStrategy(type, buySide, sellSide, sItem, tItem) {
   return { type, action: { buy: buySide, sell: sellSide }, buyPrice, sellPrice,
     margin, marginPct, qtyCap, daysToFillBuy, daysToFillSell, etaDays, estProfit: margin * qtyCap };
 }
-function evaluateStrategies(sItem, tItem) {
-  return [
-    _evalStrategy('take-take', 'take', 'take', sItem, tItem),
-    _evalStrategy('make-take', 'make', 'take', sItem, tItem),
-    _evalStrategy('take-make', 'take', 'make', sItem, tItem),
-    _evalStrategy('make-make', 'make', 'make', sItem, tItem),
-  ].filter(Boolean);
+function evaluateStrategies(sItem, tItem, opts) {
+  return ACTIVE_STRATEGIES
+    .map(([type, buySide, sellSide]) => _evalStrategy(type, buySide, sellSide, sItem, tItem, opts))
+    .filter(Boolean);
 }
 function bestStrategy(sItem, tItem, opts) {
   opts = opts || {};
   const maxEta = opts.maxEtaDays == null ? Infinity : opts.maxEtaDays;
   const minMarginPct = opts.minMarginPct == null ? 0 : opts.minMarginPct;
-  const cands = evaluateStrategies(sItem, tItem)
+  const cands = evaluateStrategies(sItem, tItem, opts)
     .filter(s => s.etaDays <= maxEta && s.marginPct >= minMarginPct);
   if (!cands.length) return null;
   cands.sort((a, b) => b.estProfit - a.estProfit);
