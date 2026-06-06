@@ -15,8 +15,10 @@ npm install
 
 node scanner.js                              # Both phases
 node scanner.js --phase1                     # Phase 1 only: fetch market values → Supabase
+node scanner.js --phase1 --force             # Phase 1, re-scan ALL worlds (ignore freshness skip)
+node scanner.js --phase1 --force --skip=0 --take=95   # Phase 1 in 95-world batches (API caps ~100 req/run)
 node scanner.js --phase2                     # Phase 2 only: fetch market board (reads phase 1 from Supabase)
-node scanner.js --phase2 --skip=85 --take=85 # Phase 2 with pagination (used by CI batches)
+node scanner.js --phase2 --skip=95 --take=95 # Phase 2 with pagination (used by CI batches)
 node scanner.js --targeted --batch=1/2       # Targeted mode: verify specific trades (TARGETS_JSON env var)
 
 node fetch_item_metadata.js                  # Refresh item_metadata.json cache from API
@@ -76,7 +78,7 @@ Frontend (`index.html`) has a **strategy mode** selector:
 The budget reserves the 750 TC transfer cost before computing spendable gold.
 
 ### CI / GitHub Actions (`.github/workflows/`)
-- `scan.yml` — Runs daily at 01:54 UTC. Phase 1 runs first, then Phase 2 runs a 15-batch matrix (`--skip`/`--take` pagination, 95 each = 1425 pairs) with `max-parallel: 5` to cap concurrent load on the market API.
+- `scan.yml` — Runs daily at 01:54 UTC. Phase 1 runs as a 2-batch matrix (`--skip`/`--take`, 95 worlds each — each scanned world ≈ 1 request and the API throttles around ~100 req/run), then Phase 2 runs a 15-batch matrix (`--skip`/`--take` pagination, 95 each = 1425 pairs) with `max-parallel: 5` to cap concurrent load on the market API. Phase 1's `--force` flag bypasses the freshness skip to re-scan every world (needed after adding fields to `trimItems`).
 - `scan-phase2.yml` — Manual Phase 2 re-run; same 15-batch matrix (max 5 parallel).
 - `scan-targeted.yml` — Manual targeted verification; splits `TARGETS_JSON` across 2 batch runners. Triggered by the frontend "Verify" button via the GitHub API.
 

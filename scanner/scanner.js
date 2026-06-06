@@ -5,6 +5,8 @@
 // Usage:
 //   node scanner.js                           # Both phases
 //   node scanner.js --phase1                  # Only phase 1
+//   node scanner.js --phase1 --force          # Phase 1, re-scan ALL worlds (ignore freshness skip)
+//   node scanner.js --phase1 --force --skip=0 --take=95   # Phase 1 in 95-world batches (API caps ~100 req/run)
 //   node scanner.js --phase2                  # Only phase 2 (reads phase 1 from Supabase)
 //   node scanner.js --phase2 --skip=85 --take=85   # Phase 2, skip 85, fetch next 85
 //   node scanner.js --targeted --batch=1/8    # Targeted: kör TARGETS_JSON, batch 1 av 8
@@ -149,6 +151,7 @@ const PHASE1_ONLY = process.argv.includes('--phase1');
 const PHASE2_ONLY = process.argv.includes('--phase2');
 const TARGETED_MODE = process.argv.includes('--targeted');
 const TC_SCAN_MODE = process.argv.includes('--tc-scan');
+const FORCE_RESCAN = process.argv.includes('--force');  // bypassa färskhets-skip i Phase 1
 const SKIP_COUNT = parseInt(getFlag('skip') || '0');
 const TAKE_COUNT = parseInt(getFlag('take') || '0');  // 0 = take all remaining
 const BATCH_FLAG = getFlag('batch');  // "1/2" eller "2/2" (endast targeted mode)
@@ -347,6 +350,7 @@ async function main() {
   else console.log('   Mode: Full scan (phase 1 + 2)');
   if (SKIP_COUNT > 0) console.log(`   Skip: ${SKIP_COUNT}`);
   if (TAKE_COUNT > 0) console.log(`   Take: ${TAKE_COUNT}`);
+  if (FORCE_RESCAN) console.log('   Force: re-scan all worlds (freshness skip disabled)');
   console.log('');
 
   const worldMarket = {};
@@ -390,13 +394,24 @@ async function main() {
 
     let scanned = 0, failed = 0, skipped = 0;
 
-    for (const world of allWorlds) {
-      const idx = scanned + failed + skipped + 1;
+    // World-level batching: each scanned world ≈ 1 API request, and the market
+    // API throttles around ~100 requests per run, so a full --force re-scan
+    // must be split into batches of ≤95 (matches the Phase 2 convention).
+    // --skip/--take slice the world list; default (take 0) = all worlds.
+    const endIdx = TAKE_COUNT > 0 ? Math.min(SKIP_COUNT + TAKE_COUNT, allWorlds.length) : allWorlds.length;
+    const worldsToScan = allWorlds.slice(SKIP_COUNT, endIdx);
+    if (SKIP_COUNT > 0 || TAKE_COUNT > 0) {
+      console.log(`Phase 1 batch: worlds #${SKIP_COUNT + 1}–${SKIP_COUNT + worldsToScan.length} of ${allWorlds.length}\n`);
+    }
 
-      // Skip om tibiamarkets data inte uppdaterats sedan vår senaste scan
+    for (const world of worldsToScan) {
+      const idx = SKIP_COUNT + scanned + failed + skipped + 1;
+
+      // Skip om tibiamarkets data inte uppdaterats sedan vår senaste scan.
+      // --force kringgår detta (t.ex. efter att nya fält lagts till i trimItems).
       const prev = existingByWorld[world.name];
       const lastUpdate = lastUpdateByWorld[world.name];
-      if (prev && lastUpdate) {
+      if (!FORCE_RESCAN && prev && lastUpdate) {
         const prevMs = new Date(prev.scanned_at).getTime();
         if (lastUpdate - WORLD_FRESH_THRESHOLD_MS <= prevMs) {
           worldMarket[world.name] = prev.items;
