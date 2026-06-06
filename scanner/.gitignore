@@ -1,0 +1,4 @@
+node_modules/
+.env
+
+# data/ snapshots are intentionally tracked (commit them for analysis)

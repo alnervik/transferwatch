@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "scan": "node scanner.js"
+    "scan": "node scanner.js",
+    "export": "node export_snapshot.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0"
