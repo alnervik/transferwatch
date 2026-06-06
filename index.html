@@ -699,18 +699,29 @@ function calculate() {
         // of assuming the single lowest ask applies to every unit — a realistic
         // average buy cost and a real depth cap. The make-sell stays an estimate
         // (it fills in the future; the book can't prove it), so sell_price/etaDays
-        // are untouched. Flips the trade to verified (✓).
+        // are untouched.
+        //
+        // The ladder only ever UPGRADES a trade to verified (✓) when it confirms
+        // a still-profitable buy within the filter. If the resilient ladder can't
+        // (thin book where dropping the lone cheapest ask leaves only a wall above
+        // the make-sell), we keep the market_values estimate and leave it
+        // unverified — we never delete a trade the estimate already accepted.
+        // (Deleting here was the regression: it silently removed otherwise-visible
+        // trades the moment an order book was loaded / "Verifiera alla" ran.)
         const startOffers = offersData[startName + ':' + tItem.id];
         if (best.action.buy === 'take' && startOffers && startOffers.sellers && startOffers.sellers.length) {
           const lad = buyLadderCost(startOffers.sellers, qty, goldCap);
           if (lad.units > 0) {
-            qty = lad.units;
-            buy_price = Math.round(lad.avgPrice);
-            if (maxBuyPrice > 0 && buy_price > maxBuyPrice) continue;
-            margin = sell_price - buy_price;
-            if (margin <= 0) continue;
-            marginPct = buy_price > 0 ? (margin / buy_price) * 100 : 0;
-            verified = true;
+            const ladBuy = Math.round(lad.avgPrice);
+            const ladMargin = sell_price - ladBuy;
+            const overFilter = maxBuyPrice > 0 && ladBuy > maxBuyPrice;
+            if (ladMargin > 0 && !overFilter) {
+              qty = lad.units;
+              buy_price = ladBuy;
+              margin = ladMargin;
+              marginPct = buy_price > 0 ? (margin / buy_price) * 100 : 0;
+              verified = true;
+            }
           }
         }
         grossProfit = qty * margin;
