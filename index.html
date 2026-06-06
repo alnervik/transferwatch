@@ -229,6 +229,17 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
       <label>Tibia Coins att sälja</label>
       <input type="number" id="tcInput" value="250" min="1">
     </div>
+    <div class="field">
+      <label>Strategi</label>
+      <select id="strategyMode">
+        <option value="instant">Instant (ta offers)</option>
+        <option value="patient">Tålamod (lägg offers)</option>
+      </select>
+    </div>
+    <div class="field" id="maxEtaField" style="display:none;">
+      <label>Max väntetid (dagar)</label>
+      <input type="number" id="maxEtaInput" value="7" min="0" step="0.5">
+    </div>
   </div>
 
   <div class="summary" id="summaryRow" style="display:none;">
@@ -411,6 +422,73 @@ function matchResilient(sellers, buyers, budget = Infinity) {
   return matchOffers((sellers || []).slice(1), buyers, budget);
 }
 
+// ─── PATIENT / OFFER-BASED STRATEGIES ─────────────────────────────────────
+// Inline port of scanner/strategies.js. Take = accept an existing offer;
+// make = place your own offer and wait for it to fill. ask = sell_offer,
+// bid = buy_offer. See strategies.js for the full rationale.
+const STRAT_HORIZON_DAYS = 7;
+const STRAT_COMP_WEIGHT = 1;
+const STRATEGY_LABELS = {
+  'take-take': 'Take-Take', 'make-take': 'Make-Take',
+  'take-make': 'Take-Make', 'make-make': 'Make-Make',
+};
+function _makeFlow(dailyFlow, competingOffers) {
+  return (dailyFlow || 0) / (1 + STRAT_COMP_WEIGHT * (competingOffers || 0));
+}
+function _evalStrategy(type, buySide, sellSide, sItem, tItem) {
+  const buyPrice  = buySide  === 'make' ? sItem.buy_offer  : sItem.sell_offer;
+  const sellPrice = sellSide === 'make' ? tItem.sell_offer : tItem.buy_offer;
+  if (!(buyPrice > 0) || !(sellPrice > 0)) return null;
+  const margin = sellPrice - buyPrice;
+  if (margin <= 0) return null;
+  const marginPct = (margin / buyPrice) * 100;
+
+  const buyFlow  = _makeFlow(sItem.day_sold,   sItem.sell_offers);
+  const sellFlow = _makeFlow(tItem.day_bought, tItem.buy_offers);
+  let buyAvail, sellAvail;
+  if (buySide === 'make') { buyAvail = buyFlow * STRAT_HORIZON_DAYS; }
+  else { if (!(sItem.sell_offers > 0)) return null; buyAvail = sItem.sell_offers; }
+  if (sellSide === 'make') { sellAvail = sellFlow * STRAT_HORIZON_DAYS; }
+  else { if (!(tItem.buy_offers > 0)) return null; sellAvail = tItem.buy_offers; }
+
+  const qtyCap = Math.floor(Math.min(buyAvail, sellAvail));
+  if (qtyCap < 1) return null;
+  const daysToFillBuy  = buySide  === 'make' ? (buyFlow  > 0 ? qtyCap / buyFlow  : Infinity) : 0;
+  const daysToFillSell = sellSide === 'make' ? (sellFlow > 0 ? qtyCap / sellFlow : Infinity) : 0;
+  const etaDays = Math.max(daysToFillBuy, daysToFillSell);
+  return { type, action: { buy: buySide, sell: sellSide }, buyPrice, sellPrice,
+    margin, marginPct, qtyCap, daysToFillBuy, daysToFillSell, etaDays, estProfit: margin * qtyCap };
+}
+function evaluateStrategies(sItem, tItem) {
+  return [
+    _evalStrategy('take-take', 'take', 'take', sItem, tItem),
+    _evalStrategy('make-take', 'make', 'take', sItem, tItem),
+    _evalStrategy('take-make', 'take', 'make', sItem, tItem),
+    _evalStrategy('make-make', 'make', 'make', sItem, tItem),
+  ].filter(Boolean);
+}
+function bestStrategy(sItem, tItem, opts) {
+  opts = opts || {};
+  const maxEta = opts.maxEtaDays == null ? Infinity : opts.maxEtaDays;
+  const minMarginPct = opts.minMarginPct == null ? 0 : opts.minMarginPct;
+  const cands = evaluateStrategies(sItem, tItem)
+    .filter(s => s.etaDays <= maxEta && s.marginPct >= minMarginPct);
+  if (!cands.length) return null;
+  cands.sort((a, b) => b.estProfit - a.estProfit);
+  return cands[0];
+}
+// Swedish action hint for one trade ("lägg buy offer @ X" vs "köp @ ask X").
+function strategyActionText(t) {
+  if (!t.action) return '';
+  const buy = t.action.buy === 'make'
+    ? 'Lägg BUY offer @ ' + t.buy_price.toLocaleString('sv-SE') + ' (≈bid) på ' + currentStartName
+    : 'Köp @ ask ' + t.buy_price.toLocaleString('sv-SE') + ' på ' + currentStartName;
+  const sell = t.action.sell === 'make'
+    ? 'Lägg SELL offer @ ' + t.sell_price.toLocaleString('sv-SE') + ' (≈ask) på mål'
+    : 'Sälj @ bid ' + t.sell_price.toLocaleString('sv-SE') + ' på mål';
+  return buy + ' → ' + sell;
+}
+
 // ─── THROTTLED LIVE FETCH QUEUE ──────────────────────────────────────────
 const FETCH_DELAY_MS = 1500;
 let fetchQueue = [];
@@ -523,7 +601,13 @@ function calculate() {
   if (!sw) return;
 
   const startPrices = {};
-  sw.items.forEach(it => { if (it.sell_offer > 0) startPrices[it.id] = it; });
+  const startAll = {};
+  sw.items.forEach(it => { startAll[it.id] = it; if (it.sell_offer > 0) startPrices[it.id] = it; });
+
+  const strategyMode = ($('strategyMode') && $('strategyMode').value) || 'instant';
+  const maxEtaDays = strategyMode === 'patient'
+    ? (parseFloat($('maxEtaInput') && $('maxEtaInput').value) || Infinity)
+    : Infinity;
 
   const tcItem = sw.items.find(it => it.id === TC_ITEM_ID);
   if (!tcItem || tcItem.buy_offer <= 0) {
@@ -549,35 +633,52 @@ function calculate() {
 
     const trades = [];
     for (const tItem of tw.items) {
-      if (!tItem.buy_offers || tItem.buy_offers <= 0 || tItem.buy_offer <= 0) continue;
-      const sItem = startPrices[tItem.id];
-      if (!sItem || tItem.buy_offer <= sItem.sell_offer) continue;
+      let buy_price, sell_price, margin, marginPct, qty, grossProfit, verified;
+      let strategy, action, etaDays;
 
-      // Max buy price filter
-      if (maxBuyPrice > 0 && sItem.sell_offer > maxBuyPrice) continue;
-
-      const margin = tItem.buy_offer - sItem.sell_offer;
-      const marginPct = (margin / sItem.sell_offer) * 100;
-
-      // Check for pre-fetched offers data
-      const startOffers = offersData[startName + ':' + tItem.id];
-      const targetOffers = offersData[tName + ':' + tItem.id];
-      const hasOffers = !!(startOffers && targetOffers);
-
-      let grossProfit, qty, verified;
-      if (hasOffers) {
-        // REALISTIC: resilient match (drops the cheapest seller offer) so the
-        // shown profit is what survives a re-verify, not a stale-lowball mirage.
-        const match = matchResilient(startOffers.sellers, targetOffers.buyers);
-        grossProfit = match.profit;
-        qty = match.matchCount;
-        verified = true;
-      } else {
-        // ESTIMATE: fallback to market_values data
-        const affordable = Math.floor(goldCap / sItem.sell_offer);
-        qty = Math.min(affordable, tItem.buy_offers);
+      if (strategyMode === 'patient') {
+        // PATIENT: best of the 4 offer-based strategies, from market_values
+        // (no order book needed). estimate-only; budget-capped below.
+        const sAll = startAll[tItem.id];
+        if (!sAll) continue;
+        const best = bestStrategy(sAll, tItem, { maxEtaDays });
+        if (!best) continue;
+        if (maxBuyPrice > 0 && best.buyPrice > maxBuyPrice) continue;
+        buy_price = best.buyPrice; sell_price = best.sellPrice;
+        margin = best.margin; marginPct = best.marginPct;
+        strategy = best.type; action = best.action; etaDays = best.etaDays;
+        const affordable = Math.floor(goldCap / buy_price);
+        qty = Math.min(affordable, best.qtyCap);
         grossProfit = qty * margin;
         verified = false;
+      } else {
+        // INSTANT: take-take only, verified against the order book when present.
+        if (!tItem.buy_offers || tItem.buy_offers <= 0 || tItem.buy_offer <= 0) continue;
+        const sItem = startPrices[tItem.id];
+        if (!sItem || tItem.buy_offer <= sItem.sell_offer) continue;
+        if (maxBuyPrice > 0 && sItem.sell_offer > maxBuyPrice) continue;
+        margin = tItem.buy_offer - sItem.sell_offer;
+        marginPct = (margin / sItem.sell_offer) * 100;
+        buy_price = sItem.sell_offer; sell_price = tItem.buy_offer;
+        strategy = 'take-take'; action = { buy: 'take', sell: 'take' }; etaDays = null;
+
+        const startOffers = offersData[startName + ':' + tItem.id];
+        const targetOffers = offersData[tName + ':' + tItem.id];
+        const hasOffers = !!(startOffers && targetOffers);
+        if (hasOffers) {
+          // REALISTIC: resilient match (drops the cheapest seller offer) so the
+          // shown profit is what survives a re-verify, not a stale-lowball mirage.
+          const match = matchResilient(startOffers.sellers, targetOffers.buyers);
+          grossProfit = match.profit;
+          qty = match.matchCount;
+          verified = true;
+        } else {
+          // ESTIMATE: fallback to market_values data
+          const affordable = Math.floor(goldCap / sItem.sell_offer);
+          qty = Math.min(affordable, tItem.buy_offers);
+          grossProfit = qty * margin;
+          verified = false;
+        }
       }
       if (grossProfit <= 0 || qty <= 0) continue;
       if (grossProfit < minTradeProfit && !PINNED_ITEM_IDS.has(tItem.id)) continue;
@@ -586,16 +687,16 @@ function calculate() {
       trades.push({
         item_id: tItem.id,
         item_name: meta ? (meta.wiki_name || meta.name) : '#' + tItem.id,
-        buy_price: sItem.sell_offer,
-        sell_price: tItem.buy_offer,
+        buy_price, sell_price,
         margin, margin_pct: marginPct,
         qty, gross_profit: grossProfit,
         verified,
         lowProfit: grossProfit < MIN_TRADE_PROFIT,
-        t_buy_offers: tItem.buy_offers,
-        s_sell_offers: sItem.sell_offers || 0,
+        t_buy_offers: tItem.buy_offers || 0,
+        s_sell_offers: (startAll[tItem.id] && startAll[tItem.id].sell_offers) || 0,
         day_sold_target: tItem.day_sold || 0,
         days_to_sell: null,
+        strategy, action, etaDays,
       });
     }
     if (!trades.length) continue;
@@ -631,9 +732,15 @@ function calculate() {
     const viableTrades = trades.filter(t => t.qty > 0 && (t.gross_profit >= minTradeProfit || PINNED_ITEM_IDS.has(t.item_id)));
     if (!viableTrades.length) continue;
 
-    // Compute sell-speed estimate based on final qty after budget allocation
+    // Compute sell-speed estimate based on final qty after budget allocation.
+    // Patient trades carry an ETA that already covers both make-sides; instant
+    // trades fall back to qty / daily-sold on the target.
     viableTrades.forEach(t => {
-      t.days_to_sell = t.day_sold_target > 0 ? t.qty / t.day_sold_target : null;
+      if (t.strategy && t.strategy !== 'take-take' && t.etaDays != null) {
+        t.days_to_sell = isFinite(t.etaDays) ? t.etaDays : null;
+      } else {
+        t.days_to_sell = t.day_sold_target > 0 ? t.qty / t.day_sold_target : null;
+      }
     });
 
     const sortByVal = ($('sortBy') && $('sortBy').value) || 'profit';
@@ -893,11 +1000,17 @@ function renderResults() {
       const dimmed = isFiltered && !visSet.has(t.item_id) ? ' filtered-out' : '';
       const lowProfitClass = t.lowProfit ? ' low-profit-row' : '';
       const deepBadge = t.lowProfit ? '<span class="badge badge-deep" title="Djupsökt trade (50k+)">🔍</span>' : '';
+      // Patient strategy badge + per-side make/take markers (📌 = lägg egen offer).
+      const stratBadge = (t.strategy && t.strategy !== 'take-take')
+        ? ' <span class="badge badge-pvp" title="' + strategyActionText(t).replace(/"/g, '&quot;') + '">' + (STRATEGY_LABELS[t.strategy] || t.strategy) + '</span>'
+        : '';
+      const buyMark  = t.action && t.action.buy  === 'make' ? '📌 ' : '';
+      const sellMark = t.action && t.action.sell === 'make' ? '📌 ' : '';
       h += '<tr class="item-row' + dimmed + lowProfitClass + '" data-row-id="' + rowId + '" data-world="' + g.name + '" data-start="' + currentStartName + '" data-item="' + t.item_id + '" data-buy-price="' + t.buy_price + '" data-sell-price="' + t.sell_price + '" onclick="toggleOffers(this)">';
       h += '<td style="font-size:0.65rem;color:var(--text-muted);width:1.5rem;">▶</td>';
-      h += '<td class="item-name-cell">' + t.item_name + ' ' + tag + speedBadge + deepBadge + '</td>';
-      h += '<td>' + t.buy_price.toLocaleString('sv-SE') + '</td>';
-      h += '<td>' + t.sell_price.toLocaleString('sv-SE') + '</td>';
+      h += '<td class="item-name-cell">' + t.item_name + ' ' + tag + speedBadge + deepBadge + stratBadge + '</td>';
+      h += '<td title="' + (strategyActionText(t).replace(/"/g, '&quot;')) + '">' + buyMark + t.buy_price.toLocaleString('sv-SE') + '</td>';
+      h += '<td>' + sellMark + t.sell_price.toLocaleString('sv-SE') + '</td>';
       h += '<td>' + formatGold(t.margin) + ' (' + t.margin_pct.toFixed(0) + '%)</td>';
       h += '<td>' + t.qty.toLocaleString('sv-SE') + '</td>';
       h += '<td class="' + profitCls + '">' + formatGold(t.gross_profit) + ' gp</td>';
@@ -1397,6 +1510,11 @@ $('worldSelect').addEventListener('change', calculate);
 $('tcInput').addEventListener('input', debounce(calculate, 400));
 $('filterMaxBuyPrice').addEventListener('input', calculate);
 $('sortBy').addEventListener('change', calculate);
+$('strategyMode').addEventListener('change', function() {
+  $('maxEtaField').style.display = this.value === 'patient' ? '' : 'none';
+  calculate();
+});
+$('maxEtaInput').addEventListener('input', debounce(calculate, 400));
 $('filterName').addEventListener('input', renderResults);
 $('filterMinProfit').addEventListener('input', renderResults);
 $('filterMaxDays').addEventListener('input', renderResults);

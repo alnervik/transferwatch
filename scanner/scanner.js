@@ -11,6 +11,7 @@
 //   node scanner.js --tc-scan                 # TC-scan: market_board för TC på alla världar
 
 import { createClient } from '@supabase/supabase-js';
+import { bestStrategy } from './strategies.js';
 
 // ─── CONFIG ────────────────────────────────────────────────────────────────
 const MARKET_API = 'https://api.tibiamarket.top:8001';
@@ -23,6 +24,7 @@ const MIN_EST_PROFIT = 150_000;  // min top-of-book estimate per par. Verklig pr
 const DAY_SOLD_FAST_THRESHOLD = 10;  // säljs ≥10/dag på målservern → "snabbsäljare"
 const MIN_MARGIN_PCT_FAST = 6;       // lägre marginaltröskel för snabbsäljare
 const MIN_EST_PROFIT_FAST = 100_000; // lägre vinsttröskel för snabbsäljare
+const MAX_ETA_DAYS = 14;  // max estimerad fyllnadstid (dagar) för en "make"-offer-strategi
 const WORLD_FRESH_THRESHOLD_MS = 0;  // 0 = skippa skan om tibiamarkets last_update <= vår scanned_at
 const TC_FRESH_MS = 4 * 60 * 60 * 1000;  // skippa TC-scan om data < 4h gammal
 
@@ -495,28 +497,24 @@ async function main() {
       const targetIdx = worldIndex[targetName];
 
       for (const [itemIdStr, tItem] of Object.entries(targetIdx)) {
-        if (!tItem.buy_offers || tItem.buy_offer <= 0) continue;
         const sItem = startIdx[itemIdStr];
-        if (!sItem || sItem.sell_offer <= 0) continue;
-        if (tItem.buy_offer <= sItem.sell_offer) continue;
-
-        const margin = tItem.buy_offer - sItem.sell_offer;
-        const marginPct = (margin / sItem.sell_offer) * 100;
+        if (!sItem) continue;
         const pinned = PINNED_ITEM_IDS.has(Number(itemIdStr));
-        if (!pinned) {
+
+        // Best of the 4 strategies (take-take + patient make/take variants),
+        // feasibility-gated by ETA so we don't fetch order books for trades
+        // whose offers would never fill. See strategies.js.
+        const best = bestStrategy(sItem, tItem, { maxEtaDays: MAX_ETA_DAYS });
+        if (!best && !pinned) continue;
+
+        if (!pinned && best) {
           const isFast = (tItem.day_sold || 0) >= DAY_SOLD_FAST_THRESHOLD;
-          if (isFast) {
-            if (marginPct < MIN_MARGIN_PCT_FAST) continue;
-          } else {
-            if (marginPct < MIN_MARGIN_PCT) continue;
-          }
+          const minPct    = isFast ? MIN_MARGIN_PCT_FAST : MIN_MARGIN_PCT;
+          const minProfit = isFast ? MIN_EST_PROFIT_FAST : MIN_EST_PROFIT;
+          if (best.marginPct < minPct) continue;
+          if (best.estProfit < minProfit) continue;
         }
-        const qty = Math.min(tItem.buy_offers, Math.floor(1e9 / sItem.sell_offer));
-        const estProfit = margin * qty;
-        if (!pinned) {
-          const isFast = (tItem.day_sold || 0) >= DAY_SOLD_FAST_THRESHOLD;
-          if (isFast ? estProfit < MIN_EST_PROFIT_FAST : estProfit < MIN_EST_PROFIT) continue;
-        }
+        const estProfit = best ? best.estProfit : 0;
 
         const startKey = `${startName}:${itemIdStr}`;
         neededPairs.add(startKey);

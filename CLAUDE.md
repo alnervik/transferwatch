@@ -20,6 +20,8 @@ node scanner.js --phase2 --skip=85 --take=85 # Phase 2 with pagination (used by 
 node scanner.js --targeted --batch=1/2       # Targeted mode: verify specific trades (TARGETS_JSON env var)
 
 node fetch_item_metadata.js                  # Refresh item_metadata.json cache from API
+
+npm run export                               # Dump world_market_data → data/snapshot.json + patient_trades_report.md
 ```
 
 No test runner or linter is configured.
@@ -45,15 +47,31 @@ SUPABASE_SERVICE_KEY=eyJhbGci...
 - Transfers can only go to an equal or lower PvP tier (Optional → Open → Retro Open → Retro Hardcore).
 - Yellow Battleye servers cannot transfer to Green Battleye servers. `GREEN_BE` in scanner.js contains the full list.
 
+### Trade Strategies (`scanner/strategies.js`)
+TransferWatch evaluates four strategies per item/world pair, distinguished by whether you **take** an existing market offer or **make** (place) your own and wait for it to fill (`ask` = `sell_offer`, `bid` = `buy_offer`):
+
+| Strategy | Buy on start | Sell on target | Margin | Wait |
+|---|---|---|---|---|
+| **take-take** (instant) | take ask | take bid | `bid(t) − ask(s)` (narrowest) | none |
+| **make-take** | place buy offer | take bid | `≈ bid(t) − bid(s)` | buy side |
+| **take-make** | take ask | place sell offer | `≈ ask(t) − ask(s)` | sell side |
+| **make-make** | place buy offer | place sell offer | `≈ ask(t) − bid(s)` (widest) | both |
+
+"make" sides don't fill instantly; `strategies.js` estimates fill time (`etaDays`) from each world's daily flow (`day_sold` fills your buy offer, `day_bought` fills your sell offer) diluted by competing offer counts, bounded by `HORIZON_DAYS`. `bestStrategy()` picks the highest-`estProfit` strategy with `etaDays ≤ maxEtaDays`. These constants are first-pass and meant to be calibrated against a real snapshot (`npm run export`). `scanner.js` and `export_snapshot.js` import this module; `index.html` carries an inline port.
+
 ### Profit Thresholds
-Scanner Phase 2 candidate selection (`scanner.js`):
+Scanner Phase 2 candidate selection (`scanner.js`) ranks pairs by the best strategy's estimated profit, feasibility-gated by `MAX_ETA_DAYS` (14):
 | Condition | Margin | Est. Profit |
 |---|---|---|
 | Default | ≥10% | ≥150k gold |
 | Fast-selling (≥10/day on target) | ≥6% | ≥100k gold |
 | Pinned items (Gold Token 22721, Silver Token 22516) | always included | — |
 
-Frontend (`index.html`) scores trades with **resilient profit** (`matchResilient`): the profit that survives if the single cheapest seller offer disappears. Trades backed by a genuine order book keep their value; single-offer "stale lowball" mirages collapse to ~0 and get filtered. This is used in both the per-world view and the "Top 5 routes" leaderboard so they agree, and lets the flat floor stay low (25k gross, 15k in per-world deep-search mode; leaderboard per-item floor 15k) while still surfacing only genuine trades. The budget reserves the 750 TC transfer cost before computing spendable gold.
+Frontend (`index.html`) has a **strategy mode** selector:
+- **Instant (take-take)** — original behaviour: scores trades with **resilient profit** (`matchResilient`), the profit that survives if the single cheapest seller offer disappears. Trades backed by a genuine order book keep their value; single-offer "stale lowball" mirages collapse to ~0 and get filtered. Used in both the per-world view and the "Top 5 routes" leaderboard so they agree, and lets the flat floor stay low (25k gross, 15k in per-world deep-search mode; leaderboard per-item floor 15k) while still surfacing only genuine trades.
+- **Patient (offers)** — computes the best of all four strategies from `market_values` alone (no order book fetch). Trades show a strategy badge, a 📌 marker on the make side(s), and an ETA (reusing the speed badge / "Max väntetid" filter). The leaderboard stays take-take only.
+
+The budget reserves the 750 TC transfer cost before computing spendable gold.
 
 ### CI / GitHub Actions (`.github/workflows/`)
 - `scan.yml` — Runs daily at 01:54 UTC. Phase 1 runs first, then Phase 2 runs a 15-batch matrix (`--skip`/`--take` pagination, 95 each = 1425 pairs) with `max-parallel: 5` to cap concurrent load on the market API.
@@ -62,6 +80,8 @@ Frontend (`index.html`) scores trades with **resilient profit** (`matchResilient
 
 ### Key Files
 - `scanner/scanner.js` — All scanning logic (~600 lines). Constants at top control thresholds and rate limiting (`REQUEST_PAUSE = 12s`).
+- `scanner/strategies.js` — Shared 4-strategy evaluation + ETA/feasibility model (imported by scanner + export).
+- `scanner/export_snapshot.js` — Dumps `world_market_data` to `scanner/data/snapshot.json` and writes a ranked `patient_trades_report.md`. Run with `npm run export`.
 - `index.html` — Entire frontend in one file (HTML + CSS + JS).
 - `supabase_setup.sql` — Database schema and RLS policy setup. Run once to initialize.
 - `item_metadata.json` — Cached item catalog (~3.6 MB). Regenerate with `fetch_item_metadata.js`.
