@@ -1,8 +1,8 @@
 # Patient trades report
 
-Exported 2026-06-06T12:30:36.448Z · 73 worlds · 1419249 feasible trades (maxEta 14d)
+Exported 2026-06-06T14:50:38.886Z · 73 worlds · 1404181 feasible trades (maxEta 14d)
 
-Strategy mix: Make-Take 218902 · Make-Make 539780 · Take-Make 581668 · Take-Take 78899
+Strategy mix: Make-Take 213274 · Make-Make 526218 · Take-Make 584251 · Take-Take 80438
 
 | # | Strategy | Start → Target | Item | Buy | Sell | Margin% | Qty | ETA(d) | Est. profit |
 |---|---|---|---|---|---|---|---|---|---|
@@ -39,120 +39,120 @@ Strategy mix: Make-Take 218902 · Make-Make 539780 · Take-Make 581668 · Take-T
 | 31 | Make-Take | Nevia → Yonabra | Crypt Strike | 497,500 | 420,420,420 | 84406.6 | 3 | 6.0 | 1,259,768,760 |
 | 32 | Make-Take | Unebra → Yonabra | Crypt Strike | 502,500 | 420,420,420 | 83565.8 | 3 | 3.0 | 1,259,753,760 |
 | 33 | Make-Take | Nevia → Secura | Crypt Strike | 497,500 | 420,000,000 | 84322.1 | 3 | 6.0 | 1,258,507,500 |
-| 34 | Make-Take | Xymera → Honbra | Soulshredder | 320,000 | 200,000,000 | 62400.0 | 6 | 6.0 | 1,198,080,000 |
-| 35 | Make-Take | Thyria → Belobra | Crypt Slicer | 427,779 | 285,000,000 | 66523.2 | 4 | 4.0 | 1,138,288,884 |
-| 36 | Make-Take | Xymera → Venebra | Soulshredder | 320,000 | 190,000,000 | 59275.0 | 6 | 6.0 | 1,138,080,000 |
-| 37 | Make-Make | Terribra → Bravoria | Sanguine Bow | 1,111,111 | 380,000,000 | 34100.0 | 3 | 6.0 | 1,136,666,667 |
+| 34 | Make-Take | Issobra → Collabra | Sanguine Legs | 356,500 | 300,000,001 | 84051.5 | 4 | 4.0 | 1,198,574,004 |
+| 35 | Make-Take | Xymera → Honbra | Soulshredder | 320,000 | 200,000,000 | 62400.0 | 6 | 6.0 | 1,198,080,000 |
+| 36 | Make-Take | Thyria → Belobra | Crypt Slicer | 427,779 | 285,000,000 | 66523.2 | 4 | 4.0 | 1,138,288,884 |
+| 37 | Make-Take | Xymera → Venebra | Soulshredder | 320,000 | 190,000,000 | 59275.0 | 6 | 6.0 | 1,138,080,000 |
 | 38 | Make-Take | Havera → Belobra | Crypt Slicer | 3,100,000 | 285,000,000 | 9093.5 | 4 | 4.0 | 1,127,600,000 |
 | 39 | Make-Take | Xymera → Belobra | Soulshredder | 320,000 | 182,500,000 | 56931.3 | 6 | 6.0 | 1,093,080,000 |
 | 40 | Make-Take | Thyria → Secura | Crypt Slicer | 427,779 | 270,000,000 | 63016.7 | 4 | 4.0 | 1,078,288,884 |
 | 41 | Make-Take | Havera → Secura | Crypt Slicer | 3,100,000 | 270,000,000 | 8609.7 | 4 | 4.0 | 1,067,600,000 |
-| 42 | Make-Make | Terribra → Jadebra | Sanguine Bow | 1,111,111 | 355,000,000 | 31850.0 | 3 | 6.0 | 1,061,666,667 |
-| 43 | Make-Take | Nevia → Astera | Crypt Strike | 497,500 | 350,002,000 | 70252.2 | 3 | 6.0 | 1,048,513,500 |
-| 44 | Make-Take | Unebra → Astera | Crypt Strike | 502,500 | 350,002,000 | 69552.1 | 3 | 3.0 | 1,048,498,500 |
-| 45 | Make-Take | Celesta → Bona | Crypt Splitter | 385,000 | 260,000,000 | 67432.5 | 4 | 4.0 | 1,038,460,000 |
-| 46 | Make-Take | Celebra → Secura | Sanguine Legs | 356,500 | 340,201,000 | 95328.1 | 3 | 6.0 | 1,019,533,500 |
-| 47 | Make-Take | Luminera → Secura | Sanguine Legs | 356,501 | 340,201,000 | 95327.8 | 3 | 6.0 | 1,019,533,497 |
-| 48 | Make-Take | Issobra → Nefera | Sanguine Legs | 356,500 | 340,000,000 | 95271.7 | 3 | 3.0 | 1,018,930,500 |
-| 49 | Make-Take | Celebra → Nefera | Sanguine Legs | 356,500 | 340,000,000 | 95271.7 | 3 | 6.0 | 1,018,930,500 |
-| 50 | Make-Take | Celebra → Belobra | Sanguine Legs | 356,500 | 340,000,000 | 95271.7 | 3 | 6.0 | 1,018,930,500 |
-| 51 | Make-Take | Luminera → Nefera | Sanguine Legs | 356,501 | 340,000,000 | 95271.4 | 3 | 6.0 | 1,018,930,497 |
-| 52 | Make-Take | Luminera → Belobra | Sanguine Legs | 356,501 | 340,000,000 | 95271.4 | 3 | 6.0 | 1,018,930,497 |
-| 53 | Make-Take | Talera → Nefera | Sanguine Legs | 357,000 | 340,000,000 | 95138.1 | 3 | 3.0 | 1,018,929,000 |
-| 54 | Make-Take | Bona → Nefera | Sanguine Legs | 500,000 | 340,000,000 | 67900.0 | 3 | 3.0 | 1,018,500,000 |
-| 55 | Make-Take | Xymera → Secura | Soulshredder | 320,000 | 170,022,000 | 53031.9 | 6 | 6.0 | 1,018,212,000 |
-| 56 | Make-Take | Nevia → Secura | Soulkamas | 100 | 253,799,999 | 253799899.0 | 4 | 4.0 | 1,015,199,596 |
-| 57 | Make-Take | Ourobra → Secura | Soulkamas | 335,000 | 253,799,999 | 75661.2 | 4 | 4.0 | 1,013,859,996 |
-| 58 | Make-Take | Premia → Secura | Soulkamas | 376,000 | 253,799,999 | 67400.0 | 4 | 4.0 | 1,013,695,996 |
-| 59 | Make-Take | Ourobra → Antica | Soulkamas | 335,000 | 253,000,000 | 75422.4 | 4 | 4.0 | 1,010,660,000 |
-| 60 | Make-Take | Premia → Antica | Soulkamas | 376,000 | 253,000,000 | 67187.2 | 4 | 4.0 | 1,010,496,000 |
-| 61 | Make-Take | Issobra → Kalibra | Sanguine Legs | 356,500 | 335,000,000 | 93869.1 | 3 | 3.0 | 1,003,930,500 |
-| 62 | Make-Take | Celebra → Kalibra | Sanguine Legs | 356,500 | 335,000,000 | 93869.1 | 3 | 6.0 | 1,003,930,500 |
-| 63 | Make-Take | Luminera → Kalibra | Sanguine Legs | 356,501 | 335,000,000 | 93868.9 | 3 | 6.0 | 1,003,930,497 |
-| 64 | Make-Take | Talera → Kalibra | Sanguine Legs | 357,000 | 335,000,000 | 93737.5 | 3 | 3.0 | 1,003,929,000 |
-| 65 | Make-Take | Bona → Kalibra | Sanguine Legs | 500,000 | 335,000,000 | 66900.0 | 3 | 3.0 | 1,003,500,000 |
-| 66 | Make-Take | Talera → Quintera | Sanguine Legs | 357,000 | 330,500,000 | 92477.0 | 3 | 3.0 | 990,429,000 |
-| 67 | Make-Take | Terribra → Secura | Sanguine Bow | 1,111,111 | 331,100,000 | 29699.0 | 3 | 6.0 | 989,966,667 |
-| 68 | Make-Take | Ourobra → Honbra | Soulkamas | 335,000 | 330,000,000 | 98407.5 | 3 | 3.0 | 988,995,000 |
-| 69 | Make-Take | Celebra → Celesta | Sanguine Legs | 356,500 | 330,000,000 | 92466.6 | 3 | 6.0 | 988,930,500 |
-| 70 | Make-Take | Luminera → Celesta | Sanguine Legs | 356,501 | 330,000,000 | 92466.4 | 3 | 6.0 | 988,930,497 |
-| 71 | Make-Take | Issobra → Descubra | Sanguine Legs | 356,500 | 322,000,000 | 90222.6 | 3 | 3.0 | 964,930,500 |
-| 72 | Make-Take | Celebra → Gentebra | Sanguine Legs | 356,500 | 321,533,007 | 90091.6 | 3 | 6.0 | 963,529,521 |
-| 73 | Make-Take | Luminera → Gentebra | Sanguine Legs | 356,501 | 321,533,007 | 90091.3 | 3 | 6.0 | 963,529,518 |
-| 74 | Make-Take | Talera → Havera | Sanguine Legs | 357,000 | 320,124,500 | 89570.7 | 3 | 3.0 | 959,302,500 |
-| 75 | Make-Take | Terribra → Rasteibra | Sanguine Bow | 1,111,111 | 320,100,000 | 28709.0 | 3 | 6.0 | 956,966,667 |
-| 76 | Make-Take | Terribra → Havera | Sanguine Bow | 1,111,111 | 320,010,000 | 28700.9 | 3 | 6.0 | 956,696,667 |
-| 77 | Make-Take | Terribra → Honbra | Sanguine Bow | 1,111,111 | 320,000,000 | 28700.0 | 3 | 6.0 | 956,666,667 |
-| 78 | Make-Take | Terribra → Lobera | Sanguine Bow | 1,111,111 | 320,000,000 | 28700.0 | 3 | 6.0 | 956,666,667 |
-| 79 | Make-Take | Terribra → Celesta | Sanguine Bow | 1,111,111 | 320,000,000 | 28700.0 | 3 | 6.0 | 956,666,667 |
-| 80 | Make-Take | Xymera → Lobera | Soulshredder | 320,000 | 190,010,000 | 59278.1 | 5 | 5.0 | 948,450,000 |
-| 81 | Make-Take | Terribra → Dia | Sanguine Bow | 1,111,111 | 316,000,000 | 28340.0 | 3 | 6.0 | 944,666,667 |
-| 82 | Make-Take | Talera → Premia | Sanguine Legs | 357,000 | 315,200,999 | 88191.6 | 3 | 3.0 | 944,531,997 |
-| 83 | Make-Take | Bona → Kalibra | Sanguine Bow | 390,000 | 315,000,000 | 80669.2 | 3 | 3.0 | 943,830,000 |
-| 84 | Make-Take | Terribra → Kalibra | Sanguine Bow | 1,111,111 | 315,000,000 | 28250.0 | 3 | 6.0 | 941,666,667 |
-| 85 | Make-Take | Xymera → Wintera | Soulshredder | 320,000 | 186,100,000 | 58056.3 | 5 | 5.0 | 928,900,000 |
-| 86 | Make-Take | Terribra → Wintera | Sanguine Bow | 1,111,111 | 310,000,000 | 27800.0 | 3 | 6.0 | 926,666,667 |
-| 87 | Make-Take | Xymera → Quelibra | Soulshredder | 320,000 | 182,500,000 | 56931.3 | 5 | 5.0 | 910,900,000 |
-| 88 | Make-Take | Issobra → Collabra | Sanguine Legs | 356,500 | 300,000,000 | 84051.5 | 3 | 3.0 | 898,930,500 |
-| 89 | Make-Take | Issobra → Ustebra | Sanguine Legs | 356,500 | 300,000,000 | 84051.5 | 3 | 3.0 | 898,930,500 |
-| 90 | Make-Take | Talera → Thyria | Sanguine Legs | 357,000 | 300,000,000 | 83933.6 | 3 | 3.0 | 898,929,000 |
-| 91 | Make-Take | Xymera → Havera | Soulshredder | 320,000 | 180,102,001 | 56181.9 | 5 | 5.0 | 898,910,005 |
-| 92 | Make-Take | Celesta → Refugia | Crypt Splitter | 385,000 | 300,000,000 | 77822.1 | 3 | 3.0 | 898,845,000 |
-| 93 | Make-Take | Celesta → Belobra | Crypt Splitter | 385,000 | 300,000,000 | 77822.1 | 3 | 3.0 | 898,845,000 |
-| 94 | Make-Take | Thyria → Antica | Crypt Slicer | 427,779 | 300,000,000 | 70029.7 | 3 | 3.0 | 898,716,663 |
-| 95 | Make-Take | Terribra → Tornabra | Sanguine Bow | 1,111,111 | 300,000,000 | 26900.0 | 3 | 6.0 | 896,666,667 |
-| 96 | Make-Take | Havera → Antica | Crypt Slicer | 3,100,000 | 300,000,000 | 9577.4 | 3 | 3.0 | 890,700,000 |
-| 97 | Make-Take | Terribra → Antica | Sanguine Bow | 1,111,111 | 296,103,000 | 26549.3 | 3 | 6.0 | 884,975,667 |
-| 98 | Make-Take | Terribra → Peloria | Sanguine Bow | 1,111,111 | 290,000,000 | 26000.0 | 3 | 6.0 | 866,666,667 |
-| 99 | Make-Take | Terribra → Ferobra | Sanguine Bow | 1,111,111 | 290,000,000 | 26000.0 | 3 | 6.0 | 866,666,667 |
-| 100 | Make-Take | Terribra → Talera | Sanguine Bow | 1,111,111 | 290,000,000 | 26000.0 | 3 | 6.0 | 866,666,667 |
-| 101 | Make-Take | Xymera → Blumera | Soulshredder | 320,000 | 170,000,000 | 53025.0 | 5 | 5.0 | 848,400,000 |
-| 102 | Make-Take | Xymera → Ourobra | Soulshredder | 320,000 | 212,000,000 | 66150.0 | 4 | 4.0 | 846,720,000 |
-| 103 | Make-Take | Celesta → Kalibra | Crypt Splitter | 385,000 | 280,000,000 | 72627.3 | 3 | 3.0 | 838,845,000 |
-| 104 | Make-Take | Bona → Nefera | Sanguine Bow | 390,000 | 280,002,000 | 71695.4 | 3 | 3.0 | 838,836,000 |
-| 105 | Make-Take | Bona → Astera | Sanguine Bow | 390,000 | 280,002,000 | 71695.4 | 3 | 3.0 | 838,836,000 |
-| 106 | Make-Take | Thyria → Kalibra | Crypt Slicer | 427,779 | 280,000,000 | 65354.4 | 3 | 3.0 | 838,716,663 |
-| 107 | Make-Take | Terribra → Vunira | Sanguine Bow | 1,111,111 | 280,444,444 | 25140.0 | 3 | 6.0 | 837,999,999 |
-| 108 | Make-Take | Terribra → Gentebra | Sanguine Bow | 1,111,111 | 280,333,000 | 25130.0 | 3 | 6.0 | 837,665,667 |
-| 109 | Make-Take | Terribra → Nefera | Sanguine Bow | 1,111,111 | 280,002,000 | 25100.2 | 3 | 6.0 | 836,672,667 |
-| 110 | Make-Take | Terribra → Astera | Sanguine Bow | 1,111,111 | 280,002,000 | 25100.2 | 3 | 6.0 | 836,672,667 |
-| 111 | Make-Take | Terribra → Nevia | Sanguine Bow | 1,111,111 | 280,000,000 | 25100.0 | 3 | 6.0 | 836,666,667 |
-| 112 | Make-Take | Terribra → Thyria | Sanguine Bow | 1,111,111 | 280,000,000 | 25100.0 | 3 | 6.0 | 836,666,667 |
-| 113 | Make-Take | Havera → Kalibra | Crypt Slicer | 3,100,000 | 280,000,000 | 8932.3 | 3 | 3.0 | 830,700,000 |
-| 114 | Make-Take | Terribra → Ombra | Sanguine Bow | 1,111,111 | 270,750,750 | 24267.6 | 3 | 6.0 | 808,918,917 |
-| 115 | Make-Take | Bona → Pacera | Sanguine Bow | 390,000 | 270,002,000 | 69131.3 | 3 | 3.0 | 808,836,000 |
-| 116 | Make-Take | Terribra → Pacera | Sanguine Bow | 1,111,111 | 270,002,000 | 24200.2 | 3 | 6.0 | 806,672,667 |
-| 117 | Make-Take | Xymera → Karmeya | Soulshredder | 320,000 | 200,005,000 | 62401.6 | 4 | 4.0 | 798,740,000 |
-| 118 | Make-Take | Xymera → Antica | Soulshredder | 320,000 | 160,002,000 | 49900.6 | 5 | 5.0 | 798,410,000 |
-| 119 | Make-Take | Nevia → Celesta | Soulkamas | 100 | 265,000,000 | 264999900.0 | 3 | 3.0 | 794,999,700 |
-| 120 | Make-Make | Xymera → Premia | Soulshredder | 320,000 | 199,000,000 | 62087.5 | 4 | 6.0 | 794,720,000 |
-| 121 | Make-Take | Ourobra → Celesta | Soulkamas | 335,000 | 265,000,000 | 79004.5 | 3 | 3.0 | 793,995,000 |
-| 122 | Make-Take | Premia → Celesta | Soulkamas | 376,000 | 265,000,000 | 70378.7 | 3 | 3.0 | 793,872,000 |
-| 123 | Make-Make | Issobra → Astera | Sanguine Legs | 356,500 | 389,979,000 | 109291.0 | 2 | 6.0 | 779,245,000 |
-| 124 | Make-Make | Celebra → Astera | Sanguine Legs | 356,500 | 389,979,000 | 109291.0 | 2 | 6.0 | 779,245,000 |
-| 125 | Make-Make | Luminera → Astera | Sanguine Legs | 356,501 | 389,979,000 | 109290.7 | 2 | 6.0 | 779,244,998 |
-| 126 | Make-Make | Talera → Astera | Sanguine Legs | 357,000 | 389,979,000 | 109137.8 | 2 | 6.0 | 779,244,000 |
-| 127 | Make-Make | Bona → Astera | Sanguine Legs | 500,000 | 389,979,000 | 77895.8 | 2 | 6.0 | 778,958,000 |
-| 128 | Make-Take | Xymera → Celebra | Soulshredder | 320,000 | 195,000,000 | 60837.5 | 4 | 4.0 | 778,720,000 |
-| 129 | Make-Take | Xymera → Jadebra | Soulshredder | 320,000 | 193,151,000 | 60259.7 | 4 | 4.0 | 771,324,000 |
-| 130 | Make-Take | Xymera → Yovera | Soulshredder | 320,000 | 192,300,000 | 59993.8 | 4 | 4.0 | 767,920,000 |
-| 131 | Make-Take | Xymera → Pacera | Soulshredder | 320,000 | 191,000,027 | 59587.5 | 4 | 4.0 | 762,720,108 |
-| 132 | Make-Take | Xymera → Nefera | Soulshredder | 320,000 | 190,069,000 | 59296.6 | 4 | 4.0 | 758,996,000 |
-| 133 | Make-Take | Unebra → Antica | Sanguine Razor | 145,400 | 108,502,000 | 74523.1 | 7 | 7.0 | 758,496,200 |
-| 134 | Make-Take | Xymera → Talera | Soulshredder | 320,000 | 188,100,000 | 58681.3 | 4 | 4.0 | 751,120,000 |
-| 135 | Make-Take | Unebra → Secura | Sanguine Razor | 145,400 | 125,000,000 | 85869.7 | 6 | 6.0 | 749,127,600 |
-| 136 | Make-Make | Terribra → Xyla | Sanguine Bow | 1,111,111 | 375,000,000 | 33650.0 | 2 | 6.0 | 747,777,778 |
-| 137 | Make-Take | Terribra → Descubra | Sanguine Bow | 1,111,111 | 250,000,000 | 22400.0 | 3 | 6.0 | 746,666,667 |
-| 138 | Make-Take | Xymera → Gentebra | Soulshredder | 320,000 | 186,400,000 | 58150.0 | 4 | 4.0 | 744,320,000 |
-| 139 | Make-Take | Bona → Celesta | Soulshell | 154,999 | 106,100,000 | 68352.1 | 7 | 7.0 | 741,615,007 |
-| 140 | Make-Take | Xymera → Ustebra | Soulshredder | 320,000 | 182,500,007 | 56931.3 | 4 | 4.0 | 728,720,028 |
-| 141 | Make-Take | Xymera → Solidera | Soulshredder | 320,000 | 181,107,000 | 56495.9 | 4 | 4.0 | 723,148,000 |
-| 142 | Make-Take | Unebra → Dia | Sanguine Razor | 145,400 | 120,000,000 | 82430.9 | 6 | 6.0 | 719,127,600 |
-| 143 | Make-Take | Xymera → Xyla | Soulshredder | 320,000 | 180,000,026 | 56150.0 | 4 | 4.0 | 718,720,104 |
-| 144 | Make-Take | Xymera → Inabra | Soulshredder | 320,000 | 180,000,000 | 56150.0 | 4 | 4.0 | 718,720,000 |
-| 145 | Make-Make | Talera → Serdebra | Sanguine Legs | 357,000 | 351,900,000 | 98471.4 | 2 | 6.0 | 703,086,000 |
-| 146 | Make-Take | Unebra → Lobera | Crypt Strike | 502,500 | 350,000,000 | 69551.7 | 2 | 2.0 | 698,995,000 |
-| 147 | Make-Take | Unebra → Wintera | Crypt Strike | 502,500 | 350,000,000 | 69551.7 | 2 | 2.0 | 698,995,000 |
-| 148 | Make-Take | Xymera → Ombra | Soulshredder | 320,000 | 175,000,000 | 54587.5 | 4 | 4.0 | 698,720,000 |
-| 149 | Make-Take | Issobra → Dia | Sanguine Legs | 356,500 | 345,000,000 | 96674.2 | 2 | 2.0 | 689,287,000 |
-| 150 | Make-Take | Xymera → Astera | Soulshredder | 320,000 | 170,022,000 | 53031.9 | 4 | 4.0 | 678,808,000 |
+| 42 | Make-Take | Nevia → Astera | Crypt Strike | 497,500 | 350,002,000 | 70252.2 | 3 | 6.0 | 1,048,513,500 |
+| 43 | Make-Take | Unebra → Astera | Crypt Strike | 502,500 | 350,002,000 | 69552.1 | 3 | 3.0 | 1,048,498,500 |
+| 44 | Make-Take | Celesta → Bona | Crypt Splitter | 385,000 | 260,000,000 | 67432.5 | 4 | 4.0 | 1,038,460,000 |
+| 45 | Make-Take | Celebra → Secura | Sanguine Legs | 356,500 | 340,201,000 | 95328.1 | 3 | 6.0 | 1,019,533,500 |
+| 46 | Make-Take | Luminera → Secura | Sanguine Legs | 356,501 | 340,201,000 | 95327.8 | 3 | 6.0 | 1,019,533,497 |
+| 47 | Make-Take | Issobra → Nefera | Sanguine Legs | 356,500 | 340,000,000 | 95271.7 | 3 | 3.0 | 1,018,930,500 |
+| 48 | Make-Take | Celebra → Nefera | Sanguine Legs | 356,500 | 340,000,000 | 95271.7 | 3 | 6.0 | 1,018,930,500 |
+| 49 | Make-Take | Celebra → Belobra | Sanguine Legs | 356,500 | 340,000,000 | 95271.7 | 3 | 6.0 | 1,018,930,500 |
+| 50 | Make-Take | Luminera → Nefera | Sanguine Legs | 356,501 | 340,000,000 | 95271.4 | 3 | 6.0 | 1,018,930,497 |
+| 51 | Make-Take | Luminera → Belobra | Sanguine Legs | 356,501 | 340,000,000 | 95271.4 | 3 | 6.0 | 1,018,930,497 |
+| 52 | Make-Take | Talera → Nefera | Sanguine Legs | 357,000 | 340,000,000 | 95138.1 | 3 | 3.0 | 1,018,929,000 |
+| 53 | Make-Take | Bona → Nefera | Sanguine Legs | 500,000 | 340,000,000 | 67900.0 | 3 | 3.0 | 1,018,500,000 |
+| 54 | Make-Take | Xymera → Secura | Soulshredder | 320,000 | 170,022,000 | 53031.9 | 6 | 6.0 | 1,018,212,000 |
+| 55 | Make-Take | Nevia → Secura | Soulkamas | 100 | 253,799,999 | 253799899.0 | 4 | 4.0 | 1,015,199,596 |
+| 56 | Make-Take | Ourobra → Secura | Soulkamas | 335,000 | 253,799,999 | 75661.2 | 4 | 4.0 | 1,013,859,996 |
+| 57 | Make-Take | Premia → Secura | Soulkamas | 376,000 | 253,799,999 | 67400.0 | 4 | 4.0 | 1,013,695,996 |
+| 58 | Make-Take | Ourobra → Antica | Soulkamas | 335,000 | 253,000,000 | 75422.4 | 4 | 4.0 | 1,010,660,000 |
+| 59 | Make-Take | Premia → Antica | Soulkamas | 376,000 | 253,000,000 | 67187.2 | 4 | 4.0 | 1,010,496,000 |
+| 60 | Make-Take | Issobra → Kalibra | Sanguine Legs | 356,500 | 335,000,000 | 93869.1 | 3 | 3.0 | 1,003,930,500 |
+| 61 | Make-Take | Celebra → Kalibra | Sanguine Legs | 356,500 | 335,000,000 | 93869.1 | 3 | 6.0 | 1,003,930,500 |
+| 62 | Make-Take | Luminera → Kalibra | Sanguine Legs | 356,501 | 335,000,000 | 93868.9 | 3 | 6.0 | 1,003,930,497 |
+| 63 | Make-Take | Talera → Kalibra | Sanguine Legs | 357,000 | 335,000,000 | 93737.5 | 3 | 3.0 | 1,003,929,000 |
+| 64 | Make-Take | Bona → Kalibra | Sanguine Legs | 500,000 | 335,000,000 | 66900.0 | 3 | 3.0 | 1,003,500,000 |
+| 65 | Make-Take | Talera → Quintera | Sanguine Legs | 357,000 | 330,500,000 | 92477.0 | 3 | 3.0 | 990,429,000 |
+| 66 | Make-Take | Ourobra → Honbra | Soulkamas | 335,000 | 330,000,000 | 98407.5 | 3 | 3.0 | 988,995,000 |
+| 67 | Make-Take | Celebra → Celesta | Sanguine Legs | 356,500 | 330,000,000 | 92466.6 | 3 | 6.0 | 988,930,500 |
+| 68 | Make-Take | Luminera → Celesta | Sanguine Legs | 356,501 | 330,000,000 | 92466.4 | 3 | 6.0 | 988,930,497 |
+| 69 | Make-Take | Issobra → Descubra | Sanguine Legs | 356,500 | 322,000,000 | 90222.6 | 3 | 3.0 | 964,930,500 |
+| 70 | Make-Take | Celebra → Gentebra | Sanguine Legs | 356,500 | 321,533,007 | 90091.6 | 3 | 6.0 | 963,529,521 |
+| 71 | Make-Take | Luminera → Gentebra | Sanguine Legs | 356,501 | 321,533,007 | 90091.3 | 3 | 6.0 | 963,529,518 |
+| 72 | Make-Take | Talera → Havera | Sanguine Legs | 357,000 | 320,124,500 | 89570.7 | 3 | 3.0 | 959,302,500 |
+| 73 | Make-Take | Xymera → Lobera | Soulshredder | 320,000 | 190,010,000 | 59278.1 | 5 | 5.0 | 948,450,000 |
+| 74 | Make-Take | Talera → Premia | Sanguine Legs | 357,000 | 315,200,999 | 88191.6 | 3 | 3.0 | 944,531,997 |
+| 75 | Make-Take | Bona → Kalibra | Sanguine Bow | 390,000 | 315,000,000 | 80669.2 | 3 | 3.0 | 943,830,000 |
+| 76 | Make-Take | Xymera → Wintera | Soulshredder | 320,000 | 186,100,000 | 58056.3 | 5 | 5.0 | 928,900,000 |
+| 77 | Make-Take | Xymera → Quelibra | Soulshredder | 320,000 | 182,500,000 | 56931.3 | 5 | 5.0 | 910,900,000 |
+| 78 | Make-Take | Issobra → Ustebra | Sanguine Legs | 356,500 | 300,000,000 | 84051.5 | 3 | 3.0 | 898,930,500 |
+| 79 | Make-Take | Talera → Thyria | Sanguine Legs | 357,000 | 300,000,000 | 83933.6 | 3 | 3.0 | 898,929,000 |
+| 80 | Make-Take | Xymera → Havera | Soulshredder | 320,000 | 180,102,001 | 56181.9 | 5 | 5.0 | 898,910,005 |
+| 81 | Make-Take | Celesta → Refugia | Crypt Splitter | 385,000 | 300,000,000 | 77822.1 | 3 | 3.0 | 898,845,000 |
+| 82 | Make-Take | Celesta → Belobra | Crypt Splitter | 385,000 | 300,000,000 | 77822.1 | 3 | 3.0 | 898,845,000 |
+| 83 | Make-Take | Thyria → Antica | Crypt Slicer | 427,779 | 300,000,000 | 70029.7 | 3 | 3.0 | 898,716,663 |
+| 84 | Make-Take | Havera → Antica | Crypt Slicer | 3,100,000 | 300,000,000 | 9577.4 | 3 | 3.0 | 890,700,000 |
+| 85 | Make-Take | Xymera → Blumera | Soulshredder | 320,000 | 170,000,000 | 53025.0 | 5 | 5.0 | 848,400,000 |
+| 86 | Make-Take | Xymera → Ourobra | Soulshredder | 320,000 | 212,000,000 | 66150.0 | 4 | 4.0 | 846,720,000 |
+| 87 | Make-Take | Celesta → Kalibra | Crypt Splitter | 385,000 | 280,000,000 | 72627.3 | 3 | 3.0 | 838,845,000 |
+| 88 | Make-Take | Bona → Nefera | Sanguine Bow | 390,000 | 280,002,000 | 71695.4 | 3 | 3.0 | 838,836,000 |
+| 89 | Make-Take | Bona → Astera | Sanguine Bow | 390,000 | 280,002,000 | 71695.4 | 3 | 3.0 | 838,836,000 |
+| 90 | Make-Take | Thyria → Kalibra | Crypt Slicer | 427,779 | 280,000,000 | 65354.4 | 3 | 3.0 | 838,716,663 |
+| 91 | Make-Take | Havera → Kalibra | Crypt Slicer | 3,100,000 | 280,000,000 | 8932.3 | 3 | 3.0 | 830,700,000 |
+| 92 | Make-Take | Bona → Pacera | Sanguine Bow | 390,000 | 270,002,000 | 69131.3 | 3 | 3.0 | 808,836,000 |
+| 93 | Make-Take | Nevia → Yovera | Soulkamas | 100 | 200,999,999 | 200999899.0 | 4 | 4.0 | 803,999,596 |
+| 94 | Make-Take | Ourobra → Yovera | Soulkamas | 335,000 | 200,999,999 | 59900.0 | 4 | 4.0 | 802,659,996 |
+| 95 | Make-Take | Xymera → Karmeya | Soulshredder | 320,000 | 200,005,000 | 62401.6 | 4 | 4.0 | 798,740,000 |
+| 96 | Make-Take | Xymera → Antica | Soulshredder | 320,000 | 160,002,000 | 49900.6 | 5 | 5.0 | 798,410,000 |
+| 97 | Make-Take | Nevia → Celesta | Soulkamas | 100 | 265,000,000 | 264999900.0 | 3 | 3.0 | 794,999,700 |
+| 98 | Make-Make | Xymera → Premia | Soulshredder | 320,000 | 199,000,000 | 62087.5 | 4 | 6.0 | 794,720,000 |
+| 99 | Make-Take | Ourobra → Celesta | Soulkamas | 335,000 | 265,000,000 | 79004.5 | 3 | 3.0 | 793,995,000 |
+| 100 | Make-Take | Premia → Celesta | Soulkamas | 376,000 | 265,000,000 | 70378.7 | 3 | 3.0 | 793,872,000 |
+| 101 | Make-Make | Issobra → Astera | Sanguine Legs | 356,500 | 389,979,000 | 109291.0 | 2 | 6.0 | 779,245,000 |
+| 102 | Make-Make | Celebra → Astera | Sanguine Legs | 356,500 | 389,979,000 | 109291.0 | 2 | 6.0 | 779,245,000 |
+| 103 | Make-Make | Luminera → Astera | Sanguine Legs | 356,501 | 389,979,000 | 109290.7 | 2 | 6.0 | 779,244,998 |
+| 104 | Make-Make | Talera → Astera | Sanguine Legs | 357,000 | 389,979,000 | 109137.8 | 2 | 6.0 | 779,244,000 |
+| 105 | Make-Make | Bona → Astera | Sanguine Legs | 500,000 | 389,979,000 | 77895.8 | 2 | 6.0 | 778,958,000 |
+| 106 | Make-Take | Xymera → Celebra | Soulshredder | 320,000 | 195,000,000 | 60837.5 | 4 | 4.0 | 778,720,000 |
+| 107 | Make-Take | Xymera → Jadebra | Soulshredder | 320,000 | 193,151,000 | 60259.7 | 4 | 4.0 | 771,324,000 |
+| 108 | Make-Take | Xymera → Pacera | Soulshredder | 320,000 | 191,000,027 | 59587.5 | 4 | 4.0 | 762,720,108 |
+| 109 | Make-Take | Xymera → Nefera | Soulshredder | 320,000 | 190,069,000 | 59296.6 | 4 | 4.0 | 758,996,000 |
+| 110 | Make-Take | Unebra → Antica | Sanguine Razor | 145,400 | 108,502,000 | 74523.1 | 7 | 7.0 | 758,496,200 |
+| 111 | Make-Take | Xymera → Talera | Soulshredder | 320,000 | 188,100,000 | 58681.3 | 4 | 4.0 | 751,120,000 |
+| 112 | Make-Take | Unebra → Secura | Sanguine Razor | 145,400 | 125,000,000 | 85869.7 | 6 | 6.0 | 749,127,600 |
+| 113 | Make-Take | Xymera → Gentebra | Soulshredder | 320,000 | 186,400,000 | 58150.0 | 4 | 4.0 | 744,320,000 |
+| 114 | Make-Take | Bona → Celesta | Soulshell | 154,999 | 106,100,000 | 68352.1 | 7 | 7.0 | 741,615,007 |
+| 115 | Make-Take | Xymera → Ustebra | Soulshredder | 320,000 | 182,500,007 | 56931.3 | 4 | 4.0 | 728,720,028 |
+| 116 | Make-Take | Xymera → Solidera | Soulshredder | 320,000 | 181,107,000 | 56495.9 | 4 | 4.0 | 723,148,000 |
+| 117 | Make-Take | Unebra → Dia | Sanguine Razor | 145,400 | 120,000,000 | 82430.9 | 6 | 6.0 | 719,127,600 |
+| 118 | Make-Take | Xymera → Xyla | Soulshredder | 320,000 | 180,000,026 | 56150.0 | 4 | 4.0 | 718,720,104 |
+| 119 | Make-Take | Xymera → Inabra | Soulshredder | 320,000 | 180,000,000 | 56150.0 | 4 | 4.0 | 718,720,000 |
+| 120 | Make-Make | Talera → Serdebra | Sanguine Legs | 357,000 | 351,900,000 | 98471.4 | 2 | 6.0 | 703,086,000 |
+| 121 | Make-Take | Unebra → Lobera | Crypt Strike | 502,500 | 350,000,000 | 69551.7 | 2 | 2.0 | 698,995,000 |
+| 122 | Make-Take | Unebra → Wintera | Crypt Strike | 502,500 | 350,000,000 | 69551.7 | 2 | 2.0 | 698,995,000 |
+| 123 | Make-Take | Xymera → Ombra | Soulshredder | 320,000 | 175,000,000 | 54587.5 | 4 | 4.0 | 698,720,000 |
+| 124 | Make-Take | Issobra → Dia | Sanguine Legs | 356,500 | 345,000,000 | 96674.2 | 2 | 2.0 | 689,287,000 |
+| 125 | Make-Take | Xymera → Astera | Soulshredder | 320,000 | 170,022,000 | 53031.9 | 4 | 4.0 | 678,808,000 |
+| 126 | Make-Take | Nevia → Harmonia | Soulkamas | 100 | 225,000,000 | 224999900.0 | 3 | 3.0 | 674,999,700 |
+| 127 | Make-Take | Ourobra → Harmonia | Soulkamas | 335,000 | 225,000,000 | 67064.2 | 3 | 3.0 | 673,995,000 |
+| 128 | Make-Take | Premia → Harmonia | Soulkamas | 376,000 | 225,000,000 | 59740.4 | 3 | 3.0 | 673,872,000 |
+| 129 | Make-Take | Nevia → Kalanta | Soulkamas | 100 | 333,333,333 | 333333233.0 | 2 | 2.0 | 666,666,466 |
+| 130 | Make-Take | Ourobra → Kalanta | Soulkamas | 335,000 | 333,333,333 | 99402.5 | 2 | 2.0 | 665,996,666 |
+| 131 | Make-Take | Xymera → Bona | Soulshredder | 320,000 | 133,066,331 | 41483.2 | 5 | 5.0 | 663,731,655 |
+| 132 | Make-Take | Nevia → Issobra | Soulkamas | 100 | 330,000,000 | 329999900.0 | 2 | 2.0 | 659,999,800 |
+| 133 | Make-Take | Ourobra → Ombra | Soulkamas | 335,000 | 330,000,000 | 98407.5 | 2 | 2.0 | 659,330,000 |
+| 134 | Make-Take | Ourobra → Issobra | Soulkamas | 335,000 | 330,000,000 | 98407.5 | 2 | 2.0 | 659,330,000 |
+| 135 | Make-Take | Thyria → Gentebra | Crypt Slicer | 427,779 | 220,000,000 | 51328.4 | 3 | 3.0 | 658,716,663 |
+| 136 | Make-Take | Havera → Gentebra | Crypt Slicer | 3,100,000 | 220,000,000 | 6996.8 | 3 | 3.0 | 650,700,000 |
+| 137 | Make-Take | Issobra → Kalanta | Sanguine Legs | 356,500 | 325,000,000 | 91064.1 | 2 | 2.0 | 649,287,000 |
+| 138 | Make-Take | Issobra → Etebra | Sanguine Legs | 356,500 | 320,000,000 | 89661.6 | 2 | 2.0 | 639,287,000 |
+| 139 | Make-Take | Unebra → Inabra | Sanguine Razor | 145,400 | 105,000,000 | 72114.6 | 6 | 6.0 | 629,127,600 |
+| 140 | Make-Take | Issobra → Menera | Sanguine Legs | 356,500 | 310,000,000 | 86856.5 | 2 | 2.0 | 619,287,000 |
+| 141 | Make-Take | Issobra → Blumera | Sanguine Legs | 356,500 | 310,000,000 | 86856.5 | 2 | 2.0 | 619,287,000 |
+| 142 | Make-Take | Celebra → Menera | Sanguine Legs | 356,500 | 310,000,000 | 86856.5 | 2 | 4.0 | 619,287,000 |
+| 143 | Make-Take | Luminera → Menera | Sanguine Legs | 356,501 | 310,000,000 | 86856.3 | 2 | 4.0 | 619,286,998 |
+| 144 | Make-Take | Talera → Menera | Sanguine Legs | 357,000 | 310,000,000 | 86734.7 | 2 | 2.0 | 619,286,000 |
+| 145 | Make-Take | Bona → Menera | Sanguine Legs | 500,000 | 310,000,000 | 61900.0 | 2 | 2.0 | 619,000,000 |
+| 146 | Make-Take | Etebra → Yonabra | Crypt Slicer | 340,000 | 305,000,000 | 89605.9 | 2 | 6.0 | 609,320,000 |
+| 147 | Make-Take | Thyria → Yonabra | Crypt Slicer | 427,779 | 305,000,000 | 71198.5 | 2 | 2.0 | 609,144,442 |
+| 148 | Make-Take | Havera → Yonabra | Crypt Slicer | 3,100,000 | 305,000,000 | 9738.7 | 2 | 2.0 | 603,800,000 |
+| 149 | Make-Take | Ourobra → Quelibra | Soulkamas | 335,000 | 200,777,777 | 59833.7 | 3 | 3.0 | 601,328,331 |
+| 150 | Make-Take | Premia → Quelibra | Soulkamas | 376,000 | 200,777,777 | 53298.3 | 3 | 3.0 | 601,205,331 |
