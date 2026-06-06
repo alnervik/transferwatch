@@ -238,7 +238,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     </div>
     <div class="field" id="maxEtaField" style="display:none;">
       <label>Max väntetid (dagar)</label>
-      <input type="number" id="maxEtaInput" value="7" min="0" step="0.5">
+      <input type="number" id="maxEtaInput" value="12" min="0" step="0.5">
     </div>
   </div>
 
@@ -426,8 +426,8 @@ function matchResilient(sellers, buyers, budget = Infinity) {
 // Inline port of scanner/strategies.js. Take = accept an existing offer;
 // make = place your own offer and wait for it to fill. ask = sell_offer,
 // bid = buy_offer. See strategies.js for the full rationale.
-const STRAT_HORIZON_DAYS = 7;
-const STRAT_COMP_WEIGHT = 1;
+const STRAT_HORIZON_DAYS = 12;   // calibrated; see scanner/strategies.js
+const STRAT_COMP_WEIGHT = 0.5;
 const STRAT_SELL_PREMIUM = 1.10;      // patient premium over month_average_sell
 const STRAT_MAX_SELL_OVER_BID = 1.7;  // fallback guard when no average (see strategies.js)
 // Buy side is always "take" — make-buy (lowball buy offers) caused false positives.

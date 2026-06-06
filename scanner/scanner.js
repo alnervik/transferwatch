@@ -26,7 +26,7 @@ const MIN_EST_PROFIT = 150_000;  // min top-of-book estimate per par. Verklig pr
 const DAY_SOLD_FAST_THRESHOLD = 10;  // säljs ≥10/dag på målservern → "snabbsäljare"
 const MIN_MARGIN_PCT_FAST = 6;       // lägre marginaltröskel för snabbsäljare
 const MIN_EST_PROFIT_FAST = 100_000; // lägre vinsttröskel för snabbsäljare
-const MAX_ETA_DAYS = 14;  // max estimerad fyllnadstid (dagar) för en "make"-offer-strategi
+const MAX_ETA_DAYS = 12;  // max estimerad fyllnadstid (dagar) — i synk med HORIZON_DAYS i strategies.js
 const WORLD_FRESH_THRESHOLD_MS = 0;  // 0 = skippa skan om tibiamarkets last_update <= vår scanned_at
 const TC_FRESH_MS = 4 * 60 * 60 * 1000;  // skippa TC-scan om data < 4h gammal
 

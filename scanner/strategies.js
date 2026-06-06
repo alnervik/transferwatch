@@ -20,8 +20,14 @@
 // HORIZON_DAYS / COMP_WEIGHT are first-pass values meant to be calibrated
 // against a real snapshot (npm run export → data/patient_trades_report.md).
 
-const HORIZON_DAYS = 7;   // planning window for "make" offers; bounds qty & ETA
-const COMP_WEIGHT  = 1;   // how strongly each competing offer dilutes your flow share
+// Calibrated against a full 73-world snapshot (npm run export, 2026-06):
+// HORIZON 12 ≈ a patient window (median fill ETA ~9d); COMP_WEIGHT 0.5 assumes
+// you undercut into roughly the front half of the sell book rather than sitting
+// dead-last behind every offer (which throttled most trades to qty ~2). 12 vs a
+// 14-day horizon keeps ~87% of the worthwhile (≥100k) trades while shortening
+// the wait and the capital tied up per trade.
+const HORIZON_DAYS = 12;   // planning window for "make" offers; bounds qty & ETA
+const COMP_WEIGHT  = 0.5;  // how strongly each competing offer dilutes your flow share
 
 // Sell-price realism. A "make" sell offer only fills near what items actually
 // transact for. The API's month_average_sell is the real anchor: we re-price a
