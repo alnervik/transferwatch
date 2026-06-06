@@ -48,16 +48,18 @@ SUPABASE_SERVICE_KEY=eyJhbGci...
 - Yellow Battleye servers cannot transfer to Green Battleye servers. `GREEN_BE` in scanner.js contains the full list.
 
 ### Trade Strategies (`scanner/strategies.js`)
-TransferWatch evaluates four strategies per item/world pair, distinguished by whether you **take** an existing market offer or **make** (place) your own and wait for it to fill (`ask` = `sell_offer`, `bid` = `buy_offer`):
+TransferWatch models four strategies per item/world pair, distinguished by whether you **take** an existing market offer or **make** (place) your own and wait for it to fill (`ask` = `sell_offer`, `bid` = `buy_offer`):
 
-| Strategy | Buy on start | Sell on target | Margin | Wait |
-|---|---|---|---|---|
-| **take-take** (instant) | take ask | take bid | `bid(t) − ask(s)` (narrowest) | none |
-| **make-take** | place buy offer | take bid | `≈ bid(t) − bid(s)` | buy side |
-| **take-make** | take ask | place sell offer | `≈ ask(t) − ask(s)` | sell side |
-| **make-make** | place buy offer | place sell offer | `≈ ask(t) − bid(s)` (widest) | both |
+| Strategy | Buy on start | Sell on target | Margin | Wait | Active |
+|---|---|---|---|---|---|
+| **take-take** (instant) | take ask | take bid | `bid(t) − ask(s)` (narrowest) | none | ✅ |
+| **take-make** | take ask | place sell offer | `≈ ask(t) − ask(s)` | sell side | ✅ |
+| **make-take** | place buy offer | take bid | `≈ bid(t) − bid(s)` | buy side | ❌ |
+| **make-make** | place buy offer | place sell offer | `≈ ask(t) − bid(s)` (widest) | both | ❌ |
 
-"make" sides don't fill instantly; `strategies.js` estimates fill time (`etaDays`) from each world's daily flow (`day_sold` fills your buy offer, `day_bought` fills your sell offer) diluted by competing offer counts, bounded by `HORIZON_DAYS`. `bestStrategy()` picks the highest-`estProfit` strategy with `etaDays ≤ maxEtaDays`. These constants are first-pass and meant to be calibrated against a real snapshot (`npm run export`). `scanner.js` and `export_snapshot.js` import this module; `index.html` carries an inline port.
+Only the **take-buy** strategies are active (`ACTIVE_STRATEGIES` in `strategies.js`). The make-buy strategies (`make-take`, `make-make`) were disabled: a placed buy offer assumes a lowball bid that may never fill, producing false-positive "trades" that never let you acquire the item. The buy side is therefore always a real take; only the sell side stays patient.
+
+"make" sides don't fill instantly; `strategies.js` estimates fill time (`etaDays`) from each world's daily flow (`day_bought` fills your sell offer, `day_sold` would fill a buy offer) diluted by competing offer counts, bounded by `HORIZON_DAYS`. A **sell-realism guard** (`MAX_SELL_OVER_BID`) drops a make-sell whose price exceeds the target's bid × factor — bid is the best "what buyers pay" anchor until a true transaction-average field is captured from the API. `bestStrategy()` picks the highest-`estProfit` strategy with `etaDays ≤ maxEtaDays`. These constants are first-pass and meant to be calibrated against a real snapshot (`npm run export`). `scanner.js` and `export_snapshot.js` import this module; `index.html` carries an inline port.
 
 ### Profit Thresholds
 Scanner Phase 2 candidate selection (`scanner.js`) ranks pairs by the best strategy's estimated profit, feasibility-gated by `MAX_ETA_DAYS` (14):

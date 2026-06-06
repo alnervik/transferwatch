@@ -23,6 +23,25 @@
 const HORIZON_DAYS = 7;   // planning window for "make" offers; bounds qty & ETA
 const COMP_WEIGHT  = 1;   // how strongly each competing offer dilutes your flow share
 
+// Sell-price realism guard: a "make" sell offer only fills if its price is
+// within reach of what buyers actually pay on that world. Without a true
+// transaction average from the API, the target world's top buy_offer (bid =
+// what buyers pay right now) is the best anchor we have. Reject a make-sell
+// whose price exceeds bid × this factor (e.g. "avg 500k, sell offer 1M" with
+// bid ≈ 500k is ratio 2.0 → rejected). Tune once a real avg field is wired in.
+const MAX_SELL_OVER_BID = 1.7;
+
+// Which (type, buySide, sellSide) strategies to evaluate. The buy side is
+// always "take": placing a buy offer (make-buy, i.e. make-take / make-make)
+// assumes a lowball bid that may never fill — the source of false-positive
+// "trades" that never actually let you acquire the item. We keep only the
+// strategies where you genuinely own the item (take-buy) and optionally stay
+// patient on the sell side. Re-add a row here to bring make-buy back.
+const ACTIVE_STRATEGIES = [
+  ['take-take', 'take', 'take'],
+  ['take-make', 'take', 'make'],
+];
+
 export const STRATEGY_LABELS = {
   'take-take': 'Take-Take',
   'make-take': 'Make-Take',
@@ -35,7 +54,7 @@ function makeFlow(dailyFlow, competingOffers) {
   return (dailyFlow || 0) / (1 + COMP_WEIGHT * (competingOffers || 0));
 }
 
-function evalOne(type, buySide, sellSide, sItem, tItem) {
+function evalOne(type, buySide, sellSide, sItem, tItem, opts) {
   const buyPrice  = buySide  === 'make' ? sItem.buy_offer  : sItem.sell_offer;
   const sellPrice = sellSide === 'make' ? tItem.sell_offer : tItem.buy_offer;
   if (!(buyPrice > 0) || !(sellPrice > 0)) return null;
@@ -43,6 +62,12 @@ function evalOne(type, buySide, sellSide, sItem, tItem) {
   const margin = sellPrice - buyPrice;
   if (margin <= 0) return null;
   const marginPct = (margin / buyPrice) * 100;
+
+  // Sell-realism guard (make-sell only). bid = tItem.buy_offer.
+  if (sellSide === 'make') {
+    const maxOverBid = opts && opts.maxSellOverBid != null ? opts.maxSellOverBid : MAX_SELL_OVER_BID;
+    if (maxOverBid > 0 && tItem.buy_offer > 0 && sellPrice > tItem.buy_offer * maxOverBid) return null;
+  }
 
   // Available quantity per side. Take = current offer count (instant depth,
   // same proxy legacy code used). Make = flow you can queue within HORIZON_DAYS.
@@ -81,20 +106,17 @@ function evalOne(type, buySide, sellSide, sItem, tItem) {
 }
 
 // All priced & feasible strategies for one (start item, target item) snapshot.
-export function evaluateStrategies(sItem, tItem) {
-  return [
-    evalOne('take-take', 'take', 'take', sItem, tItem),
-    evalOne('make-take', 'make', 'take', sItem, tItem),
-    evalOne('take-make', 'take', 'make', sItem, tItem),
-    evalOne('make-make', 'make', 'make', sItem, tItem),
-  ].filter(Boolean);
+export function evaluateStrategies(sItem, tItem, opts) {
+  return ACTIVE_STRATEGIES
+    .map(([type, buySide, sellSide]) => evalOne(type, buySide, sellSide, sItem, tItem, opts))
+    .filter(Boolean);
 }
 
 // Best strategy by estimated profit, subject to ETA and margin gates.
 export function bestStrategy(sItem, tItem, opts = {}) {
   const maxEta = opts.maxEtaDays ?? Infinity;
   const minMarginPct = opts.minMarginPct ?? 0;
-  const candidates = evaluateStrategies(sItem, tItem)
+  const candidates = evaluateStrategies(sItem, tItem, opts)
     .filter(s => s.etaDays <= maxEta && s.marginPct >= minMarginPct);
   if (!candidates.length) return null;
   candidates.sort((a, b) => b.estProfit - a.estProfit);
