@@ -45,6 +45,9 @@ SUPABASE_SERVICE_KEY=eyJhbGci...
 
 3. **Frontend** (`index.html`) — Vanilla JS dashboard that queries Supabase directly via its REST API, displays trade routes grouped by world, calculates profit after transfer cost (750 Tibia Coins), and lets users trigger targeted scans via the GitHub Actions API.
 
+### Auth Gate
+The dashboard is gated behind a Supabase Auth (GoTrue) login (`#authGate` in `index.html`). The app stays hidden until a valid session exists; sign-in posts to `/auth/v1/token?grant_type=password`, the session is cached in `localStorage` under `tw_session`, and `authHeaders()` swaps the user's `access_token` in as the `Bearer` for all Supabase REST calls (anon key stays as `apikey`). `ensureFreshSession()` refreshes expired tokens before each data load. RLS (`supabase_setup.sql`) only grants `SELECT` to the `authenticated` role, so the public anon key alone can't read the data — hiding the UI isn't enough on its own. Accounts are added manually in the Supabase dashboard (signups disabled); there is no self-registration.
+
 ### Transfer Eligibility Rules (`canTransfer` in scanner.js)
 - Transfers can only go to an equal or lower PvP tier (Optional → Open → Retro Open → Retro Hardcore).
 - Yellow Battleye servers cannot transfer to Green Battleye servers. `GREEN_BE` in scanner.js contains the full list.

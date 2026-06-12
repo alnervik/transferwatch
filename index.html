@@ -194,16 +194,48 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .lookup-detail-row td { padding: 0; }
 .lookup-detail { padding: 0.5rem 0.85rem 0.75rem 2.2rem; }
 .item-lookup-empty { padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+
+/* Inloggningsgrind */
+.auth-gate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.5rem; background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.08), var(--bg) 60%); }
+.auth-card { width: 100%; max-width: 360px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem 1.5rem; }
+.auth-brand { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1.4rem; }
+.auth-brand .header-icon { width: 38px; height: 38px; font-size: 1.25rem; }
+.auth-brand h1 { font-size: 1.3rem; font-weight: 700; }
+.auth-brand h1 span { color: var(--accent); }
+.auth-card label { display: block; font-size: 0.8rem; color: var(--text-dim); margin: 0.9rem 0 0.35rem; }
+.auth-card input { width: 100%; padding: 0.6rem 0.8rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+.auth-card input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+.auth-card button { width: 100%; margin-top: 1.3rem; padding: 0.65rem; background: linear-gradient(135deg, var(--accent), #6366f1); color: #fff; border: none; border-radius: var(--radius); font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+.auth-card button:disabled { opacity: 0.6; cursor: default; }
+.auth-error { margin-top: 0.9rem; font-size: 0.82rem; color: var(--red); min-height: 1em; }
+.logout-btn { margin-left: auto; align-self: center; padding: 0.45rem 0.85rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-dim); font-family: 'Outfit', sans-serif; font-size: 0.82rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+.logout-btn:hover { border-color: var(--border-focus); color: var(--text); }
 </style>
 </head>
 <body>
-<div class="app">
+<div class="auth-gate" id="authGate">
+  <form class="auth-card" id="authForm" autocomplete="on">
+    <div class="auth-brand">
+      <div class="header-icon">⚔️</div>
+      <h1>Transfer<span>Watch</span></h1>
+    </div>
+    <label for="authEmail">E-post</label>
+    <input type="email" id="authEmail" autocomplete="username" required>
+    <label for="authPassword">Lösenord</label>
+    <input type="password" id="authPassword" autocomplete="current-password" required>
+    <button type="submit" id="authSubmit">Logga in</button>
+    <div class="auth-error" id="authError"></div>
+  </form>
+</div>
+
+<div class="app" id="app" style="display:none;">
   <div class="header">
     <div class="header-icon">⚔️</div>
     <div>
       <h1>Transfer<span>Watch</span></h1>
       <div class="header-sub">Cross-world arbitrage — realistisk profit via matchade offers</div>
     </div>
+    <button class="logout-btn" id="logoutBtn" type="button" title="Logga ut">Logga ut</button>
   </div>
 
   <div class="status-bar">
@@ -318,6 +350,60 @@ const GITHUB_REPO          = 'alnervik/transferwatch';
 const GITHUB_WORKFLOW_FILE = 'scan-targeted.yml';
 const GITHUB_REF           = 'main';
 const VERIFY_POLL_MS       = 30_000;
+
+// ── Auth (Supabase GoTrue via REST) ───────────────────────────────────────
+// Konton skapas/läggs till manuellt i Supabase (Auth → Users). Self-signup är
+// avstängt, så bara konton du själv lägger till kan logga in.
+const AUTH_KEY = 'tw_session';
+let session = (() => { try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; } })();
+
+function storeSession(s) {
+  s.expires_at = Date.now() + ((s.expires_in || 3600) * 1000) - 60_000; // 1 min marginal
+  session = s;
+  localStorage.setItem(AUTH_KEY, JSON.stringify(s));
+}
+function clearSession() { session = null; localStorage.removeItem(AUTH_KEY); }
+
+// Headers för alla Supabase REST-anrop: anon-nyckeln som apikey, användarens
+// access_token som Bearer (faller tillbaka till anon innan inloggning).
+function authHeaders(extra) {
+  const token = (session && session.access_token) || SUPABASE_ANON;
+  return Object.assign({ apikey: SUPABASE_ANON, Authorization: 'Bearer ' + token }, extra || {});
+}
+
+async function ensureFreshSession() {
+  if (!session) return false;
+  if (session.expires_at && Date.now() < session.expires_at) return true;
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    });
+    if (!res.ok) throw new Error('refresh failed');
+    storeSession(await res.json());
+    return true;
+  } catch { clearSession(); return false; }
+}
+
+async function signIn(email, password) {
+  const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.error || 'Inloggning misslyckades');
+  storeSession(data);
+}
+
+async function signOut() {
+  try {
+    if (session) await fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST', headers: authHeaders() });
+  } catch {}
+  clearSession();
+  location.reload();
+}
 
 const PVP_RANK = { 'Optional PvP': 0, 'Open PvP': 1, 'Retro Open PvP': 2, 'Retro Hardcore PvP': 3 };
 const PVP_SHORT = { 'Optional PvP': 'Opt', 'Open PvP': 'Open', 'Retro Open PvP': 'R-Open', 'Retro Hardcore PvP': 'R-HC' };
@@ -565,7 +651,8 @@ async function processQueue() {
 
 // ─── LOAD DATA ──────────────────────────────────────────────────────────
 async function loadData() {
-  const sbHeaders = { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON };
+  await ensureFreshSession();
+  const sbHeaders = authHeaders();
 
   // Item metadata
   try {
@@ -1243,7 +1330,8 @@ async function pollVerify(worldName) {
     (byWorld[w] = byWorld[w] || []).push(parseInt(id));
   }
 
-  const sbHeaders = { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON };
+  await ensureFreshSession();
+  const sbHeaders = authHeaders();
   const sinceIso = job.startedAt.toISOString();
 
   for (const [w, ids] of Object.entries(byWorld)) {
@@ -1632,9 +1720,36 @@ $('lookupSort').addEventListener('change', e => {
   renderItemLookup();
 });
 
-(async () => {
+// ── Auth-grindad uppstart ──────────────────────────────────────────────────
+async function startApp() {
+  $('authGate').style.display = 'none';
+  $('app').style.display = '';
   await loadData();
   buildItemLookupIndex();
+}
+
+$('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('authSubmit'), err = $('authError');
+  err.textContent = '';
+  btn.disabled = true; btn.textContent = 'Loggar in…';
+  try {
+    await signIn($('authEmail').value.trim(), $('authPassword').value);
+    await startApp();
+  } catch (ex) {
+    err.textContent = ex.message || 'Inloggning misslyckades';
+    btn.disabled = false; btn.textContent = 'Logga in';
+  }
+});
+
+$('logoutBtn').addEventListener('click', signOut);
+
+(async () => {
+  if (await ensureFreshSession()) {
+    await startApp();
+  } else {
+    $('authEmail').focus();
+  }
 })();
 </script>
 </body>
