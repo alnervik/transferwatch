@@ -29,6 +29,7 @@ const MIN_EST_PROFIT_FAST = 100_000; // lägre vinsttröskel för snabbsäljare
 const MAX_ETA_DAYS = 12;  // max estimerad fyllnadstid (dagar) — i synk med HORIZON_DAYS i strategies.js
 const WORLD_FRESH_THRESHOLD_MS = 0;  // 0 = skippa skan om tibiamarkets last_update <= vår scanned_at
 const TC_FRESH_MS = 4 * 60 * 60 * 1000;  // skippa TC-scan om data < 4h gammal
+const STALE_OFFERS_MS = 36 * 60 * 60 * 1000;  // item_offers äldre än så rensas i Phase 2 (batch skip=0)
 
 const TC_ITEM_ID = 22118;
 const TRANSFER_COST_TC = 750;
@@ -559,13 +560,19 @@ async function main() {
   console.log(`Total pairs: ${neededPairs.size} → top ${allSorted.length}`);
   console.log(`This batch: #${SKIP_COUNT + 1} to #${SKIP_COUNT + myPairs.length} (${myPairs.length} pairs)\n`);
 
-  // Only clear old data on full fresh run
-  if (SKIP_COUNT === 0 && !TAKE_COUNT) {
+  // Purga inaktuella orderböcker i batch #1 (skip=0). Den gamla full-wipen
+  // krävde en körning utan --take och triggades därför aldrig i CI (som alltid
+  // batchar med --take=95), så gamla rader ackumulerades för evigt och kunde
+  // visas som "verifierade" i dashboarden. En stale-delete är idempotent och
+  // säker att köra parallellt med andra batchars upserts (de skriver färska rader).
+  if (SKIP_COUNT === 0) {
+    const cutoff = new Date(Date.now() - STALE_OFFERS_MS).toISOString();
     const { error: delErr } = await supabase
       .from('item_offers')
       .delete()
-      .neq('world_name', '___never___');
-    if (delErr) console.log(`⚠️ Clear error: ${delErr.message}`);
+      .lt('scanned_at', cutoff);
+    if (delErr) console.log(`⚠️ Cleanup error: ${delErr.message}`);
+    else console.log(`🧹 Rensade item_offers äldre än ${cutoff}\n`);
   }
 
   // Fetch and store
