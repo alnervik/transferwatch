@@ -343,6 +343,8 @@ const TRANSFER_COST_TC = 750;
 const MIN_TRADE_PROFIT = 25_000;       // platt per-trade-golv — lågt, robusthet (resilient match) gallrar bort mirages
 const MIN_TRADE_PROFIT_DEEP = 15_000;  // djupsökning per världspar: ännu lägre golv
 const LEADERBOARD_MIN_TRADE_PROFIT = 15_000; // per-item-golv i leaderboarden (resilient profit)
+const OFFERS_MAX_AGE_MS = 36 * 60 * 60 * 1000; // orderböcker äldre än så räknas som döda och ignoreras
+const SB_PAGE_SIZE = 1000; // PostgREST svarar max "Max Rows" (default 1000) per request — paginera
 const PINNED_ITEM_IDS = new Set([22721, 22516]); // Gold Token, Silver Token – visas alltid
 
 // GitHub-trigger för "Verifiera alla"-funktionen
@@ -650,6 +652,24 @@ async function processQueue() {
 }
 
 // ─── LOAD DATA ──────────────────────────────────────────────────────────
+// Hämtar ALLA rader för en REST-query via Range-paginering. En enda request
+// med limit=10000 kapades tyst av PostgREST:s Max Rows (default 1000), så
+// dashboarden såg bara en godtycklig delmängd av orderböckerna. Queryn måste
+// ha en stabil &order= för att sidorna inte ska överlappa.
+async function fetchAllRows(pathAndQuery, headers) {
+  const rows = [];
+  for (let from = 0; ; from += SB_PAGE_SIZE) {
+    const res = await fetch(SUPABASE_URL + pathAndQuery, {
+      headers: Object.assign({ Range: from + '-' + (from + SB_PAGE_SIZE - 1) }, headers)
+    });
+    if (res.status === 416) return rows; // offset förbi sista raden (jämn multipel)
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const page = await res.json();
+    rows.push(...page);
+    if (page.length < SB_PAGE_SIZE) return rows;
+  }
+}
+
 async function loadData() {
   await ensureFreshSession();
   const sbHeaders = authHeaders();
@@ -693,20 +713,24 @@ async function loadData() {
     $('dotData').className = 'dot dot-err';
   }
 
-  // Item offers (phase 2 data)
+  // Item offers (phase 2 data) — paginerat, och rader äldre än OFFERS_MAX_AGE_MS
+  // slängs så att gamla orderböcker aldrig kan rendera trades som "✓ verifierade".
   try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/item_offers?select=world_name,item_id,sellers,buyers&limit=10000', { headers: sbHeaders });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
+    const rows = await fetchAllRows('/rest/v1/item_offers?select=world_name,item_id,sellers,buyers,scanned_at&order=world_name,item_id', sbHeaders);
+    const minScan = Date.now() - OFFERS_MAX_AGE_MS;
+    let kept = 0;
     rows.forEach(r => {
+      if (r.scanned_at && new Date(r.scanned_at).getTime() < minScan) return;
       const sellers = (r.sellers || []).slice().sort((a, b) => a.price - b.price);
       const buyers  = (r.buyers  || []).slice().sort((a, b) => b.price - a.price);
       offersData[r.world_name + ':' + r.item_id] = { sellers, buyers };
       // Pre-populate boardCache for click-to-expand
       boardCache[r.world_name + ':' + r.item_id] = { ...r, sellers, buyers };
+      kept++;
     });
     _lbCache = null;
-    $('statusOffers').textContent = rows.length + ' offers';
+    const staleCount = rows.length - kept;
+    $('statusOffers').textContent = kept + ' offers' + (staleCount > 0 ? ' (' + staleCount + ' gamla ignorerade)' : '');
     $('dotOffers').className = 'dot dot-ok';
     // Defer leaderboard so the page becomes interactive before the heavy
     // all-worlds matchOffers sweep runs.
@@ -938,8 +962,18 @@ function calculate() {
     const targetTCSellPrice = (targetTCItem && targetTCItem.sell_offer > 0) ? targetTCItem.sell_offer : tcBuy;
     const tcSpreadCost = tcAmount * (targetTCSellPrice - tcBuy);
 
+    // TC-bonus: sälj bara det TC som behövs för inköpen på startvärlden. TC du
+    // inte konverterar följer med i transfern, så om målvärldens TC-bid är högre
+    // än startvärldens är mellanskillnaden på överskottet ren extra vinst.
+    // `remaining` efter budgetallokeringen säger hur mycket guld som aldrig behövdes.
+    const spentGold = goldCap - remaining;
+    const neededTC = Math.min(spendableTC, Math.ceil(spentGold / tcBuy));
+    const surplusTC = Math.max(0, spendableTC - neededTC);
+    const targetTCBid = (targetTCItem && targetTCItem.buy_offer > 0) ? targetTCItem.buy_offer : 0;
+    const tcSellBonus = (surplusTC > 0 && targetTCBid > tcBuy) ? surplusTC * (targetTCBid - tcBuy) : 0;
+
     const ignoreCost = $('ignoreTransferCost') && $('ignoreTransferCost').checked;
-    const netProfit = totalGross - (ignoreCost ? 0 : transferCostGold) - (ignoreCost ? 0 : tcSpreadCost);
+    const netProfit = totalGross + tcSellBonus - (ignoreCost ? 0 : transferCostGold) - (ignoreCost ? 0 : tcSpreadCost);
     if (netProfit <= 0) continue;
 
     const verifiedCount = viableTrades.filter(t => t.verified).length;
@@ -948,6 +982,7 @@ function calculate() {
       name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
       trades: viableTrades, totalGross, netProfit,
       tcSpreadCost, targetTCSellPrice,
+      tcSellBonus, surplusTC, targetTCBid,
       verifiedCount, tradeCount: viableTrades.length,
       scanned_at: tw.scanned_at,
     });
@@ -989,7 +1024,8 @@ function computeGlobalLeaderboard() {
     const tcItem = sw.items.find(it => it.id === TC_ITEM_ID);
     if (!tcItem || tcItem.buy_offer <= 0) continue;
     const startTCBuy = tcItem.buy_offer;
-    const goldCap = Math.max(0, tcAmount - TRANSFER_COST_TC) * startTCBuy;
+    const spendableTC = Math.max(0, tcAmount - TRANSFER_COST_TC);
+    const goldCap = spendableTC * startTCBuy;
     const transferCost = TRANSFER_COST_TC * startTCBuy;
 
     for (const [targetName, tw] of Object.entries(worldData)) {
@@ -1033,7 +1069,13 @@ function computeGlobalLeaderboard() {
 
       const targetTCItem = tw.items.find(it => it.id === TC_ITEM_ID);
       const targetTCSell = (targetTCItem && targetTCItem.sell_offer > 0) ? targetTCItem.sell_offer : startTCBuy;
-      const netProfit = totalGross - transferCost - tcAmount * (targetTCSell - startTCBuy);
+      // Samma TC-bonus som calculate(): överskotts-TC som inte behövdes för
+      // inköpen säljs på målvärlden när dess bid är högre än startvärldens.
+      const neededTC = Math.min(spendableTC, Math.ceil((goldCap - remaining) / startTCBuy));
+      const surplusTC = Math.max(0, spendableTC - neededTC);
+      const targetTCBid = (targetTCItem && targetTCItem.buy_offer > 0) ? targetTCItem.buy_offer : 0;
+      const tcBonus = (surplusTC > 0 && targetTCBid > startTCBuy) ? surplusTC * (targetTCBid - startTCBuy) : 0;
+      const netProfit = totalGross + tcBonus - transferCost - tcAmount * (targetTCSell - startTCBuy);
       if (netProfit <= 0) continue;
 
       results.push({ startName, targetName, tcProfit: Math.round(netProfit / targetTCSell) });
@@ -1131,6 +1173,11 @@ function renderResults() {
       const sign = g.tcSpreadCost > 0 ? '+' : '';
       costNote += ' · TC-spread: <span>' + sign + formatGold(g.tcSpreadCost) + ' gp</span>';
       costNote += ' · Totalt: <span>' + formatGold(totalTCCost) + ' gp</span>';
+    }
+    if (g.tcSellBonus > 0) {
+      costNote += ' · 💡 TC-bonus: <span style="color:var(--green)">+' + formatGold(g.tcSellBonus) + ' gp</span>'
+        + ' — sälj ' + g.surplusTC.toLocaleString('sv-SE') + ' överskotts-TC på ' + g.name
+        + ' (bid ' + g.targetTCBid.toLocaleString('sv-SE') + ' vs ' + tcBuy.toLocaleString('sv-SE') + ' på ' + currentStartName + ')';
     }
     h += '<div class="transfer-cost-note">' + costNote + '</div>';
 
