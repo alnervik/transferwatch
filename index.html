@@ -195,6 +195,16 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .lookup-detail { padding: 0.5rem 0.85rem 0.75rem 2.2rem; }
 .item-lookup-empty { padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
 
+/* Flikar */
+.tab-bar { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+.tab-bar button { background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: inherit; font-size: 0.9rem; font-weight: 600; padding: 0.55rem 1rem; cursor: pointer; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; }
+.tab-bar button:hover { color: var(--text); }
+.tab-bar button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Soul Cores-fliken (återanvänder .item-lookup-stilarna för kort + tabell) */
+.sc-back { padding: 0.4rem 0.8rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-dim); font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+.sc-back:hover { border-color: var(--border-focus); color: var(--text); }
+
 /* Inloggningsgrind */
 .auth-gate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.5rem; background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.08), var(--bg) 60%); }
 .auth-card { width: 100%; max-width: 360px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem 1.5rem; }
@@ -245,6 +255,12 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
     <span>Scan: <strong id="statusScanAge">–</strong></span>
   </div>
 
+  <div class="tab-bar">
+    <button type="button" id="tabBtnArbitrage" class="active" onclick="switchTab('arbitrage')">⚔️ Arbitrage</button>
+    <button type="button" id="tabBtnSoulcores" onclick="switchTab('soulcores')">💀 Soul Cores</button>
+  </div>
+
+  <div id="tabArbitrage">
   <div id="leaderboard" class="leaderboard" style="display:none;">
     <div class="leaderboard-title">Top 5 routes</div>
     <div id="leaderboardEntries" class="leaderboard-entries">
@@ -332,6 +348,30 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
   <div id="resultsArea">
     <div class="state-msg"><div class="icon">📡</div><p>Laddar marknadsdata…</p></div>
   </div>
+  </div><!-- /tabArbitrage -->
+
+  <div id="tabSoulcores" style="display:none;">
+    <div class="item-lookup">
+      <div class="item-lookup-head">
+        <span class="item-lookup-title">💀 Soul Cores</span>
+        <button type="button" class="sc-back" id="scBack" style="display:none;">← Alla världar</button>
+        <input type="text" id="scSearch" class="item-lookup-search" placeholder="Filtrera världar…" autocomplete="off">
+        <div class="be-toggle" id="scBeToggle">
+          <button type="button" data-be="all" class="active">Alla</button>
+          <button type="button" data-be="green">🟢 Gröna</button>
+          <button type="button" data-be="yellow">🟡 Gula</button>
+        </div>
+        <div class="item-lookup-sort">
+          <label>Sortera</label>
+          <select id="scSort"></select>
+        </div>
+        <span class="item-lookup-meta" id="scMeta"></span>
+      </div>
+      <div class="item-lookup-results" id="scResults">
+        <div class="item-lookup-empty">Laddar marknadsdata…</div>
+      </div>
+    </div>
+  </div><!-- /tabSoulcores -->
 </div>
 
 <script>
@@ -1735,6 +1775,229 @@ function setLookupItemFromInput() {
   renderItemLookup();
 }
 
+// ─── SOUL CORES TAB ─────────────────────────────────────────────────────
+// Översikt: antal soul cores till salu per värld (från market_values —
+// sell_offers = antal säljoffers, sell_offer = lägsta ask). Klicka på en
+// värld för att se vilka soul cores som säljs där och aktuella priser.
+const scState = {
+  be: 'all',            // BE-filter i översikten
+  world: null,          // null = översikt, annars vald värld (detaljvy)
+  search: '',
+  sortOverview: 'offers_desc',
+  sortDetail: 'price_asc',
+};
+let _scIds = null;      // Set med item-ids där category === 'Soul Cores'
+
+function soulCoreIds() {
+  if (!_scIds || !_scIds.size) {
+    _scIds = new Set();
+    for (const id of Object.keys(itemMeta)) {
+      if (itemMeta[id].category === 'Soul Cores') _scIds.add(parseInt(id));
+    }
+  }
+  return _scIds;
+}
+
+function scWorldItems(w) {
+  const ids = soulCoreIds();
+  return (w.items || []).filter(it => ids.has(it.id) && it.sell_offer > 0);
+}
+
+const SC_SORTS_OVERVIEW = [
+  ['offers_desc', 'Flest till salu'],
+  ['types_desc', 'Flest sorter'],
+  ['world', 'Världsnamn'],
+];
+const SC_SORTS_DETAIL = [
+  ['price_asc', 'Pris (lägst)'],
+  ['price_desc', 'Pris (högst)'],
+  ['sellers_desc', 'Flest säljoffers'],
+  ['name', 'Namn'],
+];
+
+function scSetSortOptions(list, current) {
+  $('scSort').innerHTML = list.map(([v, l]) =>
+    '<option value="' + v + '"' + (v === current ? ' selected' : '') + '>' + l + '</option>').join('');
+}
+
+function switchTab(tab) {
+  const isSc = tab === 'soulcores';
+  $('tabArbitrage').style.display = isSc ? 'none' : '';
+  $('tabSoulcores').style.display = isSc ? '' : 'none';
+  $('tabBtnArbitrage').classList.toggle('active', !isSc);
+  $('tabBtnSoulcores').classList.toggle('active', isSc);
+  if (isSc) renderSoulCores();
+}
+
+function renderSoulCores() {
+  if (!Object.keys(worldData).length) {
+    $('scResults').innerHTML = '<div class="item-lookup-empty">Laddar marknadsdata…</div>';
+    $('scMeta').textContent = '';
+    return;
+  }
+  if (scState.world && !worldData[scState.world]) scState.world = null;
+  if (scState.world) renderScDetail(); else renderScOverview();
+}
+
+function renderScOverview() {
+  $('scBack').style.display = 'none';
+  $('scBeToggle').style.display = '';
+  $('scSearch').placeholder = 'Filtrera världar…';
+  scSetSortOptions(SC_SORTS_OVERVIEW, scState.sortOverview);
+
+  const search = scState.search.trim().toLowerCase();
+  const rows = [];
+  let totalOffers = 0;
+  for (const [name, w] of Object.entries(worldData)) {
+    const be = getBE(name);
+    if (scState.be !== 'all' && be !== scState.be) continue;
+    if (search && !name.toLowerCase().includes(search)) continue;
+    const items = scWorldItems(w);
+    let offers = 0, cheapest = null;
+    for (const it of items) {
+      offers += it.sell_offers || 1;
+      if (cheapest === null || it.sell_offer < cheapest) cheapest = it.sell_offer;
+    }
+    totalOffers += offers;
+    rows.push({ name, be, pvp: w.pvp_type, types: items.length, offers, cheapest, scanned_at: w.scanned_at });
+  }
+
+  const sort = scState.sortOverview;
+  rows.sort((a, b) => {
+    if (sort === 'world') return a.name.localeCompare(b.name);
+    if (sort === 'types_desc') return b.types - a.types || b.offers - a.offers;
+    return b.offers - a.offers || b.types - a.types;
+  });
+
+  $('scMeta').textContent = rows.length + ' världar · ' + totalOffers.toLocaleString('sv-SE') + ' säljoffers totalt';
+
+  if (!rows.length) {
+    $('scResults').innerHTML = '<div class="item-lookup-empty">Inga världar matchar filtret.</div>';
+    return;
+  }
+
+  let h = '<table><thead><tr>';
+  h += '<th>Värld</th><th>BE</th><th>PvP</th>';
+  h += '<th>Till salu (offers)</th><th>Olika sorter</th><th>Billigaste</th><th>Data</th>';
+  h += '</tr></thead><tbody>';
+  for (const r of rows) {
+    const beE = r.be === 'green' ? '🟢' : '🟡';
+    const pvp = PVP_SHORT[r.pvp] || r.pvp || '?';
+    h += '<tr class="lookup-row' + (r.offers ? '' : ' no-data') + '" onclick="openScWorld(\'' + r.name.replace(/'/g, "\\'") + '\')" title="Visa soul cores på ' + r.name + '">';
+    h += '<td class="world-cell">' + r.name + '</td>';
+    h += '<td><span class="badge badge-be-' + r.be + '">' + beE + '</span></td>';
+    h += '<td><span class="badge badge-pvp">' + pvp + '</span></td>';
+    h += '<td>' + r.offers.toLocaleString('sv-SE') + '</td>';
+    h += '<td>' + r.types.toLocaleString('sv-SE') + '</td>';
+    h += '<td class="sell-cell">' + (r.cheapest !== null ? r.cheapest.toLocaleString('sv-SE') : '–') + '</td>';
+    h += '<td>' + (r.scanned_at ? timeAgo(r.scanned_at) : '–') + '</td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table>';
+  $('scResults').innerHTML = h;
+}
+
+function openScWorld(name) {
+  scState.world = name;
+  scState.search = '';
+  $('scSearch').value = '';
+  renderSoulCores();
+}
+
+function renderScDetail() {
+  const name = scState.world;
+  const w = worldData[name];
+  $('scBack').style.display = '';
+  $('scBeToggle').style.display = 'none';
+  $('scSearch').placeholder = 'Sök soul core…';
+  scSetSortOptions(SC_SORTS_DETAIL, scState.sortDetail);
+
+  const search = scState.search.trim().toLowerCase();
+  const rows = scWorldItems(w).map(it => {
+    const m = itemMeta[it.id];
+    return {
+      id: it.id,
+      name: m ? (m.wiki_name || m.name) : '#' + it.id,
+      price: it.sell_offer,
+      sellers: it.sell_offers || 0,
+      bid: it.buy_offer > 0 ? it.buy_offer : null,
+      daySold: it.day_sold || 0,
+    };
+  }).filter(r => !search || r.name.toLowerCase().includes(search));
+
+  const sort = scState.sortDetail;
+  rows.sort((a, b) => {
+    if (sort === 'price_desc') return b.price - a.price;
+    if (sort === 'sellers_desc') return b.sellers - a.sellers || a.price - b.price;
+    if (sort === 'name') return a.name.localeCompare(b.name);
+    return a.price - b.price;
+  });
+
+  const beE = getBE(name) === 'green' ? '🟢' : '🟡';
+  $('scMeta').textContent = name + ' ' + beE + ' · ' + rows.length + ' soul cores till salu · data ' + (w.scanned_at ? timeAgo(w.scanned_at) : '–');
+
+  if (!rows.length) {
+    $('scResults').innerHTML = '<div class="item-lookup-empty">' +
+      (search ? 'Inga soul cores matchar sökningen på ' + name + '.' : 'Inga soul cores till salu på ' + name + ' just nu.') + '</div>';
+    return;
+  }
+
+  let h = '<table><thead><tr>';
+  h += '<th></th><th>Soul Core</th><th>Pris (lägsta ask)</th><th># säljoffers</th>';
+  h += '<th>Bid (buy offer)</th><th>Sold/d</th>';
+  h += '</tr></thead><tbody>';
+  for (const r of rows) {
+    h += '<tr class="lookup-row" data-world="' + name + '" data-item="' + r.id + '" onclick="toggleScBoard(this)">';
+    h += '<td><span class="lookup-arrow">▶</span></td>';
+    h += '<td class="world-cell">' + r.name + '</td>';
+    h += '<td class="sell-cell">' + r.price.toLocaleString('sv-SE') + '</td>';
+    h += '<td>' + r.sellers + '</td>';
+    h += '<td class="buy-cell">' + (r.bid !== null ? r.bid.toLocaleString('sv-SE') : '–') + '</td>';
+    h += '<td>' + (r.daySold || '–') + '</td>';
+    h += '</tr>';
+    h += '<tr class="lookup-detail-row"><td colspan="6"><div class="lookup-detail"><div class="lookup-detail-content">Klicka för att visa orderbok…</div></div></td></tr>';
+  }
+  h += '</tbody></table>';
+  $('scResults').innerHTML = h;
+}
+
+// Expandera en soul core-rad → visa hela orderboken (cachad eller live-fetch,
+// samma köade fetch som item-uppslaget så vi inte spammar market-API:t).
+async function toggleScBoard(rowEl) {
+  const detailRow = rowEl.nextElementSibling;
+  if (!detailRow || !detailRow.classList.contains('lookup-detail-row')) return;
+  const arrow = rowEl.querySelector('.lookup-arrow');
+  if (detailRow.classList.contains('visible')) {
+    detailRow.classList.remove('visible');
+    rowEl.classList.remove('expanded');
+    if (arrow) arrow.textContent = '▶';
+    return;
+  }
+  detailRow.classList.add('visible');
+  rowEl.classList.add('expanded');
+  if (arrow) arrow.textContent = '▼';
+
+  const world = rowEl.dataset.world;
+  const id = parseInt(rowEl.dataset.item);
+  const contentEl = detailRow.querySelector('.lookup-detail-content');
+  const key = world + ':' + id;
+
+  if (offersData[key]) {
+    renderLookupBoard(contentEl, world, offersData[key]);
+    return;
+  }
+  contentEl.innerHTML = '<span class="loading-text">⏳ Hämtar orderbok från ' + world + '… (köad)</span>';
+  try {
+    const data = await queueFetch(MARKET_API + '/market_board?server=' + encodeURIComponent(world) + '&item_id=' + id);
+    const sellers = (data.sellers || []).slice().sort((a, b) => a.price - b.price);
+    const buyers  = (data.buyers  || []).slice().sort((a, b) => b.price - a.price);
+    offersData[key] = { sellers, buyers };
+    renderLookupBoard(contentEl, world, { sellers, buyers });
+  } catch (e) {
+    contentEl.innerHTML = '<span class="error-text">Fel: ' + e.message + '</span>';
+  }
+}
+
 // Events
 $('worldSelect').addEventListener('change', calculate);
 $('tcInput').addEventListener('input', debounce(calculate, 400));
@@ -1767,12 +2030,36 @@ $('lookupSort').addEventListener('change', e => {
   renderItemLookup();
 });
 
+$('scBack').addEventListener('click', () => {
+  scState.world = null;
+  scState.search = '';
+  $('scSearch').value = '';
+  renderSoulCores();
+});
+$('scSearch').addEventListener('input', debounce(() => {
+  scState.search = $('scSearch').value;
+  renderSoulCores();
+}, 200));
+$('scBeToggle').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-be]');
+  if (!btn) return;
+  scState.be = btn.dataset.be;
+  $('scBeToggle').querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+  renderSoulCores();
+});
+$('scSort').addEventListener('change', e => {
+  if (scState.world) scState.sortDetail = e.target.value;
+  else scState.sortOverview = e.target.value;
+  renderSoulCores();
+});
+
 // ── Auth-grindad uppstart ──────────────────────────────────────────────────
 async function startApp() {
   $('authGate').style.display = 'none';
   $('app').style.display = '';
   await loadData();
   buildItemLookupIndex();
+  renderSoulCores();
 }
 
 $('authForm').addEventListener('submit', async (e) => {
