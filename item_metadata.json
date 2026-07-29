@@ -8981,7 +8981,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Chest"
+    "wiki_name": null
   },
   {
     "id": 2473,
@@ -14926,7 +14926,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Lamp"
+    "wiki_name": null
   },
   {
     "id": 2917,
@@ -15125,7 +15125,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Candlestick"
+    "wiki_name": null
   },
   {
     "id": 2920,
@@ -24063,7 +24063,7 @@
     "name": "wooden trash",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Wooden Trash"
+    "wiki_name": null
   },
   {
     "id": 3136,
@@ -24072,7 +24072,7 @@
     "name": "wooden trash",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Wooden Trash"
+    "wiki_name": null
   },
   {
     "id": 3137,
@@ -24081,7 +24081,7 @@
     "name": "wooden trash",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Wooden Trash"
+    "wiki_name": null
   },
   {
     "id": 3138,
@@ -24090,7 +24090,7 @@
     "name": "wooden trash",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Wooden Trash"
+    "wiki_name": null
   },
   {
     "id": 3139,
@@ -24099,7 +24099,7 @@
     "name": "wooden trash",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Wooden Trash"
+    "wiki_name": null
   },
   {
     "id": 3140,
@@ -24117,7 +24117,7 @@
     "name": "stone rubbish",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Stone Rubbish"
+    "wiki_name": null
   },
   {
     "id": 3142,
@@ -24126,7 +24126,7 @@
     "name": "stone rubbish",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Stone Rubbish"
+    "wiki_name": null
   },
   {
     "id": 3143,
@@ -24135,7 +24135,7 @@
     "name": "stone rubbish",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Stone Rubbish"
+    "wiki_name": null
   },
   {
     "id": 3144,
@@ -64984,7 +64984,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Panda Teddy"
+    "wiki_name": null
   },
   {
     "id": 5086,
@@ -65128,7 +65128,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Helmet of the Deep"
+    "wiki_name": null
   },
   {
     "id": 5461,
@@ -65278,7 +65278,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Pirate Tapestry"
+    "wiki_name": null
   },
   {
     "id": 5668,
@@ -65457,7 +65457,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Stuffed Dragon"
+    "wiki_name": null
   },
   {
     "id": 5792,
@@ -65466,7 +65466,7 @@
     "name": "die",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Die"
+    "wiki_name": null
   },
   {
     "id": 5793,
@@ -65475,7 +65475,7 @@
     "name": "die",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Die"
+    "wiki_name": null
   },
   {
     "id": 5794,
@@ -65484,7 +65484,7 @@
     "name": "die",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Die"
+    "wiki_name": null
   },
   {
     "id": 5795,
@@ -65493,7 +65493,7 @@
     "name": "die",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Die"
+    "wiki_name": null
   },
   {
     "id": 5796,
@@ -65502,7 +65502,7 @@
     "name": "die",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Die"
+    "wiki_name": null
   },
   {
     "id": 5797,
@@ -69315,7 +69315,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Santa Doll"
+    "wiki_name": null
   },
   {
     "id": 6522,
@@ -69363,7 +69363,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Skeleton Decoration"
+    "wiki_name": null
   },
   {
     "id": 6526,
@@ -70013,7 +70013,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Party Trumpet"
+    "wiki_name": null
   },
   {
     "id": 6573,
@@ -70189,7 +70189,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Baby Seal Doll"
+    "wiki_name": null
   },
   {
     "id": 7184,
@@ -77553,7 +77553,7 @@
     "name": "oracle figurine",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Oracle Figurine"
+    "wiki_name": null
   },
   {
     "id": 8147,
@@ -77580,7 +77580,7 @@
     "name": "toy spider",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Toy Spider"
+    "wiki_name": null
   },
   {
     "id": 8179,
@@ -78706,7 +78706,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Dracoyle Statue"
+    "wiki_name": null
   },
   {
     "id": 9039,
@@ -80360,7 +80360,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Claw of 'The Noxious Spawn'"
+    "wiki_name": null
   },
   {
     "id": 9396,
@@ -80387,7 +80387,7 @@
     "name": "the rain coat",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "The Rain Coat"
+    "wiki_name": null
   },
   {
     "id": 9401,
@@ -80396,7 +80396,7 @@
     "name": "the shield Nevermourn",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "The Shield Nevermourn"
+    "wiki_name": null
   },
   {
     "id": 9446,
@@ -80662,7 +80662,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Bejeweled Ship's Telescope"
+    "wiki_name": null
   },
   {
     "id": 9617,
@@ -90273,7 +90273,7 @@
     "name": "demon infant",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Demon Infant"
+    "wiki_name": null
   },
   {
     "id": 12179,
@@ -91003,7 +91003,7 @@
     "name": "fan doll of Queen Eloise",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Fan Doll of Queen Eloise"
+    "wiki_name": null
   },
   {
     "id": 12571,
@@ -91021,7 +91021,7 @@
     "name": "Whinona",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Whinona"
+    "wiki_name": null
   },
   {
     "id": 12576,
@@ -91030,7 +91030,7 @@
     "name": "Meandi",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Meandi"
+    "wiki_name": null
   },
   {
     "id": 12577,
@@ -91039,7 +91039,7 @@
     "name": "Impward",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Impward"
+    "wiki_name": null
   },
   {
     "id": 12578,
@@ -91048,7 +91048,7 @@
     "name": "Evilina",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Evilina"
+    "wiki_name": null
   },
   {
     "id": 12579,
@@ -91612,7 +91612,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Depth Galea"
+    "wiki_name": null
   },
   {
     "id": 13996,
@@ -93064,7 +93064,7 @@
     "name": "true heart of the sea",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "True Heart of the Sea"
+    "wiki_name": null
   },
   {
     "id": 14242,
@@ -96168,7 +96168,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Pet Pig"
+    "wiki_name": null
   },
   {
     "id": 16166,
@@ -99994,7 +99994,7 @@
     "name": "nightmare beacon",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Nightmare Beacon"
+    "wiki_name": null
   },
   {
     "id": 20281,
@@ -100080,7 +100080,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Snow Globe"
+    "wiki_name": null
   },
   {
     "id": 20312,
@@ -100106,7 +100106,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Santa Music Box"
+    "wiki_name": null
   },
   {
     "id": 20314,
@@ -101248,6 +101248,13 @@
         "price": 270,
         "currency_object_type_id": 0,
         "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asphota",
+        "location": "Silvertides",
+        "price": 270,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
       }
     ],
     "wiki_name": "Golden Lotus Brooch"
@@ -101283,6 +101290,13 @@
       {
         "name": "Yasir",
         "location": "Liberty Bay City",
+        "price": 350,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asphota",
+        "location": "Silvertides",
         "price": 350,
         "currency_object_type_id": 0,
         "currency_quest_flag_display_name": ""
@@ -101995,7 +102009,7 @@
     "name": "bones",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Bones (Item)"
+    "wiki_name": null
   },
   {
     "id": 22159,
@@ -104104,7 +104118,7 @@
     "name": "tiara of power",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Tiara of Power"
+    "wiki_name": null
   },
   {
     "id": 23477,
@@ -105056,7 +105070,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Ring of Blue Plasma"
+    "wiki_name": null
   },
   {
     "id": 23531,
@@ -105073,7 +105087,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Ring of Green Plasma"
+    "wiki_name": null
   },
   {
     "id": 23533,
@@ -105090,7 +105104,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Ring of Red Plasma"
+    "wiki_name": null
   },
   {
     "id": 23535,
@@ -106183,7 +106197,7 @@
     "name": "treasure chest",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Treasure Chest (Item)"
+    "wiki_name": null
   },
   {
     "id": 24862,
@@ -114537,7 +114551,7 @@
     "name": "enchanted sleep shawl",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Enchanted Sleep Shawl"
+    "wiki_name": null
   },
   {
     "id": 30344,
@@ -114546,7 +114560,7 @@
     "name": "enchanted pendulet",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Enchanted Pendulet"
+    "wiki_name": null
   },
   {
     "id": 30362,
@@ -114555,7 +114569,7 @@
     "name": "Badbara",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Badbara"
+    "wiki_name": null
   },
   {
     "id": 30363,
@@ -114564,7 +114578,7 @@
     "name": "Tearesa",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Tearesa"
+    "wiki_name": null
   },
   {
     "id": 30364,
@@ -114573,7 +114587,7 @@
     "name": "Cryana",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Cryana"
+    "wiki_name": null
   },
   {
     "id": 30365,
@@ -115421,7 +115435,7 @@
     "name": "enchanted blister ring",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Enchanted Blister Ring"
+    "wiki_name": null
   },
   {
     "id": 31558,
@@ -127048,7 +127062,7 @@
     "name": "charged spiritthorn ring",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Charged Spiritthorn Ring"
+    "wiki_name": null
   },
   {
     "id": 39179,
@@ -127066,7 +127080,7 @@
     "name": "charged alicorn ring",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Charged Alicorn Ring"
+    "wiki_name": null
   },
   {
     "id": 39182,
@@ -127084,7 +127098,7 @@
     "name": "charged arcanomancer sigil",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Charged Arcanomancer Sigil"
+    "wiki_name": null
   },
   {
     "id": 39185,
@@ -127102,7 +127116,7 @@
     "name": "charged arboreal ring",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Charged Arboreal Ring"
+    "wiki_name": null
   },
   {
     "id": 39188,
@@ -128795,7 +128809,7 @@
       }
     ],
     "npc_buy": [],
-    "wiki_name": "Rainbow Torch"
+    "wiki_name": null
   },
   {
     "id": 39698,
@@ -142887,7 +142901,7 @@
     "name": "Rotrender's sceptre",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": "Rotrender's Sceptre"
+    "wiki_name": null
   },
   {
     "id": 50053,
@@ -144597,7 +144611,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": "Sai"
+    "wiki_name": "Sais"
   },
   {
     "id": 50184,
@@ -145269,7 +145283,7 @@
         "currency_quest_flag_display_name": ""
       }
     ],
-    "wiki_name": null
+    "wiki_name": "Spirited Soil"
   },
   {
     "id": 51294,
@@ -149582,7 +149596,7 @@
     "name": "brass-shod chest",
     "npc_sell": [],
     "npc_buy": [],
-    "wiki_name": null
+    "wiki_name": "Brass-Shod Chest (Order of the Stag)"
   },
   {
     "id": 52865,
@@ -149906,5 +149920,2592 @@
     "npc_sell": [],
     "npc_buy": [],
     "wiki_name": "Lesser Proficiency Catalyst"
+  },
+  {
+    "id": 53633,
+    "category": "Valuables",
+    "tier": -1,
+    "name": "beaver of wisdom",
+    "npc_sell": [
+      {
+        "name": "Jorge",
+        "location": "Adventurers' Guild",
+        "price": 20,
+        "currency_object_type_id": 19083,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Beaver of Wisdom (Replica)"
+  },
+  {
+    "id": 53634,
+    "category": "Valuables",
+    "tier": -1,
+    "name": "war backpack",
+    "npc_sell": [
+      {
+        "name": "Jorge",
+        "location": "Adventurers' Guild",
+        "price": 20,
+        "currency_object_type_id": 19083,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "War Backpack (Replica)"
+  },
+  {
+    "id": 53635,
+    "category": "Valuables",
+    "tier": -1,
+    "name": "bonelord tome",
+    "npc_sell": [
+      {
+        "name": "Jorge",
+        "location": "Adventurers' Guild",
+        "price": 20,
+        "currency_object_type_id": 19083,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Bonelord Tome (Replica)"
+  },
+  {
+    "id": 53636,
+    "category": "Valuables",
+    "tier": -1,
+    "name": "wicked witch",
+    "npc_sell": [
+      {
+        "name": "Jorge",
+        "location": "Adventurers' Guild",
+        "price": 20,
+        "currency_object_type_id": 19083,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Wicked Witch (Replica)"
+  },
+  {
+    "id": 53637,
+    "category": "Valuables",
+    "tier": -1,
+    "name": "Tibiapedia",
+    "npc_sell": [
+      {
+        "name": "Jorge",
+        "location": "Adventurers' Guild",
+        "price": 20,
+        "currency_object_type_id": 19083,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Tibiapedia (Replica)"
+  },
+  {
+    "id": 53161,
+    "category": "Potions",
+    "tier": -1,
+    "name": "great mana potion",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53162,
+    "category": "Potions",
+    "tier": -1,
+    "name": "superior mana potion",
+    "npc_sell": [
+      {
+        "name": "Minzy",
+        "location": "Green Claw Swamp",
+        "price": 19,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": "Favour"
+      },
+      {
+        "name": "Alaistar",
+        "location": "Rathleton City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asima",
+        "location": "Darashia City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asnarus",
+        "location": "Roshamuul Mountains",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Chartan",
+        "location": "Spirittrails",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Chuckles",
+        "location": "Yalahar Centre",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Digger",
+        "location": "Venore City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Faloriel",
+        "location": "Issavi",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Frederik",
+        "location": "Liberty Bay City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Ghorza",
+        "location": "Ogre Village",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Gnomegica",
+        "location": "Kazordoon",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Hireling",
+        "location": "Secret Subarea",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Maun",
+        "location": "Lower Roshamuul",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Mehkesh",
+        "location": "Ankrahmun City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Nelly",
+        "location": "Svargrond City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Onfroi",
+        "location": "Bounac",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rabaz",
+        "location": "Farmine City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rachel",
+        "location": "Carlin City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Romir",
+        "location": "Svargrond Surroundings",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Sandra",
+        "location": "Edron Castle",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Shiriel",
+        "location": "Ab'Dendriel City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Siflind",
+        "location": "Nibelor",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Sigurd",
+        "location": "Kazordoon City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rock in a Hard Place",
+        "location": "Gray Beach",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Talila",
+        "location": "Fae Village",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Tandros",
+        "location": "Port Hope City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Tarun",
+        "location": "Port Hope Surroundings",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Topsy",
+        "location": "Thais City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Valindara",
+        "location": "Fae Village",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Xodet",
+        "location": "Thais City",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Sundara",
+        "location": "Moonfall",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Nipuna",
+        "location": "Silvertides",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yerga",
+        "location": "Oskayaat",
+        "price": 254,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Superior Mana Potion"
+  },
+  {
+    "id": 53163,
+    "category": "Potions",
+    "tier": -1,
+    "name": "distilled superior mana potion",
+    "npc_sell": [
+      {
+        "name": "Minzy",
+        "location": "Green Claw Swamp",
+        "price": 29,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": "Favour"
+      },
+      {
+        "name": "Alaistar",
+        "location": "Rathleton City",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asima",
+        "location": "Darashia City",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asnarus",
+        "location": "Roshamuul Mountains",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Chartan",
+        "location": "Spirittrails",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Chuckles",
+        "location": "Yalahar Centre",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Faloriel",
+        "location": "Issavi",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Frederik",
+        "location": "Liberty Bay City",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Ghorza",
+        "location": "Ogre Village",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Hireling",
+        "location": "Secret Subarea",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Maun",
+        "location": "Lower Roshamuul",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Mehkesh",
+        "location": "Ankrahmun City",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Nelly",
+        "location": "Svargrond City",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Onfroi",
+        "location": "Bounac",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rabaz",
+        "location": "Farmine City",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Romir",
+        "location": "Svargrond Surroundings",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Sandra",
+        "location": "Edron Castle",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Siflind",
+        "location": "Nibelor",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rock in a Hard Place",
+        "location": "Gray Beach",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Talila",
+        "location": "Fae Village",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Tandros",
+        "location": "Port Hope City",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Tarun",
+        "location": "Port Hope Surroundings",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Valindara",
+        "location": "Fae Village",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Sundara",
+        "location": "Moonfall",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Nipuna",
+        "location": "Silvertides",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yerga",
+        "location": "Oskayaat",
+        "price": 381,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Distilled Superior Mana Potion"
+  },
+  {
+    "id": 53164,
+    "category": "Potions",
+    "tier": -1,
+    "name": "distilled ultimate mana potion",
+    "npc_sell": [
+      {
+        "name": "Minzy",
+        "location": "Green Claw Swamp",
+        "price": 56,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": "Favour"
+      },
+      {
+        "name": "Alaistar",
+        "location": "Rathleton City",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asima",
+        "location": "Darashia City",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asnarus",
+        "location": "Roshamuul Mountains",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Chartan",
+        "location": "Spirittrails",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Chuckles",
+        "location": "Yalahar Centre",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Faloriel",
+        "location": "Issavi",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Frederik",
+        "location": "Liberty Bay City",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Ghorza",
+        "location": "Ogre Village",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Hireling",
+        "location": "Secret Subarea",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Maun",
+        "location": "Lower Roshamuul",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Mehkesh",
+        "location": "Ankrahmun City",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Nelly",
+        "location": "Svargrond City",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Onfroi",
+        "location": "Bounac",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rabaz",
+        "location": "Farmine City",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Romir",
+        "location": "Svargrond Surroundings",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Sandra",
+        "location": "Edron Castle",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Siflind",
+        "location": "Nibelor",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rock in a Hard Place",
+        "location": "Gray Beach",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Talila",
+        "location": "Fae Village",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Tandros",
+        "location": "Port Hope City",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Tarun",
+        "location": "Port Hope Surroundings",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Valindara",
+        "location": "Fae Village",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Sundara",
+        "location": "Moonfall",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Nipuna",
+        "location": "Silvertides",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yerga",
+        "location": "Oskayaat",
+        "price": 732,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Distilled Ultimate Mana Potion"
+  },
+  {
+    "id": 53168,
+    "category": "Ammunition",
+    "tier": -1,
+    "name": "shatterstorm arrow",
+    "npc_sell": [
+      {
+        "name": "Asnarus",
+        "location": "Roshamuul Mountains",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Brengus",
+        "location": "Port Hope City",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Cedrik",
+        "location": "Liberty Bay City",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Dario",
+        "location": "Ankrahmun City",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Edoch",
+        "location": "Darashia City",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Eliyas",
+        "location": "Issavi",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Hireling",
+        "location": "Secret Subarea",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Maun",
+        "location": "Lower Roshamuul",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Mugruu",
+        "location": "Ogre Village",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Perod",
+        "location": "Port Hope City",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Pompan",
+        "location": "Farmine City",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Robert",
+        "location": "Svargrond City",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Silas",
+        "location": "Rathleton City",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rock in a Hard Place",
+        "location": "Gray Beach",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Taegen",
+        "location": "Fae Village",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Vincent",
+        "location": "Yalahar Centre",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Willard",
+        "location": "Edron Castle",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Isika",
+        "location": "Silvertides",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Kiru",
+        "location": "Oskayaat",
+        "price": 45,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Shatterstorm Arrow"
+  },
+  {
+    "id": 53169,
+    "category": "Ammunition",
+    "tier": -1,
+    "name": "firestorm arrow",
+    "npc_sell": [
+      {
+        "name": "Asnarus",
+        "location": "Roshamuul Mountains",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Brengus",
+        "location": "Port Hope City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Cedrik",
+        "location": "Liberty Bay City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Dario",
+        "location": "Ankrahmun City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Edoch",
+        "location": "Darashia City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Eliyas",
+        "location": "Issavi",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Hireling",
+        "location": "Secret Subarea",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Maun",
+        "location": "Lower Roshamuul",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Mugruu",
+        "location": "Ogre Village",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Perod",
+        "location": "Port Hope City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Pompan",
+        "location": "Farmine City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Robert",
+        "location": "Svargrond City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Silas",
+        "location": "Rathleton City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rock in a Hard Place",
+        "location": "Gray Beach",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Taegen",
+        "location": "Fae Village",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Vincent",
+        "location": "Yalahar Centre",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Willard",
+        "location": "Edron Castle",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Isika",
+        "location": "Silvertides",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Kiru",
+        "location": "Oskayaat",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Firestorm Arrow"
+  },
+  {
+    "id": 53170,
+    "category": "Ammunition",
+    "tier": -1,
+    "name": "terrastorm arrow",
+    "npc_sell": [
+      {
+        "name": "Asnarus",
+        "location": "Roshamuul Mountains",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Brengus",
+        "location": "Port Hope City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Cedrik",
+        "location": "Liberty Bay City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Dario",
+        "location": "Ankrahmun City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Edoch",
+        "location": "Darashia City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Eliyas",
+        "location": "Issavi",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Hireling",
+        "location": "Secret Subarea",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Maun",
+        "location": "Lower Roshamuul",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Mugruu",
+        "location": "Ogre Village",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Perod",
+        "location": "Port Hope City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Pompan",
+        "location": "Farmine City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Robert",
+        "location": "Svargrond City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Silas",
+        "location": "Rathleton City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rock in a Hard Place",
+        "location": "Gray Beach",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Taegen",
+        "location": "Fae Village",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Vincent",
+        "location": "Yalahar Centre",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Willard",
+        "location": "Edron Castle",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Isika",
+        "location": "Silvertides",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Kiru",
+        "location": "Oskayaat",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Terrastorm Arrow"
+  },
+  {
+    "id": 53171,
+    "category": "Ammunition",
+    "tier": -1,
+    "name": "froststorm arrow",
+    "npc_sell": [
+      {
+        "name": "Asnarus",
+        "location": "Roshamuul Mountains",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Brengus",
+        "location": "Port Hope City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Cedrik",
+        "location": "Liberty Bay City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Dario",
+        "location": "Ankrahmun City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Edoch",
+        "location": "Darashia City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Eliyas",
+        "location": "Issavi",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Hireling",
+        "location": "Secret Subarea",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Maun",
+        "location": "Lower Roshamuul",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Mugruu",
+        "location": "Ogre Village",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Perod",
+        "location": "Port Hope City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Pompan",
+        "location": "Farmine City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Robert",
+        "location": "Svargrond City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Silas",
+        "location": "Rathleton City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rock in a Hard Place",
+        "location": "Gray Beach",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Taegen",
+        "location": "Fae Village",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Vincent",
+        "location": "Yalahar Centre",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Willard",
+        "location": "Edron Castle",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Isika",
+        "location": "Silvertides",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Kiru",
+        "location": "Oskayaat",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Froststorm Arrow"
+  },
+  {
+    "id": 53172,
+    "category": "Ammunition",
+    "tier": -1,
+    "name": "thunderstorm arrow",
+    "npc_sell": [
+      {
+        "name": "Asnarus",
+        "location": "Roshamuul Mountains",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Brengus",
+        "location": "Port Hope City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Cedrik",
+        "location": "Liberty Bay City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Dario",
+        "location": "Ankrahmun City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Edoch",
+        "location": "Darashia City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Eliyas",
+        "location": "Issavi",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Hireling",
+        "location": "Secret Subarea",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Maun",
+        "location": "Lower Roshamuul",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Mugruu",
+        "location": "Ogre Village",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Perod",
+        "location": "Port Hope City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Pompan",
+        "location": "Farmine City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Robert",
+        "location": "Svargrond City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Silas",
+        "location": "Rathleton City",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Rock in a Hard Place",
+        "location": "Gray Beach",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Taegen",
+        "location": "Fae Village",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Vincent",
+        "location": "Yalahar Centre",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Willard",
+        "location": "Edron Castle",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Isika",
+        "location": "Silvertides",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Kiru",
+        "location": "Oskayaat",
+        "price": 75,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "npc_buy": [],
+    "wiki_name": "Thunderstorm Arrow"
+  },
+  {
+    "id": 53197,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "enchanted flamingo amulet of valor",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Enchanted Flamingo Amulet of Valor"
+  },
+  {
+    "id": 53199,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "enchanted flamingo amulet of precision",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Enchanted Flamingo Amulet of Precision"
+  },
+  {
+    "id": 53201,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "enchanted flamingo amulet of destruction",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Enchanted Flamingo Amulet of Destruction"
+  },
+  {
+    "id": 53203,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "enchanted flamingo amulet of nature",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Enchanted Flamingo Amulet of Nature"
+  },
+  {
+    "id": 53205,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "enchanted swan amulet of balance",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Enchanted Swan Amulet of Balance"
+  },
+  {
+    "id": 53207,
+    "category": "Swords",
+    "tier": 4,
+    "name": "moonsilver epee",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53208,
+    "category": "Swords",
+    "tier": 4,
+    "name": "stellar moonsilver epee",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53209,
+    "category": "Swords",
+    "tier": 4,
+    "name": "moonsilver claymore",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53210,
+    "category": "Swords",
+    "tier": 4,
+    "name": "stellar moonsilver claymore",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53211,
+    "category": "Axes",
+    "tier": 4,
+    "name": "moonsilver axe",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53212,
+    "category": "Axes",
+    "tier": 4,
+    "name": "stellar moonsilver axe",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53213,
+    "category": "Axes",
+    "tier": 4,
+    "name": "moonsilver chopper",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53214,
+    "category": "Axes",
+    "tier": 4,
+    "name": "stellar moonsilver chopper",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53215,
+    "category": "Clubs",
+    "tier": 4,
+    "name": "moonsilver crusher",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53216,
+    "category": "Clubs",
+    "tier": 4,
+    "name": "stellar moonsilver crusher",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53217,
+    "category": "Clubs",
+    "tier": 4,
+    "name": "moonsilver mace",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53218,
+    "category": "Clubs",
+    "tier": 4,
+    "name": "stellar moonsilver mace",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53219,
+    "category": "Wands Rods",
+    "tier": 4,
+    "name": "moonsilver channeler",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53220,
+    "category": "Wands Rods",
+    "tier": 4,
+    "name": "stellar moonsilver channeler",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53221,
+    "category": "Wands Rods",
+    "tier": 4,
+    "name": "moonsilver sceptre",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53222,
+    "category": "Wands Rods",
+    "tier": 4,
+    "name": "stellar moonsilver sceptre",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53223,
+    "category": "Fist Weapons",
+    "tier": 4,
+    "name": "moonsilver katar",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53224,
+    "category": "Fist Weapons",
+    "tier": 4,
+    "name": "stellar moonsilver katar",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53225,
+    "category": "Distance Weapons",
+    "tier": 4,
+    "name": "moonsilver bow",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53226,
+    "category": "Distance Weapons",
+    "tier": 4,
+    "name": "stellar moonsilver bow",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53227,
+    "category": "Distance Weapons",
+    "tier": 4,
+    "name": "moonsilver crossbow",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53228,
+    "category": "Distance Weapons",
+    "tier": 4,
+    "name": "stellar moonsilver crossbow",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53229,
+    "category": "Helmets Hats",
+    "tier": 4,
+    "name": "moonsilver battle visor",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53230,
+    "category": "Helmets Hats",
+    "tier": 4,
+    "name": "moonsilver trail hood",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53231,
+    "category": "Helmets Hats",
+    "tier": 4,
+    "name": "moonsilver nimbus hat",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53232,
+    "category": "Helmets Hats",
+    "tier": 4,
+    "name": "moonsilver spirit mask",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53233,
+    "category": "Helmets Hats",
+    "tier": 4,
+    "name": "moonsilver strike helm",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": null
+  },
+  {
+    "id": 53695,
+    "category": "Valuables",
+    "tier": -1,
+    "name": "lunar ascension orb",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Lunar Ascension Orb"
+  },
+  {
+    "id": 53751,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic bash scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Bash Scroll"
+  },
+  {
+    "id": 53752,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic blockade scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Blockade Scroll"
+  },
+  {
+    "id": 53753,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic chop scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Chop Scroll"
+  },
+  {
+    "id": 53754,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic cloud fabric scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Cloud Fabric Scroll"
+  },
+  {
+    "id": 53755,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic demon presence scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Demon Presence Scroll"
+  },
+  {
+    "id": 53756,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic dragon hide scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Dragon Hide Scroll"
+  },
+  {
+    "id": 53757,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic electrify scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Electrify Scroll"
+  },
+  {
+    "id": 53758,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic epiphany scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Epiphany Scroll"
+  },
+  {
+    "id": 53759,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic featherweight scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Featherweight Scroll"
+  },
+  {
+    "id": 53760,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic frost scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Frost Scroll"
+  },
+  {
+    "id": 53761,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic lich shroud scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Lich Shroud Scroll"
+  },
+  {
+    "id": 53762,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic precision scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Precision Scroll"
+  },
+  {
+    "id": 53763,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic punch scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Punch Scroll"
+  },
+  {
+    "id": 53764,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic quara scale scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Quara Scale Scroll"
+  },
+  {
+    "id": 53765,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic reap scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Reap Scroll"
+  },
+  {
+    "id": 53766,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic scorch scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Scorch Scroll"
+  },
+  {
+    "id": 53767,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic slash scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Slash Scroll"
+  },
+  {
+    "id": 53768,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic snake skin scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Snake Skin Scroll"
+  },
+  {
+    "id": 53769,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic strike scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Strike Scroll"
+  },
+  {
+    "id": 53770,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic swiftness scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Swiftness Scroll"
+  },
+  {
+    "id": 53771,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic vampirism scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Vampirism Scroll"
+  },
+  {
+    "id": 53772,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic venom scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Venom Scroll"
+  },
+  {
+    "id": 53773,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic vibrancy scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Vibrancy Scroll"
+  },
+  {
+    "id": 53774,
+    "category": "Others",
+    "tier": -1,
+    "name": "basic void scroll",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Basic Void Scroll"
+  },
+  {
+    "id": 53778,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "catnip",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 580,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 580,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 580,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asphota",
+        "location": "Silvertides",
+        "price": 580,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Catnip"
+  },
+  {
+    "id": 53855,
+    "category": "Distance Weapons",
+    "tier": -1,
+    "name": "snowball with ice shards",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Snowball with Ice Shards"
+  },
+  {
+    "id": 54128,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "ice shard",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 500,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 500,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 500,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asphota",
+        "location": "Silvertides",
+        "price": 500,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Ice Shard"
+  },
+  {
+    "id": 54268,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "figurine of Mimar Haffar",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 2800000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 2800000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 2800000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Figurine of Mimar Haffar"
+  },
+  {
+    "id": 54269,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "figurine of Maior Domus",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 3400000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 3400000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 3400000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Figurine of Maior Domus"
+  },
+  {
+    "id": 54270,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "figurine of Phosphorus",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 5700000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 5700000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 5700000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Figurine of Phosphorus"
+  },
+  {
+    "id": 54355,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "tatty robe",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Tatty Robe"
+  },
+  {
+    "id": 54356,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "broken arrow",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Broken Arrow"
+  },
+  {
+    "id": 54357,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "book of faith",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Book of Faith"
+  },
+  {
+    "id": 54358,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "ceremonial bowl",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Ceremonial Bowl"
+  },
+  {
+    "id": 54359,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "golden belt",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Golden Belt"
+  },
+  {
+    "id": 54360,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "loose prayer beads",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Loose Prayer Beads"
+  },
+  {
+    "id": 54361,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "cloud familiar",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Cloud Familiar"
+  },
+  {
+    "id": 54362,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "gilded bell",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Gilded Bell"
+  },
+  {
+    "id": 54363,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "moonspawn tentacle",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 670,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 670,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 670,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Moonspawn Tentacle"
+  },
+  {
+    "id": 54364,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "moonspawn headpiece",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 900,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 900,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 900,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Moonspawn Headpiece"
+  },
+  {
+    "id": 54480,
+    "category": "Valuables",
+    "tier": -1,
+    "name": "auric moon sigil",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Auric Moon Sigil"
+  },
+  {
+    "id": 54510,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "flamingo amulet of valor",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Flamingo Amulet of Valor"
+  },
+  {
+    "id": 54511,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "flamingo amulet of precision",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Flamingo Amulet of Precision"
+  },
+  {
+    "id": 54512,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "flamingo amulet of destruction",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Flamingo Amulet of Destruction"
+  },
+  {
+    "id": 54513,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "flamingo amulet of nature",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Flamingo Amulet of Nature"
+  },
+  {
+    "id": 54514,
+    "category": "Amulets",
+    "tier": -1,
+    "name": "swan amulet of balance",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Swan Amulet of Balance"
+  },
+  {
+    "id": 54587,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "winged jaracal soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Winged Jaracal Soul Core"
+  },
+  {
+    "id": 54588,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "iceplume strider soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Iceplume Strider Soul Core"
+  },
+  {
+    "id": 54589,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "silverfrost sentinel soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Silverfrost Sentinel Soul Core"
+  },
+  {
+    "id": 54590,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "true feverbloom asura soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "True Feverbloom Asura Soul Core"
+  },
+  {
+    "id": 54591,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "radiant warden soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Radiant Warden Soul Core"
+  },
+  {
+    "id": 54592,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "devoted radiant warden soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Devoted Radiant Warden Soul Core"
+  },
+  {
+    "id": 54593,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "radiant paragon soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Radiant Paragon Soul Core"
+  },
+  {
+    "id": 54594,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "devoted radiant paragon soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Devoted Radiant Paragon Soul Core"
+  },
+  {
+    "id": 54595,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "radiant acolyte soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Radiant Acolyte Soul Core"
+  },
+  {
+    "id": 54596,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "devoted radiant acolyte soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Devoted Radiant Acolyte Soul Core"
+  },
+  {
+    "id": 54597,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "radiant templar soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Radiant Templar Soul Core"
+  },
+  {
+    "id": 54598,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "devoted radiant templar soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Devoted Radiant Templar Soul Core"
+  },
+  {
+    "id": 54599,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "radiant inquisitor soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Radiant Inquisitor Soul Core"
+  },
+  {
+    "id": 54600,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "devoted radiant inquisitor soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Devoted Radiant Inquisitor Soul Core"
+  },
+  {
+    "id": 54601,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "radiant zealot soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Radiant Zealot Soul Core"
+  },
+  {
+    "id": 54602,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "devoted radiant zealot soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Devoted Radiant Zealot Soul Core"
+  },
+  {
+    "id": 54603,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "moonspawn blightspitter soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Moonspawn Blightspitter Soul Core"
+  },
+  {
+    "id": 54604,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "moonspawn oozecrown soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Moonspawn Oozecrown Soul Core"
+  },
+  {
+    "id": 54611,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "frozen peacock feather",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 110000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 110000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 110000,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Frozen Peacock Feather"
+  },
+  {
+    "id": 54630,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "jaracal soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Jaracal Soul Core"
+  },
+  {
+    "id": 54631,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "moonstone excavator soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Moonstone Excavator Soul Core"
+  },
+  {
+    "id": 54632,
+    "category": "Soul Cores",
+    "tier": -1,
+    "name": "moonstone overseer soul core",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Moonstone Overseer Soul Core"
+  },
+  {
+    "id": 54639,
+    "category": "Creature Products",
+    "tier": -1,
+    "name": "pyrophyte seed pod",
+    "npc_sell": [],
+    "npc_buy": [
+      {
+        "name": "Tarun",
+        "location": "Port Hope Surroundings",
+        "price": 720,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Southern Darama",
+        "price": 720,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Carlin",
+        "price": 720,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Yasir",
+        "location": "Liberty Bay City",
+        "price": 720,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      },
+      {
+        "name": "Asphota",
+        "location": "Silvertides",
+        "price": 720,
+        "currency_object_type_id": 0,
+        "currency_quest_flag_display_name": ""
+      }
+    ],
+    "wiki_name": "Pyrophyte Seed Pod"
+  },
+  {
+    "id": 54651,
+    "category": "Valuables",
+    "tier": -1,
+    "name": "cloud in a bottle",
+    "npc_sell": [],
+    "npc_buy": [],
+    "wiki_name": "Cloud In a Bottle"
   }
 ]
