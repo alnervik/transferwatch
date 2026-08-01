@@ -393,6 +393,9 @@ const GITHUB_REPO          = 'alnervik/transferwatch';
 const GITHUB_WORKFLOW_FILE = 'scan-targeted.yml';
 const GITHUB_REF           = 'main';
 const VERIFY_POLL_MS       = 30_000;
+// Workflowet kör 8 batchar à ~12 par med 12s paus — klart på ~3 min. Taket ger
+// gott om marginal för köade runners men låter inte jobbet snurra för evigt.
+const VERIFY_TIMEOUT_MS    = 15 * 60 * 1000;
 
 // ── Auth (Supabase GoTrue via REST) ───────────────────────────────────────
 // Konton skapas/läggs till manuellt i Supabase (Auth → Users). Self-signup är
@@ -469,7 +472,8 @@ let tcBuy = 0;
 let currentStartName = '';
 let deepSearchWorlds = new Set(); // världar där 50k+ djupsökning är aktiv
 const boardCache = {};    // for live-fetch fallback
-const verifyJobs = {};    // worldName → { pairs, neededKeys, startedAt, total, doneCount, intervalId }
+const verifyJobs = {};    // worldName → { pairs, neededKeys, baseline, startedAt, total, doneCount, intervalId }
+const verifyMissing = {}; // worldName → [item_id, ...] som saknade orderbok efter senaste verifieringen
 
 let _lbCache = null;      // cached leaderboard result
 let _lbCacheTc = -1;      // tcAmount when cache was built
@@ -1248,6 +1252,13 @@ function renderResults() {
     h += '<span class="world-name-col">' + g.name + ' <span class="badge badge-be-' + g.be + '">' + beE + '</span> <span class="badge badge-pvp">' + pvp + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Trades</span><span class="stat-value">' + (isFiltered ? visT.length + ' / ' + g.tradeCount : visT.length) + '</span></span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">Verifierade</span><span class="stat-value" id="verified-stat-' + cssId(g.name) + '">' + g.verifiedCount + '/' + g.tradeCount + '</span></span>';
+    // Par som körningen aldrig levererade orderbok för. Utan det här ser en
+    // halvfärdig verifiering exakt ut som en lyckad — trades står bara kvar
+    // som ~est utan att något förklarar varför.
+    const miss = verifyMissing[g.name];
+    if (miss && miss.length) {
+      h += '<span class="stat hide-mobile" title="Verifieringen hämtade aldrig orderbok för dessa items: ' + miss.join(', ') + '"><span class="stat-label">Utan bok</span><span class="stat-value" style="color:#fbbf24">' + miss.length + '</span></span>';
+    }
     h += '<span class="stat hide-mobile"><span class="stat-label">Data</span><span class="stat-value">' + timeAgo(g.scanned_at) + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Netto profit' + (isFiltered ? ' (alla ' + g.tradeCount + ')' : '') + '</span><span class="stat-value profit-value">' + formatGold(g.netProfit) + ' gp</span>' + (isFiltered ? '<span class="stat-sub">synliga: ' + formatGold(visGrossProfit) + ' gp brutto</span>' : '') + '</span>';
     h += '<span class="stat hide-mobile"><span class="stat-label">TC-vinst</span><span class="stat-value profit-value">≈ ' + Math.round(g.netProfit / g.targetTCSellPrice).toLocaleString('sv-SE') + ' TC</span></span>';
@@ -1443,10 +1454,24 @@ async function triggerVerify(worldName) {
     return;
   }
 
+  // Baslinje: hur färsk orderbok vi redan HADE per par. En rad räknas som ny
+  // när dess scanned_at är nyare än baslinjen — en jämförelse mellan två
+  // servertider. Den gamla varianten jämförde mot webbläsarens klocka
+  // (scanned_at >= startedAt), vilket gjorde jobbet beroende av att din klocka
+  // är synkad med GitHubs runners. Går den bara någon minut före filtreras
+  // varje rad körningen skriver bort, jobbet blir aldrig klart, calculate()
+  // körs aldrig och bockarna uppdateras aldrig — varje gång, likadant.
+  const baseline = {};
+  for (const k of neededKeys) {
+    const cached = boardCache[k];
+    baseline[k] = (cached && cached.scanned_at) ? new Date(cached.scanned_at).getTime() : 0;
+  }
+
   verifyJobs[worldName] = {
     pairs,
     neededKeys: [...neededKeys],
     freshKeys: new Set(),
+    baseline,
     startedAt,
     total: pairs.length,
     doneCount: 0,
@@ -1472,13 +1497,13 @@ async function pollVerify(worldName) {
 
   await ensureFreshSession();
   const sbHeaders = authHeaders();
-  const sinceIso = job.startedAt.toISOString();
 
   for (const [w, ids] of Object.entries(byWorld)) {
+    // Hämta raderna utan tidsfilter och avgör färskheten mot baslinjen i
+    // stället — se kommentaren i triggerVerify om klockskillnaden.
     const url = SUPABASE_URL + '/rest/v1/item_offers'
       + '?world_name=eq.' + encodeURIComponent(w)
       + '&item_id=in.(' + ids.join(',') + ')'
-      + '&scanned_at=gte.' + encodeURIComponent(sinceIso)
       + '&select=world_name,item_id,sellers,buyers,scanned_at';
     try {
       const res = await fetch(url, { headers: sbHeaders });
@@ -1491,9 +1516,12 @@ async function pollVerify(worldName) {
         const buyers  = (r.buyers  || []).slice().sort((a, b) => b.price - a.price);
         offersData[key] = { sellers, buyers };
         boardCache[key] = { ...r, sellers, buyers };
-        job.freshKeys.add(key);
-        gotNew = true;
-        _lbCache = null;
+        const ts = r.scanned_at ? new Date(r.scanned_at).getTime() : 0;
+        if (ts > (job.baseline[key] || 0) && !job.freshKeys.has(key)) {
+          job.freshKeys.add(key);
+          gotNew = true;
+          _lbCache = null;
+        }
       }
       if (gotNew) renderLeaderboard();
     } catch (_) { /* försök igen nästa tick */ }
@@ -1509,10 +1537,24 @@ async function pollVerify(worldName) {
   const progEl = document.getElementById('verify-prog-' + cssId(worldName));
   if (progEl) progEl.textContent = '⏳ ' + done + '/' + job.total;
 
-  if (done >= job.total) {
+  // Avsluta när allt är inne, eller när körningen fått rimlig tid på sig. Utan
+  // taket kunde jobbet snurra för evigt på par som aldrig kommer in, och då
+  // kördes aldrig calculate() — bockarna stod kvar som de var före körningen
+  // utan att något sa ifrån. Nu räknar vi alltid om och redovisar vad som
+  // faktiskt saknas.
+  const timedOut = Date.now() - job.startedAt.getTime() > VERIFY_TIMEOUT_MS;
+  if (done >= job.total || timedOut) {
     clearInterval(job.intervalId);
+    const missing = job.pairs
+      .filter(t => !job.freshKeys.has(t.start + ':' + t.item_id) || !job.freshKeys.has(t.target + ':' + t.item_id))
+      .map(t => t.item_id);
+    verifyMissing[worldName] = missing;
     delete verifyJobs[worldName];
     calculate();  // räknar om med nya verified flaggor
+    if (missing.length) {
+      console.warn('[TransferWatch] ' + worldName + ': ' + missing.length + ' av ' + job.total +
+        ' par saknar färsk orderbok efter verifieringen. item_id: ' + missing.join(', '));
+    }
   }
 }
 
