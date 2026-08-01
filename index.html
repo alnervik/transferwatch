@@ -81,6 +81,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .deep-search-btn:hover { background: rgba(20,184,166,0.25); }
 .deep-search-btn.active { background: rgba(20,184,166,0.22); color: #5eead4; border-color: rgba(20,184,166,0.5); }
 .badge-deep { background: rgba(20,184,166,0.12); color: #2dd4bf; font-size: 0.6rem; }
+.badge-thin { background: rgba(96,165,250,0.12); color: #60a5fa; font-size: 0.62rem; }
 .low-profit-row > td { opacity: 0.6; }
 .transfer-cost-note { font-size: 0.72rem; color: var(--text-muted); padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
 .transfer-cost-note span { color: var(--gold); }
@@ -550,14 +551,52 @@ function matchResilient(sellers, buyers, budget = Infinity) {
   return matchOffers((sellers || []).slice(1), buyers, budget);
 }
 
+// ─── TUNN BOK: LOWBALL-TEST I STÄLLET FÖR RADERING ────────────────────────
+// Resilient-matchningen ovan är rätt kalibrerad för billiga, djupa böcker men
+// raderade äkta trades på dyra items: över 10M gp är medianen 1 säljorder, så
+// slice(1) tömde boken → 0 profit → traden filtrerades bort helt. Mätt över en
+// full snapshot ligger bara 0,4% av askarna över 10M under 0,7× månadssnittet,
+// mot 24% för items under 100k — lowball-mirages är i praktiken ett fenomen på
+// billiga items, precis där resilient-regeln fortsätter gälla oförändrat.
+const LOWBALL_RATIO = 0.7;  // ask under så här stor andel av månadssnittet = trolig mirage
+
+// Ser billigaste säljordern ut som ett riktigt pris, eller som en gammal lowball?
+// Utan månadssnitt (data skannad före fältet fanns) går det inte att avgöra —
+// då behåller vi den försiktiga regeln.
+function cheapestAskLooksReal(sellers, avgSell) {
+  const S = sellers || [];
+  if (!S.length || !(avgSell > 0)) return false;
+  return S[0].price >= LOWBALL_RATIO * avgSell;
+}
+
+// Normalfallet är fortfarande resilient. Först när den tunna boken nollar traden
+// helt faller vi tillbaka på hela boken — förutsatt att billigaste asken klarar
+// lowball-testet. Traden räknas då mot riktiga orderdata men flaggas `thinBook`
+// (⚠️ i UI) eftersom den vilar på en enda säljorder.
+function matchWithFallback(sellers, buyers, avgSell, budget = Infinity) {
+  const res = matchResilient(sellers, buyers, budget);
+  if (res.profit > 0) return Object.assign({ thinBook: false }, res);
+  if (!cheapestAskLooksReal(sellers, avgSell)) return Object.assign({ thinBook: false }, res);
+  const full = matchOffers(sellers, buyers, budget);
+  return Object.assign({ thinBook: full.profit > 0 }, full);
+}
+
 // ─── BUY-LADDER COST (verify the buy side of a patient trade) ─────────────
 // Climbs the real start-world seller ladder to buy up to `wantQty` units within
 // `budget`, returning the realistic total cost, units actually obtainable, and
 // average price. Resilient like matchResilient: drops the single cheapest offer
-// (the usual stale-lowball that would make our buy cost look too good), so a buy
-// backed only by one offer verifies to 0 units rather than a mirage.
-function buyLadderCost(sellers, wantQty, budget = Infinity) {
-  const S = (sellers || []).slice(1);  // resilient: ignore cheapest stale offer
+// (the usual stale-lowball that would make our buy cost look too good), with the
+// same tunn-bok-fallback — en ensam ask som klarar lowball-testet får räknas i
+// stället för att nolla köpsidan (se matchWithFallback).
+function buyLadderCost(sellers, wantQty, budget = Infinity, avgSell = 0) {
+  const res = ladderCost((sellers || []).slice(1), wantQty, budget);
+  if (res.units > 0) return Object.assign({ thinBook: false }, res);
+  if (!cheapestAskLooksReal(sellers, avgSell)) return Object.assign({ thinBook: false }, res);
+  const full = ladderCost(sellers || [], wantQty, budget);
+  return Object.assign({ thinBook: full.units > 0 }, full);
+}
+
+function ladderCost(S, wantQty, budget) {
   let units = 0, totalCost = 0;
   for (const o of S) {
     if (units >= wantQty || totalCost >= budget) break;
@@ -828,7 +867,7 @@ function calculate() {
     const trades = [];
     for (const tItem of tw.items) {
       let buy_price, sell_price, margin, marginPct, qty, grossProfit, verified;
-      let strategy, action, etaDays;
+      let strategy, action, etaDays, thinBook = false;
 
       if (strategyMode === 'patient') {
         // PATIENT: best of the 4 offer-based strategies, from market_values
@@ -861,7 +900,7 @@ function calculate() {
         // trades the moment an order book was loaded / "Verifiera alla" ran.)
         const startOffers = offersData[startName + ':' + tItem.id];
         if (best.action.buy === 'take' && startOffers && startOffers.sellers && startOffers.sellers.length) {
-          const lad = buyLadderCost(startOffers.sellers, qty, goldCap);
+          const lad = buyLadderCost(startOffers.sellers, qty, goldCap, sAll.month_average_sell || 0);
           if (lad.units > 0) {
             const ladBuy = Math.round(lad.avgPrice);
             const ladMargin = sell_price - ladBuy;
@@ -872,6 +911,7 @@ function calculate() {
               margin = ladMargin;
               marginPct = buy_price > 0 ? (margin / buy_price) * 100 : 0;
               verified = true;
+              thinBook = lad.thinBook;
             }
           }
         }
@@ -893,10 +933,14 @@ function calculate() {
         if (hasOffers) {
           // REALISTIC: resilient match (drops the cheapest seller offer) so the
           // shown profit is what survives a re-verify, not a stale-lowball mirage.
-          const match = matchResilient(startOffers.sellers, targetOffers.buyers);
+          // Tunn bok som annars nollat traden faller tillbaka på hela boken när
+          // billigaste asken håller mot månadssnittet — se matchWithFallback.
+          const sAvg = (startAll[tItem.id] && startAll[tItem.id].month_average_sell) || 0;
+          const match = matchWithFallback(startOffers.sellers, targetOffers.buyers, sAvg);
           grossProfit = match.profit;
           qty = match.matchCount;
           verified = true;
+          thinBook = match.thinBook;
         } else {
           // ESTIMATE: fallback to market_values data
           const affordable = Math.floor(goldCap / sItem.sell_offer);
@@ -915,7 +959,7 @@ function calculate() {
         buy_price, sell_price,
         margin, margin_pct: marginPct,
         qty, gross_profit: grossProfit,
-        verified,
+        verified, thinBook,
         lowProfit: grossProfit < MIN_TRADE_PROFIT,
         t_buy_offers: tItem.buy_offers || 0,
         s_sell_offers: (startAll[tItem.id] && startAll[tItem.id].sell_offers) || 0,
@@ -948,19 +992,22 @@ function calculate() {
       const tOffers = offersData[tName + ':' + trade.item_id];
       const haveStart  = !!(sOffers && sOffers.sellers && sOffers.sellers.length);
       const haveTarget = !!(tOffers && tOffers.buyers  && tOffers.buyers.length);
+      const startAvgSell = (startAll[trade.item_id] && startAll[trade.item_id].month_average_sell) || 0;
       if (trade.verified && trade.strategy === 'take-take' && haveStart && haveTarget) {
         // Both sides real: match the start sell ladder against the target buy ladder.
-        const m = matchResilient(sOffers.sellers, tOffers.buyers, remaining);
+        const m = matchWithFallback(sOffers.sellers, tOffers.buyers, startAvgSell, remaining);
         trade.gross_profit = m.profit;
         trade.qty = m.matchCount;
+        trade.thinBook = m.thinBook;
         remaining -= m.totalCost;
       } else if (trade.verified && haveStart) {
         // Buy side verified off the real start ladder; the sell stays the
         // estimate (a patient make-sell, or a take-take whose target book
         // wasn't fetched).
-        const lad = buyLadderCost(sOffers.sellers, trade.qty, remaining);
+        const lad = buyLadderCost(sOffers.sellers, trade.qty, remaining, startAvgSell);
         trade.qty = lad.units;
         trade.gross_profit = lad.units * trade.sell_price - lad.totalCost;
+        trade.thinBook = lad.thinBook;
         remaining -= lad.totalCost;
       } else {
         const affordable = Math.floor(remaining / trade.buy_price);
@@ -1063,6 +1110,9 @@ function computeGlobalLeaderboard() {
     if (!startItems) continue;
     const tcItem = sw.items.find(it => it.id === TC_ITEM_ID);
     if (!tcItem || tcItem.buy_offer <= 0) continue;
+    // Månadssnitt per item på startvärlden — underlag för tunn-bok-fallbacken.
+    const startAvgSell = {};
+    for (const it of sw.items) startAvgSell[it.id] = it.month_average_sell || 0;
     const startTCBuy = tcItem.buy_offer;
     const spendableTC = Math.max(0, tcAmount - TRANSFER_COST_TC);
     const goldCap = spendableTC * startTCBuy;
@@ -1084,9 +1134,10 @@ function computeGlobalLeaderboard() {
         if (!targetItems.has(itemId)) continue;
         const startSellers = offersData[startName + ':' + itemId].sellers;
         const targetBuyers = offersData[targetName + ':' + itemId].buyers;
-        const mFull = matchResilient(startSellers, targetBuyers);
+        const avgSell = startAvgSell[itemId] || 0;
+        const mFull = matchWithFallback(startSellers, targetBuyers, avgSell);
         if (mFull.profit < LEADERBOARD_MIN_TRADE_PROFIT || mFull.totalCost <= 0) continue;
-        candidates.push({ startSellers, targetBuyers, roi: mFull.profit / mFull.totalCost, mFull });
+        candidates.push({ startSellers, targetBuyers, avgSell, roi: mFull.profit / mFull.totalCost, mFull });
       }
       if (!candidates.length) continue;
 
@@ -1100,7 +1151,7 @@ function computeGlobalLeaderboard() {
           totalGross += c.mFull.profit;
           remaining -= c.mFull.totalCost;
         } else {
-          const m = matchResilient(c.startSellers, c.targetBuyers, remaining);
+          const m = matchWithFallback(c.startSellers, c.targetBuyers, c.avgSell, remaining);
           totalGross += m.profit;
           remaining -= m.totalCost;
         }
@@ -1251,7 +1302,9 @@ function renderResults() {
         ? 'Köp och sälj verifierade mot orderboken'
         : 'Köppris verifierat mot orderboken (snitt över säljstegen); sälj är estimat (make-offer)';
       const tag = t.verified
-        ? '<span class="badge badge-verified" title="' + verifiedTitle + '">✓</span>'
+        ? (t.thinBook
+            ? '<span class="badge badge-thin" title="Verifierad mot orderboken, men hela traden vilar på en enda säljorder — priset håller mot månadssnittet, men försvinner ordern finns ingen backup">✓ tunn</span>'
+            : '<span class="badge badge-verified" title="' + verifiedTitle + '">✓</span>')
         : '<span class="badge badge-estimate">~est</span>';
 
       let speedBadge = '';
