@@ -82,6 +82,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .deep-search-btn.active { background: rgba(20,184,166,0.22); color: #5eead4; border-color: rgba(20,184,166,0.5); }
 .badge-deep { background: rgba(20,184,166,0.12); color: #2dd4bf; font-size: 0.6rem; }
 .badge-thin { background: rgba(96,165,250,0.12); color: #60a5fa; font-size: 0.62rem; }
+.badge-refuted { background: rgba(248,113,113,0.12); color: #f87171; font-size: 0.62rem; }
 .low-profit-row > td { opacity: 0.6; }
 .transfer-cost-note { font-size: 0.72rem; color: var(--text-muted); padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
 .transfer-cost-note span { color: var(--gold); }
@@ -592,20 +593,28 @@ function matchWithFallback(sellers, buyers, avgSell, budget = Infinity) {
 // (the usual stale-lowball that would make our buy cost look too good), with the
 // same tunn-bok-fallback — en ensam ask som klarar lowball-testet får räknas i
 // stället för att nolla köpsidan (se matchWithFallback).
-function buyLadderCost(sellers, wantQty, budget = Infinity, avgSell = 0) {
-  const res = ladderCost((sellers || []).slice(1), wantQty, budget);
+function buyLadderCost(sellers, wantQty, budget = Infinity, avgSell = 0, maxPrice = Infinity) {
+  const res = ladderCost((sellers || []).slice(1), wantQty, budget, maxPrice);
   if (res.units > 0) return Object.assign({ thinBook: false }, res);
   if (!cheapestAskLooksReal(sellers, avgSell)) return Object.assign({ thinBook: false }, res);
-  const full = ladderCost(sellers || [], wantQty, budget);
+  const full = ladderCost(sellers || [], wantQty, budget, maxPrice);
   return Object.assign({ thinBook: full.units > 0 }, full);
 }
 
-function ladderCost(S, wantQty, budget) {
+// `maxPrice` = säljpriset. Utan taket klättrade stegen vidare över säljpriset
+// för att fylla wantQty, snittet drogs upp över sell_price och anroparen
+// förkastade HELA traden (ladMargin <= 0) i stället för att köpa de units som
+// faktiskt är lönsamma. matchOffers har alltid gjort rätt här — den bryter på
+// `margin <= 0` — och köpstegen speglar nu samma regel.
+function ladderCost(S, wantQty, budget, maxPrice = Infinity) {
   let units = 0, totalCost = 0;
   for (const o of S) {
     if (units >= wantQty || totalCost >= budget) break;
     const price = o.price;
     if (!(price > 0)) continue;
+    // Säljordrarna är sorterade stigande: första asken på eller över
+    // säljpriset avslutar stegen — resten kan aldrig bli lönsam.
+    if (price >= maxPrice) break;
     let take = Math.min(o.amount || 1, wantQty - units);
     if (totalCost + take * price > budget) {
       take = Math.floor((budget - totalCost) / price);
@@ -872,6 +881,14 @@ function calculate() {
     for (const tItem of tw.items) {
       let buy_price, sell_price, margin, marginPct, qty, grossProfit, verified;
       let strategy, action, etaDays, thinBook = false;
+      // 'none'    = ingen orderbok hämtad för paret ännu (~est)
+      // 'ok'      = orderboken bekräftar ett lönsamt köp (✓)
+      // 'refuted' = orderboken ÄR hämtad men motsäger estimatet (⚠ ej i boken).
+      // Tidigare fanns bara verified true/false, så 'refuted' såg ut exakt som
+      // 'none'. Då kunde "Verifiera alla" aldrig bli klar: körningen hämtade
+      // boken, boken sa nej, traden stod kvar som ~est och nästa körning gav
+      // exakt samma svar. Se renderResults för badge/räknare.
+      let bookState = 'none';
 
       if (strategyMode === 'patient') {
         // PATIENT: best of the 4 offer-based strategies, from market_values
@@ -896,15 +913,22 @@ function calculate() {
         // are untouched.
         //
         // The ladder only ever UPGRADES a trade to verified (✓) when it confirms
-        // a still-profitable buy within the filter. If the resilient ladder can't
-        // (thin book where dropping the lone cheapest ask leaves only a wall above
-        // the make-sell), we keep the market_values estimate and leave it
-        // unverified — we never delete a trade the estimate already accepted.
-        // (Deleting here was the regression: it silently removed otherwise-visible
-        // trades the moment an order book was loaded / "Verifiera alla" ran.)
+        // a still-profitable buy within the filter. If it can't, we keep the
+        // market_values estimate and mark the trade 'refuted' — we never delete
+        // a trade the estimate already accepted. (Deleting here was the
+        // regression: it silently removed otherwise-visible trades the moment an
+        // order book was loaded / "Verifiera alla" ran.)
+        //
+        // Stegen tar numera bara ask < sell_price (se ladderCost). Det var den
+        // saknade biten: förut klättrade den till qty oavsett pris och föll på
+        // ladMargin <= 0 så fort näst billigaste asken låg över säljpriset —
+        // vanligt på dyra items och tunna marginaler, precis de trades som satt
+        // fast som ~est körning efter körning. Nu köps de units som är lönsamma
+        // och traden blir verifierad på riktig volym i stället.
         const startOffers = offersData[startName + ':' + tItem.id];
+        if (startOffers) bookState = 'refuted';
         if (best.action.buy === 'take' && startOffers && startOffers.sellers && startOffers.sellers.length) {
-          const lad = buyLadderCost(startOffers.sellers, qty, goldCap, sAll.month_average_sell || 0);
+          const lad = buyLadderCost(startOffers.sellers, qty, goldCap, sAll.month_average_sell || 0, sell_price);
           if (lad.units > 0) {
             const ladBuy = Math.round(lad.avgPrice);
             const ladMargin = sell_price - ladBuy;
@@ -915,6 +939,7 @@ function calculate() {
               margin = ladMargin;
               marginPct = buy_price > 0 ? (margin / buy_price) * 100 : 0;
               verified = true;
+              bookState = 'ok';
               thinBook = lad.thinBook;
             }
           }
@@ -944,6 +969,7 @@ function calculate() {
           grossProfit = match.profit;
           qty = match.matchCount;
           verified = true;
+          bookState = 'ok';
           thinBook = match.thinBook;
         } else {
           // ESTIMATE: fallback to market_values data
@@ -963,7 +989,7 @@ function calculate() {
         buy_price, sell_price,
         margin, margin_pct: marginPct,
         qty, gross_profit: grossProfit,
-        verified, thinBook,
+        verified, thinBook, bookState,
         lowProfit: grossProfit < MIN_TRADE_PROFIT,
         t_buy_offers: tItem.buy_offers || 0,
         s_sell_offers: (startAll[tItem.id] && startAll[tItem.id].sell_offers) || 0,
@@ -980,6 +1006,11 @@ function calculate() {
     trades.sort((a, b) => b.margin_pct - a.margin_pct);
     let remaining = goldCap;
     for (const trade of trades) {
+      // Motsagda trades tar ingen budget och rör sitt estimat — de ska synas
+      // med sin ⚠-badge oavsett hur budgeten räcker till. Testet ligger före
+      // remaining-kollen, annars nollades de bort ur listan när budgeten tog
+      // slut och räknaren blev omöjlig att stämma av igen.
+      if (trade.bookState === 'refuted') continue;
       if (remaining <= 0) {
         trade.gross_profit = 0;
         trade.qty = 0;
@@ -1007,8 +1038,10 @@ function calculate() {
       } else if (trade.verified && haveStart) {
         // Buy side verified off the real start ladder; the sell stays the
         // estimate (a patient make-sell, or a take-take whose target book
-        // wasn't fetched).
-        const lad = buyLadderCost(sOffers.sellers, trade.qty, remaining, startAvgSell);
+        // wasn't fetched). Taket på sell_price gäller här också — utan det
+        // kunde stegen köpa sig förbi säljpriset och ge NEGATIV gross_profit,
+        // varpå en redan verifierad trade tystnade bort i filtret nedan.
+        const lad = buyLadderCost(sOffers.sellers, trade.qty, remaining, startAvgSell, trade.sell_price);
         trade.qty = lad.units;
         trade.gross_profit = lad.units * trade.sell_price - lad.totalCost;
         trade.thinBook = lad.thinBook;
@@ -1046,7 +1079,12 @@ function calculate() {
       viableTrades.sort((a, b) => b.gross_profit - a.gross_profit);
     }
 
-    const totalGross = viableTrades.reduce((s, t) => s + t.gross_profit, 0);
+    // Motsagda trades räknas INTE in i världens brutto/netto. Vi har hämtat
+    // orderboken och den säger att pengarna inte finns där — då får den siffran
+    // inte fortsätta driva rubriken. (I skärmdumpen som startade det här stod
+    // världen på 21.5M netto, varav 20.0M kom från en enda ~est-trade vars
+    // orderbok redan hade motsagt den.) Raden syns fortfarande i listan.
+    const totalGross = viableTrades.reduce((s, t) => s + (t.bookState === 'refuted' ? 0 : t.gross_profit), 0);
 
     // TC spread: cost of selling TC on start world and rebuying on target world
     const targetTCItem = tw.items.find(it => it.id === TC_ITEM_ID);
@@ -1068,13 +1106,18 @@ function calculate() {
     if (netProfit <= 0) continue;
 
     const verifiedCount = viableTrades.filter(t => t.verified).length;
+    // Det "Verifiera alla" faktiskt styr: hur många trades vi har en orderbok
+    // för. Bekräftade + motsagda. Den här får bli N/N när körningen lyckas —
+    // verifiedCount kan den aldrig, eftersom boken ibland säger nej.
+    const checkedCount = viableTrades.filter(t => t.bookState !== 'none').length;
+    const refutedCount = viableTrades.filter(t => t.bookState === 'refuted').length;
 
     worldGroups.push({
       name: tName, pvp_type: tw.pvp_type, be: getBE(tName),
       trades: viableTrades, totalGross, netProfit,
       tcSpreadCost, targetTCSellPrice,
       tcSellBonus, surplusTC, targetTCBid,
-      verifiedCount, tradeCount: viableTrades.length,
+      verifiedCount, checkedCount, refutedCount, tradeCount: viableTrades.length,
       scanned_at: tw.scanned_at,
     });
   }
@@ -1244,14 +1287,22 @@ function renderResults() {
     let visT = nameF ? g.trades.filter(t => t.item_name.toLowerCase().includes(nameF)) : g.trades;
     if (maxDays < Infinity) visT = visT.filter(t => t.days_to_sell !== null && t.days_to_sell <= maxDays);
     const isFiltered = visT.length < g.tradeCount;
-    const visGrossProfit = isFiltered ? visT.reduce((s, t) => s + t.gross_profit, 0) : null;
+    // Samma regel som totalGross: motsagda trades bidrar inte till bruttot.
+    const visGrossProfit = isFiltered ? visT.reduce((s, t) => s + (t.bookState === 'refuted' ? 0 : t.gross_profit), 0) : null;
 
     h += '<div class="world-group" data-world="' + g.name + '">';
     h += '<div class="world-header" onclick="toggleGroup(this)">';
     h += '<span class="arrow">▶</span>';
     h += '<span class="world-name-col">' + g.name + ' <span class="badge badge-be-' + g.be + '">' + beE + '</span> <span class="badge badge-pvp">' + pvp + '</span></span>';
     h += '<span class="stat"><span class="stat-label">Trades</span><span class="stat-value">' + (isFiltered ? visT.length + ' / ' + g.tradeCount : visT.length) + '</span></span>';
-    h += '<span class="stat hide-mobile"><span class="stat-label">Verifierade</span><span class="stat-value" id="verified-stat-' + cssId(g.name) + '">' + g.verifiedCount + '/' + g.tradeCount + '</span></span>';
+    // Räknaren visar hur många trades som har en orderbok — det är vad
+    // "Verifiera alla" styr, och den kan nå N/N. Underraden delar upp dem i
+    // bekräftade och motsagda. Förut stod här bara antalet bekräftade, så en
+    // fullständigt lyckad körning såg ut att ha misslyckats (35/43) och man
+    // tryckte om och om igen på en knapp som redan hade gjort sitt jobb.
+    h += '<span class="stat hide-mobile"><span class="stat-label">Kollade mot bok</span><span class="stat-value" id="verified-stat-' + cssId(g.name) + '">' + g.checkedCount + '/' + g.tradeCount + '</span>'
+      + (g.refutedCount ? '<span class="stat-sub">✓ ' + g.verifiedCount + ' bekräftade · ⚠ ' + g.refutedCount + ' motsagda</span>' : '')
+      + '</span>';
     // Par som körningen aldrig levererade orderbok för. Utan det här ser en
     // halvfärdig verifiering exakt ut som en lyckad — trades står bara kvar
     // som ~est utan att något förklarar varför.
@@ -1316,7 +1367,13 @@ function renderResults() {
         ? (t.thinBook
             ? '<span class="badge badge-thin" title="Verifierad mot orderboken, men hela traden vilar på en enda säljorder — priset håller mot månadssnittet, men försvinner ordern finns ingen backup">✓ tunn</span>'
             : '<span class="badge badge-verified" title="' + verifiedTitle + '">✓</span>')
-        : '<span class="badge badge-estimate">~est</span>';
+        : t.bookState === 'refuted'
+          // Orderboken ÄR hämtad och motsäger estimatet — billigaste säljordern
+          // är ensam om sitt pris, eller ser ut som en gammal lowball. Att
+          // verifiera om ger samma svar; siffrorna nedan är estimatet och
+          // räknas inte in i världens netto.
+          ? '<span class="badge badge-refuted" title="Orderboken är hämtad och stödjer inte estimatet: bortom billigaste säljordern finns inget att köpa under säljpriset. Siffrorna är estimat och ingår inte i världens netto. Att verifiera om ger samma resultat.">⚠ ej i boken</span>'
+          : '<span class="badge badge-estimate" title="Ingen orderbok hämtad för det här paret ännu — tryck &quot;Verifiera alla&quot;">~est</span>';
 
       let speedBadge = '';
       if (t.days_to_sell !== null) {
@@ -1331,7 +1388,9 @@ function renderResults() {
       }
 
       const dimmed = isFiltered && !visSet.has(t.item_id) ? ' filtered-out' : '';
-      const lowProfitClass = t.lowProfit ? ' low-profit-row' : '';
+      // Motsagda rader tonas ned som lågvinstrader: de syns, men de ingår inte
+      // i världens netto och siffrorna är estimat boken redan sagt nej till.
+      const lowProfitClass = (t.lowProfit || t.bookState === 'refuted') ? ' low-profit-row' : '';
       const deepBadge = t.lowProfit ? '<span class="badge badge-deep" title="Djupsökt trade (50k+)">🔍</span>' : '';
       // Patient strategy badge + per-side make/take markers (📌 = lägg egen offer).
       const stratBadge = (t.strategy && t.strategy !== 'take-take')
