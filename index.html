@@ -207,6 +207,29 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .sc-back { padding: 0.4rem 0.8rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-dim); font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
 .sc-back:hover { border-color: var(--border-focus); color: var(--text); }
 
+/* Inköpslista-fliken */
+.buy-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; min-height: 1.6rem; align-items: center; }
+.buy-chip { display: inline-flex; align-items: center; gap: 0.45rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; padding: 0.28rem 0.5rem 0.28rem 0.85rem; font-size: 0.82rem; }
+.buy-chip input { width: 64px; padding: 0.15rem 0.35rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; outline: none; }
+.buy-chip input:focus { border-color: var(--border-focus); }
+.buy-chip .chip-x { background: transparent; border: none; color: var(--text-muted); font-size: 1rem; line-height: 1; cursor: pointer; padding: 0 0.2rem; }
+.buy-chip .chip-x:hover { color: var(--red); }
+.buy-chips-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+.buy-chips .chip-clear { background: transparent; border: 1px dashed var(--border); border-radius: 999px; color: var(--text-muted); font-family: inherit; font-size: 0.75rem; padding: 0.28rem 0.7rem; cursor: pointer; }
+.buy-chips .chip-clear:hover { color: var(--text); border-color: var(--border-focus); }
+.item-lookup-head .toggle-label { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; user-select: none; font-size: 0.75rem; color: var(--text-dim); }
+.item-lookup-head .toggle-label input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--green); cursor: pointer; }
+.item-lookup-head .toggle-label.active { color: var(--green); }
+.buy-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 900px) { .buy-detail-grid { grid-template-columns: 1fr; } }
+.buy-detail-grid table { width: 100%; border-collapse: collapse; }
+.buy-detail-grid th { text-align: left; font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.buy-detail-grid td { padding: 0.3rem 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; border-bottom: 1px solid rgba(30,35,48,0.5); white-space: nowrap; }
+.item-lookup-results tr.buy-row.best { background: rgba(34,197,94,0.07); }
+.buy-net-cell { font-weight: 700; }
+.buy-missing { color: #f87171; }
+.buy-note { font-size: 0.75rem; color: var(--text-muted); padding: 0.5rem 1rem 0.75rem; }
+
 /* Inloggningsgrind */
 .auth-gate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.5rem; background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.08), var(--bg) 60%); }
 .auth-card { width: 100%; max-width: 360px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem 1.5rem; }
@@ -260,6 +283,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
   <div class="tab-bar">
     <button type="button" id="tabBtnArbitrage" class="active" onclick="switchTab('arbitrage')">⚔️ Arbitrage</button>
     <button type="button" id="tabBtnSoulcores" onclick="switchTab('soulcores')">💀 Soul Cores</button>
+    <button type="button" id="tabBtnBuylist" onclick="switchTab('buylist')">🛒 Inköpslista</button>
   </div>
 
   <div id="tabArbitrage">
@@ -374,7 +398,65 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
       </div>
     </div>
   </div><!-- /tabSoulcores -->
-</div>
+
+  <div id="tabBuylist" style="display:none;">
+    <div class="controls">
+      <div class="field">
+        <label>Målvärld (dit du transferar)</label>
+        <select id="buyTarget" disabled><option value="">Laddar…</option></select>
+      </div>
+      <div class="field">
+        <label>Lägg till item (Enter)</label>
+        <input type="text" id="buyItemInput" list="itemLookupList" placeholder="Sök item-namn…" autocomplete="off" disabled>
+      </div>
+      <div class="field">
+        <label>Antal</label>
+        <input type="number" id="buyItemQty" value="1" min="1">
+      </div>
+      <div class="field">
+        <label>Kapital för instant-trades (gp)</label>
+        <input type="number" id="buyCapital" value="5000000" min="0" step="1000000">
+      </div>
+    </div>
+
+    <div class="buy-chips" id="buyChips"><span class="buy-chips-empty">Inga items valda ännu.</span></div>
+
+    <div class="summary" id="buySummary" style="display:none;">
+      <div class="summary-card"><div class="label">Billigaste köpvärld</div><div class="value green-text" id="buySumWorld">–</div></div>
+      <div class="summary-card"><div class="label">Korgkostnad</div><div class="value gold-text" id="buySumBasket">–</div></div>
+      <div class="summary-card"><div class="label">Transfer (750 TC)</div><div class="value gold-text" id="buySumTransfer">–</div></div>
+      <div class="summary-card"><div class="label">Instant profit</div><div class="value green-text" id="buySumProfit">–</div></div>
+      <div class="summary-card"><div class="label">Netto totalt</div><div class="value" id="buySumNet">–</div></div>
+      <div class="summary-card"><div class="label">Vinst mot målvärlden</div><div class="value green-text" id="buySumSaving">–</div></div>
+    </div>
+
+    <div class="item-lookup">
+      <div class="item-lookup-head">
+        <span class="item-lookup-title">🛒 Köpvärldar</span>
+        <div class="be-toggle" id="buyBeToggle">
+          <button type="button" data-be="all" class="active">Alla</button>
+          <button type="button" data-be="green">🟢 Gröna</button>
+          <button type="button" data-be="yellow">🟡 Gula</button>
+        </div>
+        <div class="item-lookup-sort">
+          <label>Sortera</label>
+          <select id="buySort">
+            <option value="net_asc">Netto (billigast)</option>
+            <option value="basket_asc">Korgkostnad (billigast)</option>
+            <option value="profit_desc">Instant profit (störst)</option>
+            <option value="world">Världsnamn</option>
+          </select>
+        </div>
+        <label class="toggle-label" id="buyIgnoreCostLabel" title="Räkna utan 750 TC transferkostnad (t.ex. om du ändå ska transfera)">
+          <input type="checkbox" id="buyIgnoreCost"> Ignorera transferkostnad
+        </label>
+        <span class="item-lookup-meta" id="buyMeta"></span>
+      </div>
+      <div class="item-lookup-results" id="buyResults">
+        <div class="item-lookup-empty">Välj målvärld och minst ett item för att se var det är billigast att handla.</div>
+      </div>
+    </div>
+  </div><!-- /tabBuylist -->
 
 <script>
 const SUPABASE_URL  = 'https://vhvybrugkxkujgacekzi.supabase.co';
@@ -1783,6 +1865,7 @@ function buildItemLookupIndex() {
   const dl = $('itemLookupList');
   dl.innerHTML = display.map(n => '<option value="' + n.replace(/"/g, '&quot;') + '"></option>').join('');
   $('itemLookupSearch').disabled = false;
+  $('buyItemInput').disabled = false; // inköpslistan delar samma datalist/index
 }
 
 function resolveItemFromInput(value) {
@@ -1974,13 +2057,20 @@ function scSetSortOptions(list, current) {
     '<option value="' + v + '"' + (v === current ? ' selected' : '') + '>' + l + '</option>').join('');
 }
 
+const TABS = {
+  arbitrage: ['tabArbitrage', 'tabBtnArbitrage'],
+  soulcores: ['tabSoulcores', 'tabBtnSoulcores'],
+  buylist:   ['tabBuylist',   'tabBtnBuylist'],
+};
+
 function switchTab(tab) {
-  const isSc = tab === 'soulcores';
-  $('tabArbitrage').style.display = isSc ? 'none' : '';
-  $('tabSoulcores').style.display = isSc ? '' : 'none';
-  $('tabBtnArbitrage').classList.toggle('active', !isSc);
-  $('tabBtnSoulcores').classList.toggle('active', isSc);
-  if (isSc) renderSoulCores();
+  if (!TABS[tab]) tab = 'arbitrage';
+  for (const [key, [panelId, btnId]] of Object.entries(TABS)) {
+    $(panelId).style.display = key === tab ? '' : 'none';
+    $(btnId).classList.toggle('active', key === tab);
+  }
+  if (tab === 'soulcores') renderSoulCores();
+  if (tab === 'buylist') renderBuyList();
 }
 
 function renderSoulCores() {
@@ -2152,6 +2242,387 @@ async function toggleScBoard(rowEl) {
   }
 }
 
+// ─── INKÖPSLISTA (multi-item transfer-planerare) ────────────────────────
+// Välj flera items + målvärlden du ska transfera TILL → vilken värld är
+// billigast att köpa alltihop på? Varje kandidatvärld måste klara canTransfer()
+// till målvärlden (PvP-tier + Battleye), prissätts mot riktiga orderböcker när
+// de finns (annars market_values), och belastas med transferkostnaden (750 TC i
+// guld på köpvärlden). Ovanpå det räknas de instant-trades (take-take) du kan
+// göra på samma resa — samma matchningslogik som Arbitrage-fliken — eftersom de
+// kan kompensera hela eller delar av transferkostnaden.
+const BUY_MAX_TRADES = 10;   // hur många instant-trades vi listar/räknar per värld
+const BUY_CAND_SCAN  = 250;  // hur många trade-kandidater (bäst marginal %) vi utvärderar
+
+const buyState = {
+  items: [],            // [{ id, qty }]
+  target: '',
+  be: 'all',            // BE-filter på KÖPvärldarna
+  capital: 5_000_000,   // guld tillgängligt för instant-trades
+  sort: 'net_asc',
+  ignoreTransferCost: false,
+};
+let _buyPlans = [];
+let _buyBaseline = null;   // kostnad att köpa korgen direkt på målvärlden
+const _worldIdxCache = {};
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// itemId → item-raden för en värld. worldData ändras inte efter laddning, så
+// index:et byggs en gång per värld i stället för en find() per item och värld.
+function worldItemIndex(name) {
+  let idx = _worldIdxCache[name];
+  if (!idx) {
+    idx = new Map();
+    ((worldData[name] && worldData[name].items) || []).forEach(it => idx.set(it.id, it));
+    _worldIdxCache[name] = idx;
+  }
+  return idx;
+}
+
+function itemDisplayName(id) {
+  const m = itemMeta[id];
+  return m ? (m.wiki_name || m.name) : '#' + id;
+}
+
+function populateBuyTarget() {
+  const sel = $('buyTarget');
+  const names = Object.keys(worldData).sort();
+  if (!names.length) return;
+  sel.innerHTML = '<option value="">— Välj målvärld —</option>';
+  names.forEach(name => {
+    const w = worldData[name];
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name + ' — ' + (PVP_SHORT[w.pvp_type] || w.pvp_type) + ' ' + (getBE(name) === 'green' ? '🟢' : '🟡');
+    if (name === buyState.target) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.disabled = false;
+}
+
+// ── Item-val (chips) ──────────────────────────────────────────────────────
+function renderBuyChips() {
+  const el = $('buyChips');
+  if (!buyState.items.length) {
+    el.innerHTML = '<span class="buy-chips-empty">Inga items valda ännu.</span>';
+    return;
+  }
+  let h = '';
+  buyState.items.forEach((sel, i) => {
+    h += '<span class="buy-chip">' + esc(itemDisplayName(sel.id)) +
+         '<input type="number" min="1" value="' + sel.qty + '" data-idx="' + i + '" title="Antal">' +
+         '<button type="button" class="chip-x" data-idx="' + i + '" title="Ta bort">×</button></span>';
+  });
+  h += '<button type="button" class="chip-clear" id="buyClearAll">Rensa alla</button>';
+  el.innerHTML = h;
+}
+
+function addBuyItem(id, qty) {
+  if (!id) return false;
+  const existing = buyState.items.find(s => s.id === id);
+  if (existing) existing.qty += qty;
+  else buyState.items.push({ id, qty });
+  renderBuyChips();
+  renderBuyList();
+  return true;
+}
+
+// ── Korgkostnad på en värld ───────────────────────────────────────────────
+// Med orderbok klättrar vi den riktiga säljstegen (buyLadderCost — resilient,
+// samma tunn-bok-regel som resten av appen). Räcker inte boken till hela antalet
+// prissätts resten på snittet vi kom upp i, och raden flaggas som delvis
+// uppskattad. Utan orderbok används lägsta ask från market_values.
+function basketForWorld(worldName) {
+  const idx = worldItemIndex(worldName);
+  const lines = [];
+  let total = 0, missing = 0;
+  for (const sel of buyState.items) {
+    const qty = Math.max(1, sel.qty || 1);
+    const it = idx.get(sel.id);
+    if (!it || !(it.sell_offer > 0)) {
+      lines.push({ id: sel.id, name: itemDisplayName(sel.id), qty, missing: true });
+      missing++;
+      continue;
+    }
+    const book = offersData[worldName + ':' + sel.id];
+    let cost, source, bookUnits = 0;
+    if (book && book.sellers && book.sellers.length) {
+      const lad = buyLadderCost(book.sellers, qty, Infinity, it.month_average_sell || 0);
+      bookUnits = lad.units;
+      const short = qty - bookUnits;
+      const unitForShort = bookUnits > 0 ? Math.max(it.sell_offer, Math.round(lad.avgPrice)) : it.sell_offer;
+      cost = lad.totalCost + short * unitForShort;
+      source = short > 0 ? (bookUnits > 0 ? 'part' : 'est') : 'book';
+    } else {
+      cost = qty * it.sell_offer;
+      source = 'est';
+    }
+    total += cost;
+    lines.push({
+      id: sel.id, name: itemDisplayName(sel.id), qty,
+      unit: cost / qty, cost, source, bookUnits,
+      ask: it.sell_offer, sellers: it.sell_offers || 0,
+    });
+  }
+  return { lines, total, missing };
+}
+
+// ── Instant-trades (take-take) mellan två världar ─────────────────────────
+// Samma logik som Arbitrage-flikens instant-läge: verifierad matchning mot
+// riktiga orderböcker när båda finns (resilient + tunn-bok-fallback), annars
+// estimat från market_values. Girig allokering av `budget` efter marginal %.
+function instantTradesBetween(sName, tName, budget) {
+  const out = { trades: [], profit: 0, spent: 0 };
+  if (!(budget > 0)) return out;
+  const tw = worldData[tName];
+  if (!tw) return out;
+  const sIdx = worldItemIndex(sName);
+
+  const cands = [];
+  for (const tItem of tw.items || []) {
+    if (!(tItem.buy_offer > 0) || !(tItem.buy_offers > 0)) continue;
+    const sItem = sIdx.get(tItem.id);
+    if (!sItem || !(sItem.sell_offer > 0)) continue;
+    const margin = tItem.buy_offer - sItem.sell_offer;
+    if (margin <= 0) continue;
+    cands.push({
+      id: tItem.id, buy: sItem.sell_offer, sell: tItem.buy_offer, margin,
+      marginPct: (margin / sItem.sell_offer) * 100,
+      tBuyOffers: tItem.buy_offers, sAvg: sItem.month_average_sell || 0,
+    });
+  }
+  cands.sort((a, b) => b.marginPct - a.marginPct);
+
+  let remaining = budget;
+  for (const c of cands.slice(0, BUY_CAND_SCAN)) {
+    if (remaining <= 0 || out.trades.length >= BUY_MAX_TRADES) break;
+    const sOff = offersData[sName + ':' + c.id];
+    const tOff = offersData[tName + ':' + c.id];
+    const haveBoth = !!(sOff && sOff.sellers && sOff.sellers.length && tOff && tOff.buyers && tOff.buyers.length);
+    let qty, gross, cost, verified = false;
+    if (haveBoth) {
+      const m = matchWithFallback(sOff.sellers, tOff.buyers, c.sAvg, remaining);
+      qty = m.matchCount; gross = m.profit; cost = m.totalCost; verified = true;
+    } else {
+      qty = Math.min(Math.floor(remaining / c.buy), c.tBuyOffers);
+      gross = qty * c.margin; cost = qty * c.buy;
+    }
+    // Budgeten dras bara för trades vi faktiskt tar med — annars skulle en
+    // bortsållad småtrade äta kapital från de riktiga.
+    if (qty <= 0 || gross < MIN_TRADE_PROFIT) continue;
+    remaining -= cost;
+    out.profit += gross;
+    out.trades.push({ id: c.id, name: itemDisplayName(c.id), buy: c.buy, sell: c.sell, margin: c.margin, qty, gross, cost, verified });
+  }
+  out.spent = budget - remaining;
+  return out;
+}
+
+// ── Planberäkning ─────────────────────────────────────────────────────────
+function computeBuyPlans() {
+  _buyPlans = [];
+  _buyBaseline = null;
+  const tName = buyState.target;
+  const tw = worldData[tName];
+  if (!tName || !tw || !buyState.items.length) return;
+
+  // Referens: köpa allt på målvärlden själv, ingen transfer, ingen profit.
+  _buyBaseline = basketForWorld(tName);
+
+  for (const [sName, sw] of Object.entries(worldData)) {
+    if (sName === tName) continue;
+    if (!canTransfer(sName, sw.pvp_type, tName, tw.pvp_type)) continue;
+    if (buyState.be !== 'all' && getBE(sName) !== buyState.be) continue;
+
+    const basket = basketForWorld(sName);
+    if (basket.missing === buyState.items.length) continue; // inget av korgen finns här
+
+    const tcItem = worldItemIndex(sName).get(TC_ITEM_ID);
+    const tcBid = (tcItem && tcItem.buy_offer > 0) ? tcItem.buy_offer : 0;
+    const transferGold = tcBid > 0 ? TRANSFER_COST_TC * tcBid : null;
+    const arb = instantTradesBetween(sName, tName, buyState.capital);
+    const transferCharged = buyState.ignoreTransferCost ? 0 : (transferGold || 0);
+
+    _buyPlans.push({
+      name: sName, be: getBE(sName), pvp: sw.pvp_type, scanned_at: sw.scanned_at,
+      basket, transferGold, tcBid, arb,
+      net: basket.total + transferCharged - arb.profit,
+      saving: _buyBaseline.total - (basket.total + transferCharged - arb.profit),
+    });
+  }
+
+  const sort = buyState.sort;
+  _buyPlans.sort((a, b) => {
+    if (a.basket.missing !== b.basket.missing) return a.basket.missing - b.basket.missing;
+    if (sort === 'basket_asc') return a.basket.total - b.basket.total;
+    if (sort === 'profit_desc') return b.arb.profit - a.arb.profit;
+    if (sort === 'world') return a.name.localeCompare(b.name);
+    return a.net - b.net;
+  });
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────
+function renderBuyList() {
+  const container = $('buyResults');
+  const metaEl = $('buyMeta');
+  const summary = $('buySummary');
+
+  if (!Object.keys(worldData).length) {
+    container.innerHTML = '<div class="item-lookup-empty">Laddar marknadsdata…</div>';
+    metaEl.textContent = '';
+    summary.style.display = 'none';
+    return;
+  }
+  if (!buyState.target || !buyState.items.length) {
+    container.innerHTML = '<div class="item-lookup-empty">Välj målvärld och minst ett item för att se var det är billigast att handla.</div>';
+    metaEl.textContent = '';
+    summary.style.display = 'none';
+    return;
+  }
+
+  computeBuyPlans();
+
+  const tName = buyState.target;
+  const beNote = buyState.be === 'all' ? '' : (buyState.be === 'green' ? ' · endast 🟢' : ' · endast 🟡');
+  metaEl.textContent = 'Till ' + tName + ' ' + (getBE(tName) === 'green' ? '🟢' : '🟡') + ' · ' +
+    buyState.items.length + ' items · ' + _buyPlans.length + ' möjliga köpvärldar' + beNote;
+
+  if (!_buyPlans.length) {
+    summary.style.display = 'none';
+    container.innerHTML = '<div class="item-lookup-empty">Ingen värld kan transferera till ' + esc(tName) +
+      ' med det här filtret (PvP-tier och Battleye styr vilka transfers som är tillåtna).</div>';
+    return;
+  }
+
+  // Sammanfattning bygger alltid på den billigaste planen (netto), oavsett sortering.
+  const best = _buyPlans.reduce((a, b) => (b.net < a.net ? b : a));
+  summary.style.display = 'grid';
+  $('buySumWorld').textContent = best.name;
+  $('buySumBasket').textContent = formatGold(Math.round(best.basket.total)) + ' gp';
+  $('buySumTransfer').textContent = best.transferGold === null ? '–'
+    : (buyState.ignoreTransferCost ? '(ignoreras)' : formatGold(Math.round(best.transferGold)) + ' gp');
+  $('buySumProfit').textContent = best.arb.profit > 0 ? '+' + formatGold(Math.round(best.arb.profit)) + ' gp' : '–';
+  $('buySumNet').textContent = formatGold(Math.round(best.net)) + ' gp';
+  $('buySumNet').className = 'value gold-text';
+  const saving = _buyBaseline.total - best.net;
+  $('buySumSaving').textContent = (saving > 0 ? '+' : '') + formatGold(Math.round(saving)) + ' gp';
+  $('buySumSaving').className = 'value ' + (saving > 0 ? 'green-text' : 'gold-text');
+
+  const bestName = best.name;
+  let h = '<table><thead><tr>';
+  h += '<th></th><th>Köpvärld</th><th>BE</th><th>PvP</th><th>Korgkostnad</th><th>Saknas</th>';
+  h += '<th>Transfer (750 TC)</th><th>Instant profit</th><th>Netto</th><th>Mot ' + esc(tName) + '</th><th>Data</th>';
+  h += '</tr></thead><tbody>';
+
+  // Referensrad: köpa allt på målvärlden, ingen transfer.
+  h += '<tr class="lookup-row no-data" title="Referens: köpa allt direkt på målvärlden">';
+  h += '<td></td><td class="world-cell">' + esc(tName) + ' (utan transfer)</td>';
+  h += '<td><span class="badge badge-be-' + getBE(tName) + '">' + (getBE(tName) === 'green' ? '🟢' : '🟡') + '</span></td>';
+  h += '<td><span class="badge badge-pvp">' + (PVP_SHORT[worldData[tName].pvp_type] || '?') + '</span></td>';
+  h += '<td class="sell-cell">' + Math.round(_buyBaseline.total).toLocaleString('sv-SE') + '</td>';
+  h += '<td>' + (_buyBaseline.missing ? '<span class="buy-missing">' + _buyBaseline.missing + '</span>' : '–') + '</td>';
+  h += '<td>–</td><td>–</td><td class="buy-net-cell">' + Math.round(_buyBaseline.total).toLocaleString('sv-SE') + '</td>';
+  h += '<td>–</td><td>' + (worldData[tName].scanned_at ? timeAgo(worldData[tName].scanned_at) : '–') + '</td></tr>';
+
+  _buyPlans.forEach((p, i) => {
+    const beE = p.be === 'green' ? '🟢' : '🟡';
+    const cls = 'lookup-row buy-row' + (p.name === bestName ? ' best' : '');
+    h += '<tr class="' + cls + '" data-idx="' + i + '" onclick="toggleBuyDetail(this)">';
+    h += '<td><span class="lookup-arrow">▶</span></td>';
+    h += '<td class="world-cell">' + esc(p.name) + '</td>';
+    h += '<td><span class="badge badge-be-' + p.be + '">' + beE + '</span></td>';
+    h += '<td><span class="badge badge-pvp">' + (PVP_SHORT[p.pvp] || p.pvp || '?') + '</span></td>';
+    h += '<td class="sell-cell">' + Math.round(p.basket.total).toLocaleString('sv-SE') + '</td>';
+    h += '<td>' + (p.basket.missing ? '<span class="buy-missing">' + p.basket.missing + '</span>' : '–') + '</td>';
+    h += '<td>' + (p.transferGold === null ? '<span title="Ingen TC buy offer på världen">?</span>'
+      : (buyState.ignoreTransferCost ? '<span style="opacity:0.5">' + Math.round(p.transferGold).toLocaleString('sv-SE') + '</span>'
+        : Math.round(p.transferGold).toLocaleString('sv-SE'))) + '</td>';
+    // Hur stor del av transferkostnaden instant-traden betalar tillbaka — hela
+    // poängen med att ta trades på samma resa.
+    let cover = '';
+    if (p.arb.profit > 0 && p.transferGold > 0 && !buyState.ignoreTransferCost) {
+      const pct = Math.round((p.arb.profit / p.transferGold) * 100);
+      cover = pct >= 100
+        ? ' <span class="badge badge-verified" title="Instant-traden betalar hela transfern">✓ täcker</span>'
+        : ' <span class="badge badge-estimate" title="Andel av transferkostnaden som betalas av instant-trades">' + pct + '%</span>';
+    }
+    h += '<td class="buy-cell">' + (p.arb.profit > 0 ? '+' + Math.round(p.arb.profit).toLocaleString('sv-SE') + cover : '–') + '</td>';
+    h += '<td class="buy-net-cell">' + Math.round(p.net).toLocaleString('sv-SE') + '</td>';
+    h += '<td class="' + (p.saving > 0 ? 'buy-cell' : 'sell-cell') + '">' + (p.saving > 0 ? '+' : '') + Math.round(p.saving).toLocaleString('sv-SE') + '</td>';
+    h += '<td>' + (p.scanned_at ? timeAgo(p.scanned_at) : '–') + '</td>';
+    h += '</tr>';
+    h += '<tr class="lookup-detail-row"><td colspan="11"><div class="lookup-detail">' + buyDetailHtml(p) + '</div></td></tr>';
+  });
+  h += '</tbody></table>';
+  h += '<div class="buy-note">Korgen prissätts mot riktig orderbok (✓) när den finns, annars lägsta ask från senaste scan (~est). ' +
+       'Instant-trades använder ditt separata trade-kapital (' + formatGold(buyState.capital) + ' gp) och räknas av mot transferkostnaden — ' +
+       'köp av korgen och trade-kapitalet är alltså två olika pengapåsar.</div>';
+  container.innerHTML = h;
+}
+
+function buyDetailHtml(p) {
+  let h = '<div class="buy-detail-grid"><div>';
+  h += '<div class="offers-label">🛒 Inköp på ' + esc(p.name) + '</div>';
+  h += '<table><thead><tr><th>Item</th><th>Antal</th><th>Pris/st</th><th>Kostnad</th><th>Källa</th></tr></thead><tbody>';
+  for (const l of p.basket.lines) {
+    if (l.missing) {
+      h += '<tr><td>' + esc(l.name) + '</td><td>' + l.qty + '</td><td colspan="3" class="buy-missing">Inga säljoffers på ' + esc(p.name) + '</td></tr>';
+      continue;
+    }
+    const src = l.source === 'book'
+      ? '<span class="badge badge-verified" title="Prissatt mot riktig orderbok">✓ bok</span>'
+      : l.source === 'part'
+        ? '<span class="badge badge-thin" title="Orderboken räckte till ' + l.bookUnits + ' av ' + l.qty + ' st — resten uppskattat">✓ ' + l.bookUnits + '/' + l.qty + '</span>'
+        : '<span class="badge badge-estimate" title="Lägsta ask från senaste scan, ingen orderbok">~est</span>';
+    h += '<tr><td>' + esc(l.name) + '</td><td>' + l.qty + '</td><td>' + Math.round(l.unit).toLocaleString('sv-SE') + '</td><td>' +
+         Math.round(l.cost).toLocaleString('sv-SE') + '</td><td>' + src + '</td></tr>';
+  }
+  h += '<tr><td><strong>Totalt</strong></td><td></td><td></td><td><strong>' + Math.round(p.basket.total).toLocaleString('sv-SE') +
+       '</strong></td><td></td></tr>';
+  h += '</tbody></table>';
+  if (p.transferGold === null) {
+    h += '<div style="font-size:0.72rem;color:var(--text-muted);padding:0.4rem 0.5rem;">Ingen TC buy offer på ' + esc(p.name) +
+         ' — transferkostnaden kan inte prissättas i guld här.</div>';
+  } else {
+    h += '<div style="font-size:0.72rem;color:var(--text-muted);padding:0.4rem 0.5rem;">Transfer: 750 TC × ' +
+         p.tcBid.toLocaleString('sv-SE') + ' gp (TC-bid på ' + esc(p.name) + ') = ' +
+         Math.round(p.transferGold).toLocaleString('sv-SE') + ' gp' + (buyState.ignoreTransferCost ? ' (ignoreras)' : '') + '</div>';
+  }
+  h += '</div><div>';
+  h += '<div class="offers-label">⚡ Instant profit ' + esc(p.name) + ' → ' + esc(buyState.target) + '</div>';
+  if (!p.arb.trades.length) {
+    h += '<div style="color:var(--text-muted);font-size:0.78rem;padding:0.4rem 0.5rem;">Inga instant-trades över ' +
+         formatGold(MIN_TRADE_PROFIT) + ' gp' + (buyState.capital > 0 ? '.' : ' (sätt ett trade-kapital > 0).') + '</div>';
+  } else {
+    h += '<table><thead><tr><th>Item</th><th>Köp</th><th>Sälj</th><th>Antal</th><th>Profit</th><th></th></tr></thead><tbody>';
+    for (const t of p.arb.trades) {
+      const badge = t.verified
+        ? '<span class="badge badge-verified" title="Matchad mot riktiga orderböcker">✓</span>'
+        : '<span class="badge badge-estimate" title="Estimat från market_values">~est</span>';
+      h += '<tr><td>' + esc(t.name) + '</td><td>' + t.buy.toLocaleString('sv-SE') + '</td><td>' + t.sell.toLocaleString('sv-SE') +
+           '</td><td>' + t.qty + '</td><td class="buy-cell">+' + Math.round(t.gross).toLocaleString('sv-SE') + '</td><td>' + badge + '</td></tr>';
+    }
+    h += '<tr><td><strong>Totalt</strong></td><td></td><td></td><td></td><td class="buy-cell"><strong>+' +
+         Math.round(p.arb.profit).toLocaleString('sv-SE') + '</strong></td><td></td></tr>';
+    h += '</tbody></table>';
+    h += '<div style="font-size:0.72rem;color:var(--text-muted);padding:0.4rem 0.5rem;">Kapital som används: ' +
+         Math.round(p.arb.spent).toLocaleString('sv-SE') + ' gp av ' + buyState.capital.toLocaleString('sv-SE') + ' gp.</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function toggleBuyDetail(rowEl) {
+  const detailRow = rowEl.nextElementSibling;
+  if (!detailRow || !detailRow.classList.contains('lookup-detail-row')) return;
+  const arrow = rowEl.querySelector('.lookup-arrow');
+  const open = detailRow.classList.toggle('visible');
+  rowEl.classList.toggle('expanded', open);
+  if (arrow) arrow.textContent = open ? '▼' : '▶';
+}
+
 // Events
 $('worldSelect').addEventListener('change', calculate);
 $('tcInput').addEventListener('input', debounce(calculate, 400));
@@ -2207,6 +2678,69 @@ $('scSort').addEventListener('change', e => {
   renderSoulCores();
 });
 
+// ── Inköpslistan ──────────────────────────────────────────────────────────
+const buyRecalc = debounce(renderBuyList, 350);
+
+function buyAddFromInput() {
+  const input = $('buyItemInput');
+  const id = resolveItemFromInput(input.value);
+  if (!id) return;
+  addBuyItem(id, Math.max(1, parseInt($('buyItemQty').value) || 1));
+  input.value = '';
+}
+
+$('buyTarget').addEventListener('change', e => {
+  buyState.target = e.target.value;
+  renderBuyList();
+});
+$('buyItemInput').addEventListener('change', buyAddFromInput);
+$('buyItemInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); buyAddFromInput(); }
+});
+$('buyChips').addEventListener('click', e => {
+  if (e.target.id === 'buyClearAll') {
+    buyState.items = [];
+    renderBuyChips();
+    renderBuyList();
+    return;
+  }
+  const x = e.target.closest('.chip-x');
+  if (!x) return;
+  buyState.items.splice(parseInt(x.dataset.idx), 1);
+  renderBuyChips();
+  renderBuyList();
+});
+// Antalsfältet i en chip: räkna om utan att rita om chipsen, annars tappar
+// inputen fokus mitt i inmatningen.
+$('buyChips').addEventListener('input', e => {
+  const inp = e.target.closest('input[type="number"]');
+  if (!inp) return;
+  const sel = buyState.items[parseInt(inp.dataset.idx)];
+  if (!sel) return;
+  sel.qty = Math.max(1, parseInt(inp.value) || 1);
+  buyRecalc();
+});
+$('buyCapital').addEventListener('input', debounce(() => {
+  buyState.capital = Math.max(0, parseInt($('buyCapital').value) || 0);
+  renderBuyList();
+}, 400));
+$('buySort').addEventListener('change', e => {
+  buyState.sort = e.target.value;
+  renderBuyList();
+});
+$('buyBeToggle').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-be]');
+  if (!btn) return;
+  buyState.be = btn.dataset.be;
+  $('buyBeToggle').querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+  renderBuyList();
+});
+$('buyIgnoreCost').addEventListener('change', function() {
+  buyState.ignoreTransferCost = this.checked;
+  $('buyIgnoreCostLabel').classList.toggle('active', this.checked);
+  renderBuyList();
+});
+
 // ── Auth-grindad uppstart ──────────────────────────────────────────────────
 async function startApp() {
   $('authGate').style.display = 'none';
@@ -2214,6 +2748,9 @@ async function startApp() {
   await loadData();
   buildItemLookupIndex();
   renderSoulCores();
+  buyState.capital = Math.max(0, parseInt($('buyCapital').value) || 0);
+  populateBuyTarget();
+  renderBuyChips();
 }
 
 $('authForm').addEventListener('submit', async (e) => {
