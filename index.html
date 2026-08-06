@@ -229,6 +229,12 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
 .buy-net-cell { font-weight: 700; }
 .buy-missing { color: #f87171; }
 .buy-note { font-size: 0.75rem; color: var(--text-muted); padding: 0.5rem 1rem 0.75rem; }
+/* TC-"översättningen": guld är inte jämförbart mellan världar, TC är det. */
+.tc-sub { display: block; font-size: 0.63rem; color: #93c5fd; opacity: 0.85; font-weight: 400; letter-spacing: 0.01em; }
+.summary-card .tc-sub { font-size: 0.7rem; margin-top: 0.15rem; }
+/* Definieras efter .tc-sub så en TC-rad med Δ-tecken får Δ-färgen. */
+.buy-delta-good { color: var(--green); }
+.buy-delta-bad { color: var(--red); }
 
 /* Inloggningsgrind */
 .auth-gate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.5rem; background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.08), var(--bg) 60%); }
@@ -429,6 +435,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
       <div class="summary-card"><div class="label">Netto totalt</div><div class="value" id="buySumNet">–</div></div>
       <div class="summary-card"><div class="label">Vinst mot målvärlden</div><div class="value green-text" id="buySumSaving">–</div></div>
     </div>
+    <div class="buy-note" id="buyTcNote" style="display:none;"></div>
 
     <div class="item-lookup">
       <div class="item-lookup-head">
@@ -441,12 +448,17 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
         <div class="item-lookup-sort">
           <label>Sortera</label>
           <select id="buySort">
-            <option value="net_asc">Netto (billigast)</option>
+            <option value="net_asc">Netto i gp (billigast)</option>
+            <option value="nettc_asc">Netto i TC (billigast)</option>
+            <option value="worst_desc">Bra på ALLA items (maximin)</option>
             <option value="basket_asc">Korgkostnad (billigast)</option>
             <option value="profit_desc">Instant profit (störst)</option>
             <option value="world">Världsnamn</option>
           </select>
         </div>
+        <label class="toggle-label" id="buyAllItemsLabel" title="Dölj världar som saknar något av dina items — bara världar där hela korgen går att köpa">
+          <input type="checkbox" id="buyAllItems"> Kräv alla items
+        </label>
         <label class="toggle-label" id="buyIgnoreCostLabel" title="Räkna utan 750 TC transferkostnad (t.ex. om du ändå ska transfera)">
           <input type="checkbox" id="buyIgnoreCost"> Ignorera transferkostnad
         </label>
@@ -2260,9 +2272,14 @@ const buyState = {
   capital: 5_000_000,   // guld tillgängligt för instant-trades
   sort: 'net_asc',
   ignoreTransferCost: false,
+  requireAllItems: false,
 };
 let _buyPlans = [];
 let _buyBaseline = null;   // kostnad att köpa korgen direkt på målvärlden
+let _buyBaseIdx = null;    // itemId → baseline-raden, för per-item-jämförelsen
+let _buyTargetTcBid = 0;
+let _buyTargetTcEst = false;
+let _buyTcMedian = 0;
 const _worldIdxCache = {};
 
 function esc(s) {
@@ -2284,6 +2301,61 @@ function worldItemIndex(name) {
 function itemDisplayName(id) {
   const m = itemMeta[id];
   return m ? (m.wiki_name || m.name) : '#' + id;
+}
+
+// ── Guld → Tibia Coins ────────────────────────────────────────────────────
+// En guldsumma betyder olika saker på olika världar: 10M gp på en värld där TC
+// säljs för 40k är ~250 TC, på en värld där TC står i 20k är det ~500 TC. Därför
+// "översätts" varje guldbelopp till TC med DEN VÄRLDENS TC-bid — samma kurs vi
+// redan prissätter transferkostnaden med (bid = det du får när du säljer TC för
+// guld där). TC är alltså den enda enheten där korgen på köpvärlden och
+// profiten på målvärlden går att lägga ihop.
+function tcBidFor(worldName) {
+  const it = worldItemIndex(worldName).get(TC_ITEM_ID);
+  return (it && it.buy_offer > 0) ? it.buy_offer : 0;
+}
+// Saknar en värld TC-bid går den varken att växla eller att belasta med
+// transferkostnad — och skulle då se gratis ut och vinna hela listan. Vi
+// prissätter den i stället med marknadens median-TC-kurs och flaggar den som
+// uppskattad, så den rankas jämförbart utan att låtsas vara exakt.
+function medianTcBid() {
+  const bids = [];
+  for (const name of Object.keys(worldData)) {
+    const b = tcBidFor(name);
+    if (b > 0) bids.push(b);
+  }
+  if (!bids.length) return 0;
+  bids.sort((a, b) => a - b);
+  const m = bids.length >> 1;
+  return bids.length % 2 ? bids[m] : (bids[m - 1] + bids[m]) / 2;
+}
+function goldToTC(gold, tcBid) {
+  return tcBid > 0 ? gold / tcBid : null;
+}
+function fmtTC(tc, signed) {
+  if (tc === null || !isFinite(tc)) return '?';
+  const v = Math.round(tc);
+  return (signed && v > 0 ? '+' : '') + v.toLocaleString('sv-SE') + ' TC';
+}
+// Cell med guld som huvudsiffra och TC-översättningen under.
+function goldTcCell(gold, tc, opts) {
+  const o = opts || {};
+  const g = Math.round(gold).toLocaleString('sv-SE');
+  const main = (o.signed && gold > 0 ? '+' : '') + g;
+  return main + '<span class="tc-sub">' + (o.prefix || '≈ ') + fmtTC(tc, o.signed) + '</span>';
+}
+function fmtPct(p) {
+  if (p === null || !isFinite(p)) return '–';
+  return (p > 0 ? '+' : '') + p.toFixed(p > -10 && p < 10 ? 1 : 0) + '%';
+}
+// Vilken TC-kurs raden faktiskt räknats med — utan den går TC-siffrorna inte
+// att kontrollera, och median-fallbacken skulle se ut som riktig data.
+function tcRateNote(tcBid, est) {
+  if (!(tcBid > 0)) return '<span class="tc-sub">ingen TC-kurs</span>';
+  return '<span class="tc-sub" title="' + (est
+    ? 'Ingen TC buy offer på världen — räknat med marknadens median-TC-bid'
+    : 'Världens egen TC buy offer, samma kurs som transferkostnaden prissätts med') + '">TC-bid ' +
+    (est ? '~' : '') + Math.round(tcBid).toLocaleString('sv-SE') + ' gp' + (est ? ' (median)' : '') + '</span>';
 }
 
 function populateBuyTarget() {
@@ -2420,16 +2492,50 @@ function instantTradesBetween(sName, tName, budget) {
   return out;
 }
 
+// ── Per-item-jämförelse mot målvärlden ────────────────────────────────────
+// Totalen kan dölja att en värld är kanonbra på ett item och urusel på nästa —
+// precis det man vill undvika när man samlar flera dyra items till EN transfer.
+// Varje rad får därför sitt eget Δ mot målvärldens pris, och korgen får
+// `worstDelta` = det sämsta av dem (maximin-nyckeln "bra på ALLA items").
+function annotateVsTarget(basket, tcBid) {
+  let worst = null;
+  for (const l of basket.lines) {
+    l.tgtUnit = null; l.deltaPct = null; l.deltaGold = null; l.deltaTcPct = null;
+    const b = _buyBaseIdx && _buyBaseIdx.get(l.id);
+    if (l.missing) { worst = -Infinity; continue; }
+    if (!b || b.missing) continue;   // finns inte ens på målvärlden → inget att jämföra mot
+    l.tgtUnit = b.unit;
+    l.deltaPct = ((b.unit - l.unit) / b.unit) * 100;
+    l.deltaGold = b.cost - l.cost;
+    // Samma jämförelse fast i TC, dvs. rensad för att guldet är olika mycket
+    // värt på de två världarna. Den siffran är den som faktiskt avgör.
+    if (tcBid > 0 && _buyTargetTcBid > 0) {
+      const tgtTc = b.unit / _buyTargetTcBid, hereTc = l.unit / tcBid;
+      l.deltaTcPct = ((tgtTc - hereTc) / tgtTc) * 100;
+    }
+    if (worst === null || l.deltaPct < worst) worst = l.deltaPct;
+  }
+  basket.worstDelta = worst;
+}
+
 // ── Planberäkning ─────────────────────────────────────────────────────────
 function computeBuyPlans() {
   _buyPlans = [];
   _buyBaseline = null;
+  _buyBaseIdx = null;
+  _buyTargetTcBid = 0;
   const tName = buyState.target;
   const tw = worldData[tName];
   if (!tName || !tw || !buyState.items.length) return;
 
   // Referens: köpa allt på målvärlden själv, ingen transfer, ingen profit.
   _buyBaseline = basketForWorld(tName);
+  _buyBaseIdx = new Map(_buyBaseline.lines.map(l => [l.id, l]));
+  _buyTcMedian = medianTcBid();
+  const tTcOwn = tcBidFor(tName);
+  _buyTargetTcEst = !(tTcOwn > 0);
+  _buyTargetTcBid = tTcOwn > 0 ? tTcOwn : _buyTcMedian;
+  _buyBaseline.tc = goldToTC(_buyBaseline.total, _buyTargetTcBid);
 
   for (const [sName, sw] of Object.entries(worldData)) {
     if (sName === tName) continue;
@@ -2438,18 +2544,34 @@ function computeBuyPlans() {
 
     const basket = basketForWorld(sName);
     if (basket.missing === buyState.items.length) continue; // inget av korgen finns här
+    if (buyState.requireAllItems && basket.missing) continue;
 
-    const tcItem = worldItemIndex(sName).get(TC_ITEM_ID);
-    const tcBid = (tcItem && tcItem.buy_offer > 0) ? tcItem.buy_offer : 0;
+    const ownTcBid = tcBidFor(sName);
+    const tcEst = !(ownTcBid > 0);
+    const tcBid = tcEst ? _buyTcMedian : ownTcBid;   // kursen vi räknar med
     const transferGold = tcBid > 0 ? TRANSFER_COST_TC * tcBid : null;
     const arb = instantTradesBetween(sName, tName, buyState.capital);
     const transferCharged = buyState.ignoreTransferCost ? 0 : (transferGold || 0);
+    annotateVsTarget(basket, tcBid);
+
+    // Guldsummorna hör hemma på olika världar: korgen och transfern betalas på
+    // köpvärlden, instant-profiten landar på målvärlden. I gp läggs de ihop rakt
+    // av (som förut), i TC växlas varje del med sin egen världs kurs — och
+    // transfern är då exakt 750 TC oavsett värld.
+    const basketTC = goldToTC(basket.total, tcBid);
+    const profitTC = goldToTC(arb.profit, _buyTargetTcBid);
+    const transferTC = buyState.ignoreTransferCost ? 0 : TRANSFER_COST_TC;
+    const net = basket.total + transferCharged - arb.profit;
+    const netTC = (basketTC === null || profitTC === null) ? null
+      : basketTC + transferTC - profitTC;
 
     _buyPlans.push({
       name: sName, be: getBE(sName), pvp: sw.pvp_type, scanned_at: sw.scanned_at,
-      basket, transferGold, tcBid, arb,
-      net: basket.total + transferCharged - arb.profit,
-      saving: _buyBaseline.total - (basket.total + transferCharged - arb.profit),
+      basket, transferGold, tcBid, tcEst, arb,
+      basketTC, profitTC, transferTC, netTC,
+      net,
+      saving: _buyBaseline.total - net,
+      savingTC: (netTC === null || _buyBaseline.tc === null) ? null : _buyBaseline.tc - netTC,
     });
   }
 
@@ -2459,6 +2581,19 @@ function computeBuyPlans() {
     if (sort === 'basket_asc') return a.basket.total - b.basket.total;
     if (sort === 'profit_desc') return b.arb.profit - a.arb.profit;
     if (sort === 'world') return a.name.localeCompare(b.name);
+    if (sort === 'worst_desc') {
+      const aw = a.basket.worstDelta === null ? -Infinity : a.basket.worstDelta;
+      const bw = b.basket.worstDelta === null ? -Infinity : b.basket.worstDelta;
+      if (aw !== bw) return bw - aw;
+      return a.net - b.net;
+    }
+    if (sort === 'nettc_asc') {
+      // Världar utan TC-bid går inte att prissätta i TC — de hamnar sist.
+      const an = a.netTC === null ? Infinity : a.netTC;
+      const bn = b.netTC === null ? Infinity : b.netTC;
+      if (an !== bn) return an - bn;
+      return a.net - b.net;
+    }
     return a.net - b.net;
   });
 }
@@ -2473,12 +2608,14 @@ function renderBuyList() {
     container.innerHTML = '<div class="item-lookup-empty">Laddar marknadsdata…</div>';
     metaEl.textContent = '';
     summary.style.display = 'none';
+    $('buyTcNote').style.display = 'none';
     return;
   }
   if (!buyState.target || !buyState.items.length) {
-    container.innerHTML = '<div class="item-lookup-empty">Välj målvärld och minst ett item för att se var det är billigast att handla.</div>';
+    container.innerHTML = '<div class="item-lookup-empty">Välj målvärld och minst ett item — lägg till flera items för att hitta världen som har hela listan till bra pris.</div>';
     metaEl.textContent = '';
     summary.style.display = 'none';
+    $('buyTcNote').style.display = 'none';
     return;
   }
 
@@ -2486,44 +2623,88 @@ function renderBuyList() {
 
   const tName = buyState.target;
   const beNote = buyState.be === 'all' ? '' : (buyState.be === 'green' ? ' · endast 🟢' : ' · endast 🟡');
+  const fullBaskets = _buyPlans.filter(p => !p.basket.missing).length;
   metaEl.textContent = 'Till ' + tName + ' ' + (getBE(tName) === 'green' ? '🟢' : '🟡') + ' · ' +
-    buyState.items.length + ' items · ' + _buyPlans.length + ' möjliga köpvärldar' + beNote;
+    buyState.items.length + (buyState.items.length === 1 ? ' item' : ' items') + ' · ' +
+    _buyPlans.length + ' möjliga köpvärldar' +
+    (buyState.items.length > 1 ? ' (' + fullBaskets + ' med hela listan)' : '') + beNote;
 
   if (!_buyPlans.length) {
     summary.style.display = 'none';
-    container.innerHTML = '<div class="item-lookup-empty">Ingen värld kan transferera till ' + esc(tName) +
-      ' med det här filtret (PvP-tier och Battleye styr vilka transfers som är tillåtna).</div>';
+    $('buyTcNote').style.display = 'none';
+    container.innerHTML = '<div class="item-lookup-empty">Ingen köpvärld blev kvar för ' + esc(tName) +
+      ' med de här filtren (PvP-tier och Battleye styr vilka transfers som är tillåtna)' +
+      (buyState.requireAllItems
+        ? ' — och “Kräv alla items” döljer dessutom världar som saknar något av dina ' + buyState.items.length + ' items.'
+        : '.') + '</div>';
     return;
   }
 
-  // Sammanfattning bygger alltid på den billigaste planen (netto), oavsett sortering.
-  const best = _buyPlans.reduce((a, b) => (b.net < a.net ? b : a));
+  // Sammanfattningen följer den billigaste planen enligt vald nettovaluta
+  // (gp eller TC), oavsett hur listan sorteras i övrigt. En värld som saknar
+  // något av dina items får aldrig vinna på att dess korg är billigare — den är
+  // billig just för att den inte innehåller allt.
+  const byTC = buyState.sort === 'nettc_asc';
+  const key = p => (byTC ? (p.netTC === null ? Infinity : p.netTC) : p.net);
+  const complete = _buyPlans.filter(p => !p.basket.missing);
+  const pool = complete.length ? complete : _buyPlans;
+  const best = pool.reduce((a, b) => (key(b) < key(a) ? b : a));
   summary.style.display = 'grid';
-  $('buySumWorld').textContent = best.name;
-  $('buySumBasket').textContent = formatGold(Math.round(best.basket.total)) + ' gp';
-  $('buySumTransfer').textContent = best.transferGold === null ? '–'
-    : (buyState.ignoreTransferCost ? '(ignoreras)' : formatGold(Math.round(best.transferGold)) + ' gp');
-  $('buySumProfit').textContent = best.arb.profit > 0 ? '+' + formatGold(Math.round(best.arb.profit)) + ' gp' : '–';
-  $('buySumNet').textContent = formatGold(Math.round(best.net)) + ' gp';
+  $('buySumWorld').innerHTML = esc(best.name) + tcRateNote(best.tcBid, best.tcEst);
+  $('buySumBasket').innerHTML = formatGold(Math.round(best.basket.total)) + ' gp' +
+    '<span class="tc-sub">≈ ' + fmtTC(best.basketTC) + '</span>';
+  $('buySumTransfer').innerHTML = best.transferGold === null
+    ? '–<span class="tc-sub">750 TC, ingen kurs</span>'
+    : (buyState.ignoreTransferCost
+        ? '(ignoreras)<span class="tc-sub">0 TC</span>'
+        : (best.tcEst ? '~' : '') + formatGold(Math.round(best.transferGold)) + ' gp<span class="tc-sub">= 750 TC</span>');
+  $('buySumProfit').innerHTML = best.arb.profit > 0
+    ? '+' + formatGold(Math.round(best.arb.profit)) + ' gp<span class="tc-sub">≈ ' + fmtTC(best.profitTC, true) + '</span>'
+    : '–';
+  $('buySumNet').innerHTML = formatGold(Math.round(best.net)) + ' gp' +
+    '<span class="tc-sub">≈ ' + fmtTC(best.netTC) + '</span>';
   $('buySumNet').className = 'value gold-text';
   const saving = _buyBaseline.total - best.net;
-  $('buySumSaving').textContent = (saving > 0 ? '+' : '') + formatGold(Math.round(saving)) + ' gp';
+  const savingTC = best.savingTC;
+  $('buySumSaving').innerHTML = (saving > 0 ? '+' : '') + formatGold(Math.round(saving)) + ' gp' +
+    '<span class="tc-sub">≈ ' + fmtTC(savingTC, true) + '</span>';
   $('buySumSaving').className = 'value ' + (saving > 0 ? 'green-text' : 'gold-text');
 
+  // TC-kursen skiljer sig mellan världarna — säg det rakt ut när den gör att
+  // gp-rankningen och TC-rankningen inte pekar på samma värld.
+  const tcNote = $('buyTcNote');
+  const bestGp = pool.reduce((a, b) => (b.net < a.net ? b : a));
+  const tcPlans = pool.filter(p => p.netTC !== null);
+  const bestTc = tcPlans.length ? tcPlans.reduce((a, b) => (b.netTC < a.netTC ? b : a)) : null;
+  if (bestTc && bestGp.netTC !== null && bestTc.name !== bestGp.name) {
+    tcNote.style.display = '';
+    tcNote.innerHTML = '💱 Billigast i guld är <strong>' + esc(bestGp.name) + '</strong> (' +
+      fmtTC(bestGp.netTC) + '), men billigast räknat i Tibia Coins är <strong>' + esc(bestTc.name) +
+      '</strong> (' + fmtTC(bestTc.netTC) + ') — guldet är olika mycket värt på världarna. ' +
+      'Sortera på “Netto i TC” om det är TC du betalar med.';
+  } else {
+    tcNote.style.display = 'none';
+  }
+
   const bestName = best.name;
+  const multi = buyState.items.length > 1;
+  const cols = multi ? 12 : 11;
   let h = '<table><thead><tr>';
   h += '<th></th><th>Köpvärld</th><th>BE</th><th>PvP</th><th>Korgkostnad</th><th>Saknas</th>';
+  if (multi) h += '<th title="Sämsta enskilda item jämfört med målvärlden — hög siffra betyder att världen är bra på ALLA items, inte bara ett">Sämsta item</th>';
   h += '<th>Transfer (750 TC)</th><th>Instant profit</th><th>Netto</th><th>Mot ' + esc(tName) + '</th><th>Data</th>';
   h += '</tr></thead><tbody>';
 
   // Referensrad: köpa allt på målvärlden, ingen transfer.
   h += '<tr class="lookup-row no-data" title="Referens: köpa allt direkt på målvärlden">';
-  h += '<td></td><td class="world-cell">' + esc(tName) + ' (utan transfer)</td>';
+  h += '<td></td><td class="world-cell">' + esc(tName) + ' (utan transfer)' +
+       tcRateNote(_buyTargetTcBid, _buyTargetTcEst) + '</td>';
   h += '<td><span class="badge badge-be-' + getBE(tName) + '">' + (getBE(tName) === 'green' ? '🟢' : '🟡') + '</span></td>';
   h += '<td><span class="badge badge-pvp">' + (PVP_SHORT[worldData[tName].pvp_type] || '?') + '</span></td>';
-  h += '<td class="sell-cell">' + Math.round(_buyBaseline.total).toLocaleString('sv-SE') + '</td>';
+  h += '<td class="sell-cell">' + goldTcCell(_buyBaseline.total, _buyBaseline.tc) + '</td>';
   h += '<td>' + (_buyBaseline.missing ? '<span class="buy-missing">' + _buyBaseline.missing + '</span>' : '–') + '</td>';
-  h += '<td>–</td><td>–</td><td class="buy-net-cell">' + Math.round(_buyBaseline.total).toLocaleString('sv-SE') + '</td>';
+  if (multi) h += '<td>–</td>';
+  h += '<td>–</td><td>–</td><td class="buy-net-cell">' + goldTcCell(_buyBaseline.total, _buyBaseline.tc) + '</td>';
   h += '<td>–</td><td>' + (worldData[tName].scanned_at ? timeAgo(worldData[tName].scanned_at) : '–') + '</td></tr>';
 
   _buyPlans.forEach((p, i) => {
@@ -2531,14 +2712,18 @@ function renderBuyList() {
     const cls = 'lookup-row buy-row' + (p.name === bestName ? ' best' : '');
     h += '<tr class="' + cls + '" data-idx="' + i + '" onclick="toggleBuyDetail(this)">';
     h += '<td><span class="lookup-arrow">▶</span></td>';
-    h += '<td class="world-cell">' + esc(p.name) + '</td>';
+    h += '<td class="world-cell">' + esc(p.name) + tcRateNote(p.tcBid, p.tcEst) + '</td>';
     h += '<td><span class="badge badge-be-' + p.be + '">' + beE + '</span></td>';
     h += '<td><span class="badge badge-pvp">' + (PVP_SHORT[p.pvp] || p.pvp || '?') + '</span></td>';
-    h += '<td class="sell-cell">' + Math.round(p.basket.total).toLocaleString('sv-SE') + '</td>';
+    h += '<td class="sell-cell">' + goldTcCell(p.basket.total, p.basketTC) + '</td>';
     h += '<td>' + (p.basket.missing ? '<span class="buy-missing">' + p.basket.missing + '</span>' : '–') + '</td>';
-    h += '<td>' + (p.transferGold === null ? '<span title="Ingen TC buy offer på världen">?</span>'
-      : (buyState.ignoreTransferCost ? '<span style="opacity:0.5">' + Math.round(p.transferGold).toLocaleString('sv-SE') + '</span>'
-        : Math.round(p.transferGold).toLocaleString('sv-SE'))) + '</td>';
+    if (multi) h += '<td>' + worstItemCell(p) + '</td>';
+    h += '<td>' + (p.transferGold === null ? '<span title="Ingen TC buy offer någonstans att prissätta 750 TC mot">?<span class="tc-sub">750 TC</span></span>'
+      : (buyState.ignoreTransferCost
+        ? '<span style="opacity:0.5">' + (p.tcEst ? '~' : '') + Math.round(p.transferGold).toLocaleString('sv-SE') + '<span class="tc-sub">0 TC</span></span>'
+        : (p.tcEst ? '~' : '') + Math.round(p.transferGold).toLocaleString('sv-SE') +
+          '<span class="tc-sub" title="750 TC × ' + Math.round(p.tcBid).toLocaleString('sv-SE') + ' gp' +
+          (p.tcEst ? ' (median-kurs, världen har ingen egen TC-bid)' : ' TC-bid') + '">= 750 TC</span>')) + '</td>';
     // Hur stor del av transferkostnaden instant-traden betalar tillbaka — hela
     // poängen med att ta trades på samma resa.
     let cover = '';
@@ -2548,27 +2733,53 @@ function renderBuyList() {
         ? ' <span class="badge badge-verified" title="Instant-traden betalar hela transfern">✓ täcker</span>'
         : ' <span class="badge badge-estimate" title="Andel av transferkostnaden som betalas av instant-trades">' + pct + '%</span>';
     }
-    h += '<td class="buy-cell">' + (p.arb.profit > 0 ? '+' + Math.round(p.arb.profit).toLocaleString('sv-SE') + cover : '–') + '</td>';
-    h += '<td class="buy-net-cell">' + Math.round(p.net).toLocaleString('sv-SE') + '</td>';
-    h += '<td class="' + (p.saving > 0 ? 'buy-cell' : 'sell-cell') + '">' + (p.saving > 0 ? '+' : '') + Math.round(p.saving).toLocaleString('sv-SE') + '</td>';
+    h += '<td class="buy-cell">' + (p.arb.profit > 0
+      ? '+' + Math.round(p.arb.profit).toLocaleString('sv-SE') + cover +
+        '<span class="tc-sub">≈ ' + fmtTC(p.profitTC, true) + '</span>'
+      : '–') + '</td>';
+    h += '<td class="buy-net-cell">' + goldTcCell(p.net, p.netTC) + '</td>';
+    h += '<td class="' + (p.saving > 0 ? 'buy-cell' : 'sell-cell') + '">' +
+         goldTcCell(p.saving, p.savingTC, { signed: true }) + '</td>';
     h += '<td>' + (p.scanned_at ? timeAgo(p.scanned_at) : '–') + '</td>';
     h += '</tr>';
-    h += '<tr class="lookup-detail-row"><td colspan="11"><div class="lookup-detail">' + buyDetailHtml(p) + '</div></td></tr>';
+    h += '<tr class="lookup-detail-row"><td colspan="' + cols + '"><div class="lookup-detail">' + buyDetailHtml(p) + '</div></td></tr>';
   });
   h += '</tbody></table>';
   h += '<div class="buy-note">Korgen prissätts mot riktig orderbok (✓) när den finns, annars lägsta ask från senaste scan (~est). ' +
        'Instant-trades använder ditt separata trade-kapital (' + formatGold(buyState.capital) + ' gp) och räknas av mot transferkostnaden — ' +
-       'köp av korgen och trade-kapitalet är alltså två olika pengapåsar.</div>';
+       'köp av korgen och trade-kapitalet är alltså två olika pengapåsar.<br>' +
+       'TC-siffran under varje guldbelopp är samma summa växlad till Tibia Coins på den värld där den betalas ' +
+       '(korg och transfer på köpvärlden, instant-profit på ' + esc(tName) + ') — transfern är därför alltid exakt 750 TC. ' +
+       (multi ? '“Sämsta item” visar det item du gör sämst affär på jämfört med ' + esc(tName) +
+                ' — sortera på det för en värld som är hyfsad på hela listan i stället för kanon på ett enda item.' : '') +
+       '</div>';
   container.innerHTML = h;
+}
+
+// Sämsta enskilda item mot målvärlden + hela listan i tooltip:en, så man ser
+// direkt om en värld är jämnbra eller bara har ett fyndpris som drar snittet.
+function worstItemCell(p) {
+  if (p.basket.missing) {
+    return '<span class="buy-missing" title="Världen saknar ' + p.basket.missing + ' av dina items">saknar ' + p.basket.missing + '</span>';
+  }
+  const w = p.basket.worstDelta;
+  if (w === null || !isFinite(w)) return '–';
+  const tip = p.basket.lines
+    .filter(l => !l.missing && l.deltaPct !== null)
+    .map(l => l.name + ': ' + fmtPct(l.deltaPct) + (l.deltaTcPct !== null ? ' (' + fmtPct(l.deltaTcPct) + ' i TC)' : ''))
+    .join('\n');
+  return '<span class="' + (w > 0 ? 'buy-delta-good' : 'buy-delta-bad') + '" title="' + esc(tip) + '">' + fmtPct(w) + '</span>';
 }
 
 function buyDetailHtml(p) {
   let h = '<div class="buy-detail-grid"><div>';
   h += '<div class="offers-label">🛒 Inköp på ' + esc(p.name) + '</div>';
-  h += '<table><thead><tr><th>Item</th><th>Antal</th><th>Pris/st</th><th>Kostnad</th><th>Källa</th></tr></thead><tbody>';
+  h += '<table><thead><tr><th>Item</th><th>Antal</th><th>Pris/st</th><th>Kostnad</th>' +
+       '<th title="Pris per styck på ' + esc(buyState.target) + ' och hur mycket du sparar (+) eller förlorar (−) på att köpa här i stället">Mot ' +
+       esc(buyState.target) + '</th><th>Källa</th></tr></thead><tbody>';
   for (const l of p.basket.lines) {
     if (l.missing) {
-      h += '<tr><td>' + esc(l.name) + '</td><td>' + l.qty + '</td><td colspan="3" class="buy-missing">Inga säljoffers på ' + esc(p.name) + '</td></tr>';
+      h += '<tr><td>' + esc(l.name) + '</td><td>' + l.qty + '</td><td colspan="4" class="buy-missing">Inga säljoffers på ' + esc(p.name) + '</td></tr>';
       continue;
     }
     const src = l.source === 'book'
@@ -2576,19 +2787,42 @@ function buyDetailHtml(p) {
       : l.source === 'part'
         ? '<span class="badge badge-thin" title="Orderboken räckte till ' + l.bookUnits + ' av ' + l.qty + ' st — resten uppskattat">✓ ' + l.bookUnits + '/' + l.qty + '</span>'
         : '<span class="badge badge-estimate" title="Lägsta ask från senaste scan, ingen orderbok">~est</span>';
+    // Per item: pris här vs. på målvärlden. Δ i guld (och i TC, som tar hänsyn
+    // till att guldet är olika mycket värt) avgör om just DET här itemet är värt
+    // att köpa på resan — totalen kan annars dölja en riktigt dålig rad.
+    let vs;
+    if (l.deltaPct === null) {
+      vs = '<span style="color:var(--text-muted)" title="Itemet finns inte till salu på målvärlden — inget att jämföra mot">–</span>';
+    } else {
+      vs = '<span class="' + (l.deltaPct > 0 ? 'buy-delta-good' : 'buy-delta-bad') + '" title="' +
+        esc(Math.round(l.tgtUnit).toLocaleString('sv-SE') + ' gp/st på ' + buyState.target + ' → ' +
+            (l.deltaGold > 0 ? '+' : '') + Math.round(l.deltaGold).toLocaleString('sv-SE') + ' gp på ' + l.qty + ' st') +
+        '">' + fmtPct(l.deltaPct) + '</span>' +
+        (l.deltaTcPct !== null ? '<span class="tc-sub ' + (l.deltaTcPct > 0 ? 'buy-delta-good' : 'buy-delta-bad') +
+          '" title="Samma jämförelse växlad till TC på respektive värld — den tar hänsyn till att guldet är olika mycket värt">' +
+          fmtPct(l.deltaTcPct) + ' i TC</span>' : '');
+    }
     h += '<tr><td>' + esc(l.name) + '</td><td>' + l.qty + '</td><td>' + Math.round(l.unit).toLocaleString('sv-SE') + '</td><td>' +
-         Math.round(l.cost).toLocaleString('sv-SE') + '</td><td>' + src + '</td></tr>';
+         goldTcCell(l.cost, goldToTC(l.cost, p.tcBid)) + '</td><td>' + vs + '</td><td>' + src + '</td></tr>';
   }
-  h += '<tr><td><strong>Totalt</strong></td><td></td><td></td><td><strong>' + Math.round(p.basket.total).toLocaleString('sv-SE') +
-       '</strong></td><td></td></tr>';
+  h += '<tr><td><strong>Totalt</strong></td><td></td><td></td><td><strong>' + goldTcCell(p.basket.total, p.basketTC) +
+       '</strong></td><td>' + (p.basket.worstDelta !== null && isFinite(p.basket.worstDelta)
+         ? '<span class="' + (p.basket.worstDelta > 0 ? 'buy-delta-good' : 'buy-delta-bad') +
+           '" title="Sämsta enskilda item">sämst ' + fmtPct(p.basket.worstDelta) + '</span>' : '') + '</td><td></td></tr>';
   h += '</tbody></table>';
   if (p.transferGold === null) {
     h += '<div style="font-size:0.72rem;color:var(--text-muted);padding:0.4rem 0.5rem;">Ingen TC buy offer på ' + esc(p.name) +
          ' — transferkostnaden kan inte prissättas i guld här.</div>';
   } else {
     h += '<div style="font-size:0.72rem;color:var(--text-muted);padding:0.4rem 0.5rem;">Transfer: 750 TC × ' +
-         p.tcBid.toLocaleString('sv-SE') + ' gp (TC-bid på ' + esc(p.name) + ') = ' +
-         Math.round(p.transferGold).toLocaleString('sv-SE') + ' gp' + (buyState.ignoreTransferCost ? ' (ignoreras)' : '') + '</div>';
+         Math.round(p.tcBid).toLocaleString('sv-SE') + ' gp (' +
+         (p.tcEst ? 'median-TC-bid — ' + esc(p.name) + ' har ingen egen' : 'TC-bid på ' + esc(p.name)) + ') = ' +
+         Math.round(p.transferGold).toLocaleString('sv-SE') + ' gp' + (buyState.ignoreTransferCost ? ' (ignoreras)' : '') +
+         '.<br>Hela resan i TC: korg ' + fmtTC(p.basketTC) + ' + transfer ' + fmtTC(p.transferTC) +
+         (p.arb.profit > 0 ? ' − instant ' + fmtTC(p.profitTC) : '') +
+         ' = <strong>' + fmtTC(p.netTC) + '</strong>' +
+         (_buyBaseline && _buyBaseline.tc !== null ? ' (mot ' + fmtTC(_buyBaseline.tc) + ' på ' + esc(buyState.target) + ')' : '') +
+         '</div>';
   }
   h += '</div><div>';
   h += '<div class="offers-label">⚡ Instant profit ' + esc(p.name) + ' → ' + esc(buyState.target) + '</div>';
@@ -2605,7 +2839,8 @@ function buyDetailHtml(p) {
            '</td><td>' + t.qty + '</td><td class="buy-cell">+' + Math.round(t.gross).toLocaleString('sv-SE') + '</td><td>' + badge + '</td></tr>';
     }
     h += '<tr><td><strong>Totalt</strong></td><td></td><td></td><td></td><td class="buy-cell"><strong>+' +
-         Math.round(p.arb.profit).toLocaleString('sv-SE') + '</strong></td><td></td></tr>';
+         Math.round(p.arb.profit).toLocaleString('sv-SE') + '</strong><span class="tc-sub">≈ ' + fmtTC(p.profitTC, true) +
+         ' på ' + esc(buyState.target) + '</span></td><td></td></tr>';
     h += '</tbody></table>';
     h += '<div style="font-size:0.72rem;color:var(--text-muted);padding:0.4rem 0.5rem;">Kapital som används: ' +
          Math.round(p.arb.spent).toLocaleString('sv-SE') + ' gp av ' + buyState.capital.toLocaleString('sv-SE') + ' gp.</div>';
@@ -2738,6 +2973,11 @@ $('buyBeToggle').addEventListener('click', e => {
 $('buyIgnoreCost').addEventListener('change', function() {
   buyState.ignoreTransferCost = this.checked;
   $('buyIgnoreCostLabel').classList.toggle('active', this.checked);
+  renderBuyList();
+});
+$('buyAllItems').addEventListener('change', function() {
+  buyState.requireAllItems = this.checked;
+  $('buyAllItemsLabel').classList.toggle('active', this.checked);
   renderBuyList();
 });
 
